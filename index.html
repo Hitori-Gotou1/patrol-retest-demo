@@ -1,42 +1,17 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex,nofollow">
-<meta name="description" content="用于敏感信息识别与人工修改后复测的合成测试页。">
-<title>敏感信息识别 · 合成测试页</title>
-<style>
-:root{font-family:system-ui,-apple-system,'Segoe UI','Microsoft YaHei',sans-serif;color:#183047;background:#f2f5f8}
-*{box-sizing:border-box}body{margin:0;line-height:1.65}header{background:#17334a;color:white;padding:28px max(24px,calc((100vw - 880px)/2))}
-header p{margin:0;color:#bed0dd;font-size:14px}header h1{font-size:24px;margin:5px 0}main{max-width:880px;margin:36px auto;padding:0 24px}
-.notice{padding:18px 22px;background:#e7eff5;border-left:4px solid #4d7595;border-radius:4px;margin-bottom:24px}
-section{background:white;border:1px solid #dae2e9;border-radius:12px;padding:28px;box-shadow:0 3px 14px #17334a06}
-h2{margin:0 0 18px;font-size:18px}.version{font:13px ui-monospace,Consolas,monospace;letter-spacing:.05em;color:#4f6b80;margin:0 0 20px}
-dl{margin:0}.row{display:grid;grid-template-columns:160px 1fr;gap:12px;padding:18px 0;border-top:1px solid #edf0f4}dt{color:#526779}dd{margin:0;font-family:ui-monospace,Consolas,monospace;overflow-wrap:anywhere}
-footer{margin-top:24px;font-size:13px;color:#63788a}@media(max-width:540px){main{margin-top:24px}section{padding:20px}.row{grid-template-columns:1fr;gap:6px}header h1{font-size:21px}}
-</style>
+  <meta charset="utf-8">
+  <title>自定义规则合成测试</title>
 </head>
 <body>
-<header><p>网站安全巡检演示</p><h1>敏感信息识别 · 合成测试页</h1></header>
-<main>
-<div class="notice">本页仅包含人工构造的格式样本，用于功能演示，不代表真实个人信息或银行账户。</div>
-<section aria-labelledby="phase-title">
-<h2 id="phase-title">已移除号码的测试版本</h2>
-<p class="version">DEMO_AFTER</p>
-<dl>
-<div class="row"><dt>手机号码</dt><dd>已移除</dd></div>
-<div class="row"><dt>身份证格式样本</dt><dd>已移除</dd></div>
-<div class="row"><dt>银行卡号格式样本</dt><dd>已移除</dd></div>
-</dl>
-</section>
-<footer>测试人员可修改本页内容，并使用同一网址再次检测。候选仅用于规则测试，不能据此认定真实信息泄露。</footer>
-<section aria-labelledby="file-type-title" style="margin-top:24px">
-<h2 id="file-type-title">文件类型关注测试</h2>
-<p>以下链接指向人工构造的纯文本演示文件，不含真实备份或敏感信息。</p>
-<p><a href="./inspection-demo.bak">查看演示文件</a></p>
-<p><a href="./inspection-demo.bak">重复链接（用于验证同一网址去重）</a></p>
-</section>
-</main>
+  <h1>自定义规则合成测试</h1>
+  <p>本页内容由人工构造，用于已授权的功能验证。</p>
+
+  <p>SAMPLE-SECRET-731</p>
+  <p>EMP-123456</p>
+
+  <a href="archive.bak">演示文件链接</a>
+  <a href="archive.bak">重复的演示文件链接</a>
 </body>
 </html>
