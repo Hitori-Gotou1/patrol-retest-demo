@@ -130,16 +130,6 @@
 .strum-status { min-height: 18px; font-size: 11px; margin: 8px 0 0; color: var(--pink); }
 @keyframes string-pluck { from { transform: translateY(-2px); } to { transform: translateY(2px); } }
 
-.band-section { margin-top: 49px; }
-.band-badge { color: #30212e; background: var(--yellow); padding: 8px 12px; font-size: 14px; font-weight: 700; transform: rotate(-5deg); border-radius: 2px; white-space: nowrap; }
-.band-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 15px; }
-.band-card { --member: var(--pink); padding: 22px 20px 18px; position: relative; border: 1px solid #54414f; border-top: 3px solid var(--member); border-radius: 3px 3px 8px 8px; background: #211b25; }
-.member-nijika { --member: #e8d587; }.member-ryo { --member: #8abbd7; }.member-kita { --member: #e69b96; }
-.member-number { color: #9d879b; font: 11px var(--mono); position: absolute; top: 14px; right: 14px; }
-.member-part { color: var(--member); font-size: 12px; }
-.band-card h4 { font-size: 20px; margin: 13px 0; font-weight: 650; }
-.band-card p { font-size: 14px; line-height: 1.9; color: var(--muted); margin: 0 0 19px; }
-.member-note { display: block; border-top: 1px dashed #5d4859; padding-top: 12px; font-size: 12px; line-height: 1.8; color: var(--member); }
 .growth-note { margin-top: 25px; padding: 0 20px; border: 1px solid #594353; border-radius: 6px; background: #231c26; }
 .growth-note summary { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 15px; font-size: 14px; cursor: pointer; list-style: none; }
 .growth-note summary::-webkit-details-marker { display: none; }
@@ -161,8 +151,6 @@
   .about-grid { gap: 35px; }
   .thought-panel { padding: 25px 23px 18px; }
   .strum-row { gap: 10px; flex-wrap: wrap; }
-  .band-grid { grid-template-columns: repeat(2,1fr); }
-  .band-card p { min-height: 53px; }
 }
 @media(max-width:760px) {
   .site-header { flex-wrap: wrap; gap: 10px 20px; }
@@ -202,16 +190,6 @@
   .thought-bubble h4 { font-size: 20px; }
   .thought-bubble p { font-size: 14px; }
   .strum-row { margin-top: 16px; }
-  .band-section { margin-top: 33px; }
-  .band-section .subsection-heading h3 { font-size: 21px; max-width: 220px; }
-  .band-badge { font-size: 12px; margin-top: 24px; padding: 7px 8px; }
-  .band-grid { gap: 12px; }
-  .band-card { padding: 20px 15px 16px; }
-  .band-card h4 { font-size: 18px; }
-  .band-card p { font-size: 14px; min-height: 0; }
-  .member-number { top: 12px; right: 9px; font-size: 10px; }
-  .member-part { font-size: 11px; }
-  .member-note { font-size: 12px; }
   .growth-note { padding-inline: 15px; }
   .growth-note summary { font-size: 13px; padding-block: 13px; }
   .growth-note ol { grid-template-columns: 1fr; gap: 10px; }
@@ -240,9 +218,6 @@
   .hero-description { font-size: 13px; }
   .about-heading { flex-direction: column; gap: 12px; }
   .about-heading > p { font-size: 14px; }
-  .band-grid { grid-template-columns: 1fr; }
-  .band-section .subsection-heading { flex-wrap: wrap; }
-  .band-badge { margin-top: 0; }
   .subsection-heading h3 { font-size: 21px; }
   .section-label { font-size: 10px; }
   .sound-hint { font-size: 11px; }

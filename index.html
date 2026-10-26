@@ -9,15 +9,17 @@
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="bocchi.css">
+  <link rel="stylesheet" href="characters.css">
   <script src="site-data.js" defer></script>
   <script src="app.js" defer></script>
   <script src="bocchi-interactions.js" defer></script>
+  <script src="characters.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">跳到内容</a>
   <header class="site-header">
     <a class="brand" href="#home" aria-label="一里小屋首页"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span>一里小屋<span class="brand-en">HITORI ROOM</span></a>
-    <nav aria-label="主导航"><a href="#about">关于一里</a><a href="#gallery">心动收藏</a><a href="#video">放映时间</a></nav>
+    <nav aria-label="主导航"><a href="#about">结束乐队</a><a href="#gallery">心动收藏</a><a href="#video">放映时间</a></nav>
     <a class="header-note" href="#theater"><span aria-hidden="true">↘</span> 纸箱里，好像有人</a>
   </header>
   <main id="main">
@@ -38,11 +40,36 @@
     </section>
     <div class="ticker" aria-hidden="true"><div>粉色运动服 <span>✦</span> 蓝黄小发饰 <span>✦</span> 纸箱里的吉他英雄 <span>✦</span> 下北泽，集合！ <span>✦</span> 结束乐队练习中 <span>✦</span> 今天也向前一点 <span>✦</span> 粉色运动服 <span>✦</span> 蓝黄小发饰 <span>✦</span></div></div>
     <section class="about section-shell" id="about" aria-labelledby="about-title">
-      <div class="section-label"><span>01 / 关于一里</span><span class="hair-clips" aria-hidden="true"><i></i><i></i></span></div>
-      <div class="about-heading"><h2 id="about-title">后藤一里<span>後藤 ひとり · 波奇酱</span></h2><p>脑内已经演完一整场。<br>开口，还差一点勇气。</p></div>
-      <div class="about-grid">
-        <div class="about-story"><span class="pill">《孤独摇滚！》 · 主音吉他</span><p>一个人练习了很久的吉他，终于在虹夏的邀请下有了合奏的机会。网上的「吉他英雄」，走到人前仍会紧张得不知所措；她也还在学习，把房间里的实力带到舞台上。</p><p class="personal-note">让人想为她加油的，是那些小小的尝试：<br><strong>还没变得擅长社交，也在认真回应伙伴。</strong></p></div>
-        <dl class="profile-facts"><div><dt>乐队</dt><dd>结束乐队<span>结成四个人的声音</span></dd></div><div><dt>担当</dt><dd>主音吉他 · 作词<span>把心事写进歌词</span></dd></div><div><dt>一眼认出的标志</dt><dd>蓝黄发饰 + 粉色运动服<span>吉他，总是带在身边</span></dd></div><div><dt>反差的魅力</dt><dd>想藏起来，也想被听见<span>实力与自信，慢慢接上线</span></dd></div></dl>
+      <div class="section-label"><span>01 / 结束乐队</span><span class="hair-clips" aria-hidden="true"><i></i><i></i></span></div>
+      <div class="about-heading character-section-heading"><h2 id="about-title">结束乐队，集合。<span>結束バンド · 一起走向舞台</span></h2><p>一个人的练习，<br>四个人的回响。</p></div>
+      <div class="character-showcase" id="character-showcase" data-member="hitori">
+        <div class="character-stage-top"><span><i aria-hidden="true"></i> KESSOKU BAND / MEMBER FILE</span><div class="character-controls"><span id="character-counter">01 / 04</span><button type="button" id="character-prev" aria-label="上一位成员">←</button><button type="button" id="character-next" aria-label="下一位成员">→</button></div></div>
+        <div id="character-tabs" class="character-tabs" role="tablist" aria-label="结束乐队成员">
+          <button type="button" role="tab" id="tab-hitori" data-member="hitori" aria-controls="character-panel" aria-selected="true" tabindex="0"><span class="tab-portrait" aria-hidden="true"><img src="assets/characters/hitori.png" alt="" width="406" height="996" loading="lazy"></span><span class="tab-copy"><strong>后藤一里</strong><small>主音吉他</small></span><span class="tab-indicator" aria-hidden="true">↗</span></button>
+          <button type="button" role="tab" id="tab-nijika" data-member="nijika" aria-controls="character-panel" aria-selected="false" tabindex="-1"><span class="tab-portrait" aria-hidden="true"><img src="assets/characters/nijika.png" alt="" width="406" height="996" loading="lazy"></span><span class="tab-copy"><strong>伊地知虹夏</strong><small>鼓手</small></span><span class="tab-indicator" aria-hidden="true">↗</span></button>
+          <button type="button" role="tab" id="tab-ryo" data-member="ryo" aria-controls="character-panel" aria-selected="false" tabindex="-1"><span class="tab-portrait" aria-hidden="true"><img src="assets/characters/ryo.png" alt="" width="406" height="996" loading="lazy"></span><span class="tab-copy"><strong>山田凉</strong><small>贝斯</small></span><span class="tab-indicator" aria-hidden="true">↗</span></button>
+          <button type="button" role="tab" id="tab-kita" data-member="kita" aria-controls="character-panel" aria-selected="false" tabindex="-1"><span class="tab-portrait" aria-hidden="true"><img src="assets/characters/kita.png" alt="" width="406" height="996" loading="lazy"></span><span class="tab-copy"><strong>喜多郁代</strong><small>吉他 · 主唱</small></span><span class="tab-indicator" aria-hidden="true">↗</span></button>
+        </div>
+        <div id="character-panel" class="character-panel" role="tabpanel" aria-labelledby="tab-hitori" tabindex="0">
+          <article class="character-view" data-character="hitori">
+            <div class="character-copy"><span class="character-part">主音吉他 · 作词</span><h3>后藤一里</h3><p class="character-jp" lang="ja">後藤 ひとり</p><p class="character-headline">想藏起来，<br>也想被听见。</p><p class="character-description">网上的「吉他英雄」，现实里却连打招呼都要排练。那些独自练习的夜晚，正慢慢变成和伙伴一起站上舞台的勇气。</p><div class="character-connection"><span>迈出的那一步</span><p>虹夏的一次邀请，让一个人的练习有了回响。</p></div><p class="character-cv"><span>声优</span> 青山吉能</p></div>
+            <div class="character-art"><span class="character-lettering" aria-hidden="true">HITORI</span><span class="character-instrument" aria-hidden="true">Gt.</span><div class="character-halo" aria-hidden="true"></div><div class="character-frame" aria-hidden="true"></div><img class="character-portrait" src="assets/characters/hitori.png" alt="后藤一里全身立绘" width="406" height="996" loading="lazy" decoding="async"><span class="character-art-note">粉色运动服 / 蓝黄发饰</span><span class="character-art-index" aria-hidden="true">01</span></div>
+          </article>
+          <article class="character-view" data-character="nijika" hidden>
+            <div class="character-copy"><span class="character-part">鼓手</span><h3>伊地知虹夏</h3><p class="character-jp" lang="ja">伊地知 虹夏</p><p class="character-headline">先伸出手的人，<br>也有自己的梦想。</p><p class="character-description">开朗、善于照顾人，是把大家聚到一起的鼓手。她邀请一里加入，也在一次次合奏与日常里，认真守护属于乐队的梦想。</p><div class="character-connection"><span>和一里一起</span><p>对一里来说，她是通往结束乐队的第一扇门。</p></div><p class="character-cv"><span>声优</span> 铃代纱弓</p></div>
+            <div class="character-art"><span class="character-lettering" aria-hidden="true">NIJIKA</span><span class="character-instrument" aria-hidden="true">Dr.</span><div class="character-halo" aria-hidden="true"></div><div class="character-frame" aria-hidden="true"></div><img class="character-portrait" src="assets/characters/nijika.png" alt="伊地知虹夏全身立绘" width="406" height="996" loading="lazy" decoding="async"><span class="character-art-note">金色侧马尾 / 温柔的节拍</span><span class="character-art-index" aria-hidden="true">02</span></div>
+          </article>
+          <article class="character-view" data-character="ryo" hidden>
+            <div class="character-copy"><span class="character-part">贝斯</span><h3>山田凉</h3><p class="character-jp" lang="ja">山田 リョウ</p><p class="character-headline">安静，也可以<br>很有自己的声音。</p><p class="character-description">喜欢独处，对音乐有鲜明的喜好，也会为乐器花光零用钱。她的从容和古怪，让一里看到：自己的个性，也值得被留下。</p><div class="character-connection"><span>和一里一起</span><p>一起做音乐，也一起保留各自的棱角。</p></div><p class="character-cv"><span>声优</span> 水野朔</p></div>
+            <div class="character-art"><span class="character-lettering" aria-hidden="true">RYO</span><span class="character-instrument" aria-hidden="true">Ba.</span><div class="character-halo" aria-hidden="true"></div><div class="character-frame" aria-hidden="true"></div><img class="character-portrait" src="assets/characters/ryo.png" alt="山田凉全身立绘" width="406" height="996" loading="lazy" decoding="async"><span class="character-art-note">蓝色短发 / 自成一派</span><span class="character-art-index" aria-hidden="true">03</span></div>
+          </article>
+          <article class="character-view" data-character="kita" hidden>
+            <div class="character-copy"><span class="character-part">吉他 · 主唱</span><h3>喜多郁代</h3><p class="character-jp" lang="ja">喜多 郁代</p><p class="character-headline">耀眼的笑容里，<br>也有认真的努力。</p><p class="character-description">擅长与人相处，像一束明亮的光。憧憬乐队的她，从吉他练习开始一步步追赶；与一里不同的步调，也能在合奏里相遇。</p><div class="character-connection"><span>和一里一起</span><p>从一起练习吉他，到一起面向观众。</p></div><p class="character-cv"><span>声优</span> 长谷川育美</p></div>
+            <div class="character-art"><span class="character-lettering" aria-hidden="true">KITA</span><span class="character-instrument" aria-hidden="true">Gt. / Vo.</span><div class="character-halo" aria-hidden="true"></div><div class="character-frame" aria-hidden="true"></div><img class="character-portrait" src="assets/characters/kita.png" alt="喜多郁代全身立绘" width="406" height="996" loading="lazy" decoding="async"><span class="character-art-note">红色长发 / 迎面而来的阳光</span><span class="character-art-index" aria-hidden="true">04</span></div>
+          </article>
+        </div>
+        <div class="character-stage-bottom"><span>四种颜色，同一支乐队。</span><span class="character-keyboard-hint">点击头像切换 · 支持 ← → 方向键</span></div>
+        <p id="character-status" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></p>
       </div>
       <div class="theater-section" id="theater">
         <div class="subsection-heading"><div><span class="handwritten-note">轻敲纸箱，进入脑内频道 ↘</span><h3>一里的脑内小剧场</h3></div><span class="fan-imagination">如果此刻是她…</span></div>
@@ -55,15 +82,6 @@
             <div class="tiny-guitar"><span class="guitar-neck"></span><span class="guitar-body"></span><span class="guitar-strings"></span></div>
           </div>
           <div class="thought-panel"><div class="thought-bubble" role="status" aria-live="polite" aria-atomic="true"><h4 id="thought-title">纸箱里，暂时安全。</h4><p id="thought-text">先躲一小会儿。等心跳慢下来，再试着向外迈一步。</p><span id="scene-note">社交电量：安静充电中</span></div><div class="strum-row"><button id="strum-button" class="strum-button" type="button"><span class="string-icon" aria-hidden="true">≋</span><span id="strum-label">听一声和弦</span><span aria-hidden="true">♪</span></button><span class="sound-hint">轻轻拨一下，只响一小段</span></div><p class="strum-status" id="strum-status" role="status" aria-live="polite"></p></div>
-        </div>
-      </div>
-      <div class="band-section">
-        <div class="subsection-heading"><div><span class="handwritten-note">一个人的练习，四个人的回响</span><h3>和她一起，把乐队拼起来。</h3></div><span class="band-badge">結束バンド</span></div>
-        <div class="band-grid">
-          <article class="band-card member-hitori"><span class="member-number">01</span><span class="member-part">主音吉他</span><h4>后藤一里</h4><p>把漫长的独自练习，慢慢变成和伙伴一起演奏的力量。</p><span class="member-note">从房间里，走到大家身边。</span></article>
-          <article class="band-card member-nijika"><span class="member-number">02</span><span class="member-part">鼓手</span><h4>伊地知虹夏</h4><p>那次主动的邀请，把一里带进了乐队。她也总在留意大家的状态。</p><span class="member-note">有人先伸出手，故事就开始了。</span></article>
-          <article class="band-card member-ryo"><span class="member-number">03</span><span class="member-part">贝斯</span><h4>山田凉</h4><p>安静、特立独行，对音乐有自己的坚持。她让一里看见保留个性的可能。</p><span class="member-note">不必把自己的棱角磨平。</span></article>
-          <article class="band-card member-kita"><span class="member-number">04</span><span class="member-part">吉他 · 主唱</span><h4>喜多郁代</h4><p>开朗的喜多与容易紧张的一里，在吉他练习中一点点靠近。</p><span class="member-note">不同的步调，也能一起向前。</span></article>
         </div>
       </div>
       <details class="growth-note"><summary><span><span class="growth-dot" aria-hidden="true"></span> 从房间到舞台，那些很小、很重要的变化</span><span class="details-symbol" aria-hidden="true">＋</span></summary><ol><li><strong>一个人，也认真练习。</strong><p>在房间里反复磨练技巧，在网络上以「吉他英雄」的身份分享演奏。</p></li><li><strong>有人邀请，就试着迈一步。</strong><p>虹夏的出现，让一个人的吉他声有了与鼓、贝斯和歌声相遇的机会。</p></li><li><strong>带着紧张，继续站上舞台。</strong><p>信心没有突然变满。但她开始为了伙伴，尝试把练习过的声音真正弹出来。</p></li></ol></details>
@@ -83,6 +101,6 @@
   </main>
   <footer class="site-footer section-shell"><a class="brand" href="#home"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span>一里小屋</a><p>把喜欢的心情，一点点弹出来。</p></footer>
   <dialog id="lightbox" class="lightbox" aria-labelledby="lightbox-title"><div class="lightbox-toolbar"><span id="lightbox-count"></span><button type="button" id="lightbox-close" class="icon-button" aria-label="关闭图片">×</button></div><div class="lightbox-image-wrap"><button type="button" id="lightbox-prev" class="icon-button lightbox-prev" aria-label="上一张">←</button><img id="lightbox-image" src="assets/bocchi-cover.png" alt=""><button type="button" id="lightbox-next" class="icon-button lightbox-next" aria-label="下一张">→</button></div><div class="lightbox-bottom"><h3 id="lightbox-title"></h3><p id="lightbox-credit"></p></div></dialog>
-  <noscript><p class="noscript-note">开启 JavaScript 后可使用相册和视频预览。</p></noscript>
+  <noscript><p class="noscript-note">开启 JavaScript 后可切换乐队成员，并使用相册和视频预览。</p></noscript>
 </body>
 </html>
