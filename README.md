@@ -1,73 +1,87 @@
 # 一里小屋 · HITORI ROOM
 
-以《孤独摇滚！》后藤一里为主题的个人同人网站，适配手机和电脑。使用原生 HTML、CSS、JavaScript，无构建步骤或第三方运行依赖。
+《孤独摇滚！》主题同人展示站。保留舞台开场、深蓝角色页、淡紫纸箱剧场、奶油色收藏墙与暗色音乐放映室五幕风格，使用 **Vue 3 Composition API + Vite + Vue Router + GSAP**。无需后台、数据库或登录。
 
-## 已实现
+公开网站：https://hitori-gotou1.github.io/patrol-retest-demo/
 
-- 五幕分屏：舞台封面、深蓝角色页、淡紫纸箱剧场、奶油色收藏墙、暗色放映室。
-- 桌面端平滑分屏滚动、顶部导航和侧边导航；长内容保留完整阅读空间，手机端自然滚动。
-- 支持直接访问 `#home`、`#about`、`#theater`、`#gallery`、`#video`，浏览器前进/后退和减少动态效果偏好。
+## 安装、运行与构建
 
-- 四位成员的大幅透明立绘：切换角色时同步更新主题色、简介、声优和乐队关系。
-- 可展开的成长笔记，以及后藤一里的角色细节。
-- 原创脑内小剧场：三种情境切换纸箱表情和文案，支持键盘操作。
-- 点击后播放短和弦，使用 Web Audio 合成，无自动播放或外部音频依赖。
-- 粉色舞台与纸箱贴纸风格、提高中文可读性的响应式排版。
-- AI 生成的同人封面插画、两张原创图形海报。
-- 相册分类筛选、图片放大、方向键切换、Esc 关闭。
-- 使用浏览器 localStorage 保存收藏；只保存在当前设备。
-- 视频播放区及本地视频预览。本地选择的文件不会上传，刷新后需要重新选择。
-- 键盘导航、减少动态效果偏好、手机端布局。
-
-## 本地运行
-
-在仓库目录执行：
+需要 Node.js **22.12+**（推荐 Node 22 LTS，见 `.nvmrc`）。
 
 ```sh
-python3 -m http.server 8000 --bind 127.0.0.1
+npm ci
+npm run dev
 ```
 
-在本机浏览器中访问端口 8000。Codex 云环境中的此地址仅供内部验证，并不是公开网站地址。
+访问终端显示的地址，默认 `http://localhost:5173/patrol-retest-demo/`。云环境的本地端口与公开网站是两个地址。
 
-## 修改内容
-
-- `index.html`：文字、角色资料、页面结构。
-- `styles.css`：基础布局与原有相册、视频样式。
-- `bocchi.css`：角色主题细节、阅读字号、纸箱表情和乐队卡片样式。
-- `bocchi-interactions.js`：脑内小剧场与点击触发的短和弦。
-- `characters.css`、`characters.js`：大立绘展示区与可访问的角色切换；支持方向键、Home / End、前后按钮。
-- `scenes.css`、`scenes.js`：五幕独立视觉样式、固定导航、锚点历史及桌面分屏交互。使用正常文档滚动，不依赖固定高度的滚动容器。
-- 四位角色的文字与面板结构位于 `index.html`，立绘存放在 `assets/characters/`。
-- `site-data.js`：首页封面、相册素材和公开视频配置。
-- `assets/`：本网站实际使用的图片、视频和图标。
-
-添加图片时，把文件放入 `assets/`，在 `site-data.js` 的 `gallery` 数组中加入条目。路径使用 `assets/example.jpg` 这样的相对路径，不要以 `/` 开头，否则 GitHub Pages 的项目子路径会失效。分类可用 `illustration` 或 `poster`。导航筛选器中的总数目前为 03；增减素材时也应相应修改。
-
-公开视频目前尚未配置。选好有使用权限的 MP4 或 WebM 文件后放进 `assets/`，修改 `site-data.js`：
-
-```js
-video: {
-  src: 'assets/my-video.mp4',
-  title: '我的珍藏片段',
-  description: '想再看一遍的瞬间。',
-  poster: 'assets/bocchi-cover.png'
-}
+```sh
+npm run build
+npm run preview
 ```
 
-`src` 也可以是允许外站播放的 HTTPS 视频文件地址，不能直接使用普通视频网站的观看页网址。大视频建议使用专门的视频托管服务。浏览器支持的编码有所不同，通常可选择 MP4（H.264/AAC）或 WebM。网页上的“选择本地视频”只用于当前浏览器预览，无法让其他访客看到该文件。
+构建结果是 `dist/`，预览默认使用端口 4173。迁移后不能再用 Python 静态服务器直接运行源文件；可以用静态服务器托管构建后的 `dist/`。
 
-## 发布到 GitHub Pages
+## 功能
 
-1. 将本网站文件提交、推送到 `Hitori-Gotou1/patrol-retest-demo` 仓库的 `main` 分支。
-2. 在 GitHub 仓库中打开 **Settings → Pages**。
-3. 在 **Build and deployment** 中选择 **Deploy from a branch**。
-4. 选择 **main** 分支及 **/ (root)**，保存。
-5. 等待 Pages 部署成功，访问 GitHub 提供的网站地址。此仓库的默认地址通常为 `https://hitori-gotou1.github.io/patrol-retest-demo/`。
+- 固定导航、桌面平滑逐幕滚动、活动区域高亮；手机自然滚动，长内容完整可读。
+- 全屏插画开场、GSAP 分层入场、轻微指针视差和舞台光效；可选静音背景视频，失败时保留静态封面。
+- 四位成员数据驱动展示：中文、日文、罗马音、职务、性格、背景、声优与原创角色印象。主题色、图形及文字同步过渡，支持方向键、Home/End、前后按钮和横向触摸。
+- 纸箱情境切换、点击角色回应、明确点击才响起的原创合成短和弦。
+- 相册「收藏墙 / 流动视图」双模式：分类、本机收藏、三排交错循环、暂停、懒加载、全屏预览、方向键和触摸切图。
+- 音乐播放器：三首本站原创 Demo、播放/暂停、上下首、进度拖动、音量、旋转唱片、实际音频频谱。不会自动播放有声音乐。
+- 私人视频预览保留，与音乐互斥播放；本地文件不上传。关于页包含简介、GitHub 与致谢。
+- 减少动态效果、离屏暂停图片墙、页面隐藏暂停音频，卸载时清理监听器、音频、对象 URL 和 GSAP 动画。
 
-`.nojekyll` 用于直接发布静态文件。发布前确认仓库可使用 Pages，素材可公开展示，文件中没有私密信息或密钥。Codex 环境的发布与 GitHub Pages 网站的发布是两个独立步骤。
+## 目录
 
-## 素材说明
+```text
+src/
+  main.js / App.vue / router.js   Vue 入口、公共导航、Hash 路由
+  views/HomeView.vue             组装五幕
+  views/AboutView.vue            关于与致谢
+  components/
+    SiteNavigation.vue           导航
+    HeroScene.vue                开场
+    CharacterScene.vue           成员展示
+    TheaterScene.vue             脑内剧场
+    GalleryScene.vue             收藏墙 / 流动相册 / 弹窗
+    MediaScene.vue               音乐 / 视频切换
+    MusicPlayer.vue              音频播放器与频谱
+  composables/
+    useSceneNavigation.js        分屏、活动状态及键盘焦点
+    useChord.js                  点击触发的合成和弦
+  data/
+    characters.json              成员资料与配色
+    gallery.js                   图片、分类和来源
+    music.json                   曲目、封面和来源
+    site.js                      封面与可选视频
+  styles/                        基础样式、各幕样式与主题变量
+public/assets/                   插画、原创图形和演示音频
+scripts/generate-demo-audio.py   标准库生成原创练习音频
+.github/workflows/deploy.yml     构建并发布 GitHub Pages
+```
 
-本站为非官方同人空间，角色及原作品权利归原权利人所有。`assets/bocchi-cover.png` 为 AI 生成的同人插画，不是动画截图；其余两张海报为原创 SVG 图形排版。角色展示区的四张透明立绘保留动画官网原始文件，具体来源、尺寸及哈希见 [素材来源](assets/characters/SOURCES.md)。没有使用未经确认的演出视频，也没有伪造官方授权。后续替换素材时请保留准确的来源说明。
+主题颜色、常用间距单位和动画时长位于 `src/styles/enhancements.css`；角色主题色位于角色数据。CSS 负责简单悬停、唱片和图片墙循环，GSAP 只负责首页与角色的分层时间线，不引入 UI 组件库、图标库或额外滚动库。
 
-角色资料参考：[动画官网角色介绍](https://bocchi.rocks/tv/character/)。脑内小剧场为基于角色性格的原创想象，不是原作台词摘录。
+## 继续补充内容
+
+- **角色**：修改 `src/data/characters.json`。目前使用本站原创几何人物占位；获得适当许可的立绘后，放入 `public/assets/characters/`，替换 `portrait`、`portraitAlt`，同步调整 `CharacterScene.vue` 的占位说明。原官网立绘已从当前版本移除。`originalLine` 明确标为原创角色印象，未核实的文案不冒充动画台词。
+- **相册**：将素材放入 `public/assets/`，修改 `src/data/gallery.js`。支持 `illustration`、`poster`；计数自动更新。只有三张素材时，流动视图会有意重复，之后增加图片即可丰富内容。
+- **音乐**：修改 `src/data/music.json`。目前三段 12 秒音频是本站合成练习，不是结束乐队原曲。详情与重生成命令见 [音频来源](public/assets/audio/SOURCES.md)。替换为已获授权的文件，或另外接入允许嵌入的平台播放器；普通视频网站观看页不能直接作为 `audio.src`。
+- **背景视频**：`src/data/site.js` 的 `backgroundVideo` 默认空，使用插画与灯光动画。填入 `assets/your-background.webm` 等授权素材路径后，页面会静音播放；加载失败或减少动态效果模式使用静态封面。
+- **公开视频**：填写 `site.video.src/title/description/poster`。页面上的本地视频选择只在当前浏览器预览，不会发布给其他访客。
+
+数据中路径写成 `assets/example.webp`，不要带域名或开头 `/`；组件统一加 `import.meta.env.BASE_URL`。本站使用系统字体，不下载未知授权字体。
+
+## 部署
+
+Vite 的 `base` 为 `/patrol-retest-demo/`。GitHub Pages 的 Source 使用 **GitHub Actions**；推送 `main` 后工作流运行 `npm ci`、`npm run build` 并上传 `dist/`。
+
+Vue Router 使用 Hash 路由，关于页 `/#/about` 可直接刷新，无需服务器 rewrite。首页各幕链接形如 `/#/#gallery`；迁移前的 `/#gallery` 链接也会转换到对应幕。更换仓库名或部署到域名根目录时，同步修改 `vite.config.js` 的 `base`。
+
+## 研究与选择
+
+已实际阅读参考仓库，技术和实现分析见 [参考项目分析](docs/reference-analysis.md)，包括固定版本源码链接。本站没有复制它的源码、歌曲、视频或字体。
+
+本次确认的方向：迁移 Vue 但保留五幕；保留收藏墙并增加流动模式；官网立绘换原创图形占位。音乐并入第五幕，关于使用单独路由，纸箱和视频预览继续保留。更多阶段记录与验证见 [开发记录](docs/development.md)。

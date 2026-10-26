@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 406 620" role="img" aria-labelledby="title desc">
+<title id="title">伊地知虹夏主题原创几何人物海报</title><desc id="desc">本站用几何形状创作的角色印象图，以鼓手为主题，不是动画官方立绘。</desc>
+<defs><linearGradient id="coat" x2="1" y2="1"><stop stop-color="#f2d982"/><stop offset="1" stop-color="#302b23"/></linearGradient><pattern id="lines" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0 0v8" stroke="#f2d982" stroke-opacity=".13"/></pattern></defs>
+<path d="M32 66h343v493H32z" fill="url(#lines)"/><path d="M22 82V51h31m300 0h31v31M22 535v34h31m300 0h31v-34" fill="none" stroke="#f2d982" stroke-width="2" opacity=".65"/>
+<circle cx="204" cy="207" r="151" fill="#f2d982" opacity=".1"/><circle cx="204" cy="207" r="132" fill="none" stroke="#f2d982" stroke-dasharray="3 11" opacity=".45"/>
+<path d="m151 383-7 153h44l19-132 14 132h44l-11-153Z" fill="#212330"/><path d="m143 531-18 26h65l-1-26m32 0v26h66l-20-26" fill="#eef0e5"/>
+<path d="M122 241V150c0-79 159-76 159 1v95l-43-32-66 14Z" fill="#e5bd62"/><path d="m257 147 58-30 33 54-42 122-43-18 11-107Z" fill="#f1d782"/><path d="m123 171 18-57 85-19 54 73-43-8-29-42-39 53Z" fill="#ffe9a0"/>
+<path d="m167 230-51 29-21 126 47 12 14-85-1 100h103l-4-100 19 70 38-13-24-110-48-29Z" fill="url(#coat)" stroke="#f2d982" stroke-width="2"/>
+<path d="M197 242v157m-69-119-9 70m157-70 14 65" stroke="#f6ede8" stroke-width="5" opacity=".8"/>
+<path d="m171 217 6 30 29 20 30-20 3-30Z" fill="#edc2b0"/><ellipse cx="204" cy="182" rx="53" ry="61" fill="#f6d3bd"/>
+<path d="m152 174 2-37 57-27 47 31-19 34-28-42-22 40-9-19-15 21Z" fill="#f2d982"/>
+<path d="M170 192h15m39 0h15" stroke="#44384a" stroke-width="4" stroke-linecap="round"/><path d="M198 218h13" stroke="#ad7d79" stroke-width="3" stroke-linecap="round"/>
+<path d="m166 210 11 3m55 0 11-3" stroke="#dd8d98" stroke-width="5" stroke-linecap="round"/>
+<g><ellipse cx="205" cy="365" rx="83" ry="27" fill="#fff0c2" stroke="#a1773a" stroke-width="4"/><path d="M122 365v61c0 34 166 34 166 0v-61" fill="#d6ac62"/><ellipse cx="205" cy="427" rx="83" ry="25" fill="none" stroke="#fff0c2" stroke-width="4"/><path d="m143 283 99 66m-86 10 96-91" stroke="#f5e5c2" stroke-width="8" stroke-linecap="round"/><path d="m145 379 9 45m30-36 5 49m39-49-5 49m41-58-10 45" stroke="#fff0c2" stroke-width="5"/></g>
+<path d="m49 290 10-17 10 17-10 18Z" fill="#f2d982" opacity=".8"/><path d="M334 364v37m-18-19h36" stroke="#f2d982" stroke-width="2"/>
+<text x="33" y="592" fill="#f2d982" font-family="Arial,sans-serif" font-size="11" letter-spacing="3">02 / ORIGINAL CHARACTER STUDY</text>
+</svg>

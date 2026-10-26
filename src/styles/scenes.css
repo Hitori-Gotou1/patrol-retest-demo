@@ -155,7 +155,7 @@ body[data-active-scene='theater'] .scene-navigation, body[data-active-scene='gal
 .video-section .video-layout::before,.video-section .video-layout::after { content: ''; position: absolute; left: 12px; right: 12px; height: 6px; background: repeating-linear-gradient(90deg,#73674945 0 9px,transparent 9px 24px); pointer-events: none; }
 .video-section .video-layout::before { top: 5px; }.video-section .video-layout::after { bottom: 5px; }
 .video-section .video-stage { border-radius: 0; }
-.video-section .video-empty { background: linear-gradient(#0a0e16a6,#0c1019cf),url('assets/bocchi-cover.png') center 48%/cover; padding: 24px; }
+.video-section .video-empty { background: linear-gradient(#0a0e16a6,#0c1019cf),url('/assets/bocchi-cover.webp') center 48%/cover; padding: 24px; }
 .video-section .video-empty::before { background: repeating-linear-gradient(0deg,#a7b3ca08 0 1px,transparent 1px 4px); }
 .video-section .record { display: none; }
 .video-section .screen-label { font: 10px var(--mono); color: #d4c9b2; letter-spacing: 3px; }

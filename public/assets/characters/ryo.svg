@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 406 620" role="img" aria-labelledby="title desc">
+<title id="title">山田凉主题原创几何人物海报</title><desc id="desc">本站用几何形状创作的角色印象图，以贝斯为主题，不是动画官方立绘。</desc>
+<defs><linearGradient id="coat" x2="1" y2="1"><stop stop-color="#90c7e5"/><stop offset="1" stop-color="#222c36"/></linearGradient><pattern id="lines" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0 0v8" stroke="#90c7e5" stroke-opacity=".13"/></pattern></defs>
+<path d="M32 66h343v493H32z" fill="url(#lines)"/><path d="M22 82V51h31m300 0h31v31M22 535v34h31m300 0h31v-34" fill="none" stroke="#90c7e5" stroke-width="2" opacity=".65"/>
+<circle cx="204" cy="207" r="151" fill="#90c7e5" opacity=".1"/><circle cx="204" cy="207" r="132" fill="none" stroke="#90c7e5" stroke-dasharray="3 11" opacity=".45"/>
+<path d="m151 383-7 153h44l19-132 14 132h44l-11-153Z" fill="#212330"/><path d="m143 531-18 26h65l-1-26m32 0v26h66l-20-26" fill="#eef0e5"/>
+<path d="M116 222V152c0-80 172-80 172 0v81l-41-17-43 26-43-26Z" fill="#5289af"/><path d="m120 176 11-49 78-34 73 56-39 27-17-36-21 32-12-35-23 40Z" fill="#91c6e7"/>
+<path d="m167 230-51 29-21 126 47 12 14-85-1 100h103l-4-100 19 70 38-13-24-110-48-29Z" fill="url(#coat)" stroke="#90c7e5" stroke-width="2"/>
+<path d="M197 242v157m-69-119-9 70m157-70 14 65" stroke="#f6ede8" stroke-width="5" opacity=".8"/>
+<path d="m171 217 6 30 29 20 30-20 3-30Z" fill="#edc2b0"/><ellipse cx="204" cy="182" rx="53" ry="61" fill="#f6d3bd"/>
+<path d="m152 174 2-37 57-27 47 31-19 34-28-42-22 40-9-19-15 21Z" fill="#90c7e5"/>
+<path d="M170 192h15m39 0h15" stroke="#44384a" stroke-width="4" stroke-linecap="round"/><path d="M198 218h13" stroke="#ad7d79" stroke-width="3" stroke-linecap="round"/>
+<path d="m166 210 11 3m55 0 11-3" stroke="#dd8d98" stroke-width="5" stroke-linecap="round"/>
+<g transform="rotate(25 218 345)"><path d="M208 202h15v147h-15z" fill="#e6c793"/><path d="M204 190h23v39h-23z" fill="#e8d1a8"/><path d="M181 326c-43 27-41 91 9 103 29 8 61-13 58-45-2-25-18-22-9-49l-16-15-15 17Z" fill="#1c202b" stroke="#f0e6d9" stroke-width="3"/><path d="M208 251v147m6-147v147m6-147v147" stroke="#e6d9bb" stroke-width="1.2"/><rect x="198" y="369" width="32" height="8" fill="#dbcbac"/><circle cx="230" cy="403" r="4" fill="#90c7e5"/></g>
+<path d="m49 290 10-17 10 17-10 18Z" fill="#90c7e5" opacity=".8"/><path d="M334 364v37m-18-19h36" stroke="#90c7e5" stroke-width="2"/>
+<text x="33" y="592" fill="#90c7e5" font-family="Arial,sans-serif" font-size="11" letter-spacing="3">03 / ORIGINAL CHARACTER STUDY</text>
+</svg>

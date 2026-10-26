@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 406 620" role="img" aria-labelledby="title desc">
+<title id="title">喜多郁代主题原创几何人物海报</title><desc id="desc">本站用几何形状创作的角色印象图，以吉他 · 主唱为主题，不是动画官方立绘。</desc>
+<defs><linearGradient id="coat" x2="1" y2="1"><stop stop-color="#f2a09a"/><stop offset="1" stop-color="#342425"/></linearGradient><pattern id="lines" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0 0v8" stroke="#f2a09a" stroke-opacity=".13"/></pattern></defs>
+<path d="M32 66h343v493H32z" fill="url(#lines)"/><path d="M22 82V51h31m300 0h31v31M22 535v34h31m300 0h31v-34" fill="none" stroke="#f2a09a" stroke-width="2" opacity=".65"/>
+<circle cx="204" cy="207" r="151" fill="#f2a09a" opacity=".1"/><circle cx="204" cy="207" r="132" fill="none" stroke="#f2a09a" stroke-dasharray="3 11" opacity=".45"/>
+<path d="m151 383-7 153h44l19-132 14 132h44l-11-153Z" fill="#212330"/><path d="m143 531-18 26h65l-1-26m32 0v26h66l-20-26" fill="#eef0e5"/>
+<path d="M112 343V152c0-77 176-80 176 0v212l-41-38-39 20-43-28-39 28Z" fill="#ba666d"/><path d="m117 174 15-58 76-23 77 62-45 20-38-53-22 50Z" fill="#ef9f98"/>
+<path d="m167 230-51 29-21 126 47 12 14-85-1 100h103l-4-100 19 70 38-13-24-110-48-29Z" fill="url(#coat)" stroke="#f2a09a" stroke-width="2"/>
+<path d="M197 242v157m-69-119-9 70m157-70 14 65" stroke="#f6ede8" stroke-width="5" opacity=".8"/>
+<path d="m171 217 6 30 29 20 30-20 3-30Z" fill="#edc2b0"/><ellipse cx="204" cy="182" rx="53" ry="61" fill="#f6d3bd"/>
+<path d="m152 174 2-37 57-27 47 31-19 34-28-42-22 40-9-19-15 21Z" fill="#f2a09a"/>
+<path d="M170 192h15m39 0h15" stroke="#44384a" stroke-width="4" stroke-linecap="round"/><path d="M198 218h13" stroke="#ad7d79" stroke-width="3" stroke-linecap="round"/>
+<path d="m166 210 11 3m55 0 11-3" stroke="#dd8d98" stroke-width="5" stroke-linecap="round"/>
+<g><path d="M259 283v244m-26 0h53" stroke="#e3d2c5" stroke-width="5"/><g transform="rotate(-25 259 283)"><rect x="248" y="229" width="22" height="62" rx="11" fill="#e4d4c7"/><rect x="244" y="221" width="30" height="38" rx="14" fill="#313447" stroke="#f1c2b6" stroke-width="3"/><path d="M249 236h20m-20 8h20" stroke="#ef9f98" stroke-width="2"/></g><path d="m156 318 96-41 13 20-93 59Z" fill="#f3c5af"/></g>
+<path d="m49 290 10-17 10 17-10 18Z" fill="#f2a09a" opacity=".8"/><path d="M334 364v37m-18-19h36" stroke="#f2a09a" stroke-width="2"/>
+<text x="33" y="592" fill="#f2a09a" font-family="Arial,sans-serif" font-size="11" letter-spacing="3">04 / ORIGINAL CHARACTER STUDY</text>
+</svg>
