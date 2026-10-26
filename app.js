@@ -42,7 +42,10 @@
     pictureButton.append(image, tag, expand);
     pictureButton.addEventListener('click', () => {
       selectedImage = visibleImages().findIndex(image => image.id === item.id);
-      showImage(); lightbox.showModal(); document.body.style.overflow = 'hidden';
+      showImage();
+      // Stop a section transition before freezing the page behind the dialog.
+      window.scrollTo({ top: window.scrollY, behavior: 'instant' });
+      lightbox.showModal(); document.body.style.overflow = 'hidden';
     });
     const caption = document.createElement('div'); caption.className = 'gallery-card-caption';
     const text = document.createElement('div');

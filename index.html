@@ -10,38 +10,37 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="bocchi.css">
   <link rel="stylesheet" href="characters.css">
+  <link rel="stylesheet" href="scenes.css">
   <script src="site-data.js" defer></script>
   <script src="app.js" defer></script>
   <script src="bocchi-interactions.js" defer></script>
   <script src="characters.js" defer></script>
+  <script src="scenes.js" defer></script>
 </head>
-<body>
+<body data-active-scene="home">
   <a class="skip-link" href="#main">跳到内容</a>
   <header class="site-header">
     <a class="brand" href="#home" aria-label="一里小屋首页"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span>一里小屋<span class="brand-en">HITORI ROOM</span></a>
-    <nav aria-label="主导航"><a href="#about">结束乐队</a><a href="#gallery">心动收藏</a><a href="#video">放映时间</a></nav>
-    <a class="header-note" href="#theater"><span aria-hidden="true">↘</span> 纸箱里，好像有人</a>
+    <nav aria-label="主导航"><a href="#home">开场</a><a href="#about">结束乐队</a><a href="#theater">纸箱剧场</a><a href="#gallery">心动收藏</a><a href="#video">放映时间</a></nav>
+    <span class="header-scene-count" id="scene-current-index">01 / 05</span>
   </header>
-  <main id="main">
-    <section class="hero section-shell" id="home" aria-labelledby="hero-title">
-      <div class="hero-copy">
-        <div class="eyebrow"><span class="status-dot"></span>结束乐队 · 吉他手的秘密基地</div>
-        <h1 id="hero-title">平时，想躲进纸箱。<span>上台，想被你听见。</span></h1>
-        <p class="hero-description">粉色运动服、蓝黄发饰，还有一把黑色吉他。<br>从一个人的练习，到四个人的舞台——<br>这里，收藏后藤一里笨拙又耀眼的每一步。</p>
-        <div class="hero-actions"><a class="button button-pink" href="#theater">敲敲一里的纸箱 <span aria-hidden="true">↗</span></a><a class="text-link" href="#about">认识后藤一里 <span aria-hidden="true">→</span></a></div>
-        <div class="hero-footnote"><span class="mini-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span>ひとりじゃない。<small>在这里，不必一个人。</small></span><span class="tiny-stamp">练习中<br>请轻轻敲门</span></div>
+  <nav id="scene-nav" class="scene-navigation" aria-label="分屏导航"><a class="scene-link" href="#home" aria-label="第一幕：开场"><span>01</span></a><a class="scene-link" href="#about" aria-label="第二幕：结束乐队"><span>02</span></a><a class="scene-link" href="#theater" aria-label="第三幕：纸箱剧场"><span>03</span></a><a class="scene-link" href="#gallery" aria-label="第四幕：心动收藏"><span>04</span></a><a class="scene-link" href="#video" aria-label="第五幕：放映时间"><span>05</span></a></nav>
+  <main id="main" tabindex="-1">
+    <section class="hero scene" id="home" data-scene-name="开场" aria-labelledby="hero-title">
+      <div class="hero-backdrop"><img id="hero-image" src="assets/bocchi-cover.png" alt="后藤一里抱着吉他坐在紫粉色舞台灯光中" fetchpriority="high" width="1672" height="940"></div>
+      <div class="hero-grain" aria-hidden="true"></div>
+      <div class="hero-content scene-inner">
+        <div class="eyebrow"><span class="status-dot"></span>01 / 一里小屋 · 开场</div>
+        <p class="hero-pretitle">ひとりじゃない。</p>
+        <h1 id="hero-title">把心跳，<br><span>弹给世界听。</span></h1>
+        <p class="hero-description">平时，想躲进纸箱。上台，想被你听见。<br>从一个人的练习，到四个人的舞台，<br>这里收藏后藤一里的每一点勇气。</p>
+        <div class="hero-actions"><a class="button button-pink" href="#about">走近结束乐队 <span aria-hidden="true">↗</span></a><a class="text-link" href="#theater">敲敲她的纸箱 <span aria-hidden="true">→</span></a></div>
       </div>
-      <div class="hero-art">
-        <div class="art-topline"><span>后藤一里 · 今日练习中</span><span>01 / 01</span></div>
-        <div class="art-frame"><img id="hero-image" src="assets/bocchi-cover.png" alt="后藤一里穿粉色运动服，抱着黑色吉他坐在紫色灯光的排练室里" fetchpriority="high" width="1672" height="940"><span class="art-tag">GOTOH HITORI</span><span class="art-star" aria-hidden="true">✧</span></div>
-        <div class="art-caption"><span>想被看见，又有一点害怕被看见。</span><span aria-hidden="true">↙</span></div>
-        <div class="floating-sticker" aria-hidden="true">ぼっち！<strong>社交加载中…</strong></div>
-      </div>
+      <div class="hero-bottom"><span class="hero-edition">GUITAR, DREAMS<br>& A LITTLE COURAGE</span><a href="#about" class="scroll-cue">往下，故事才刚刚开始 <span aria-hidden="true">↓</span></a><span class="hero-signature" aria-hidden="true">ぼっち！</span></div>
     </section>
-    <div class="ticker" aria-hidden="true"><div>粉色运动服 <span>✦</span> 蓝黄小发饰 <span>✦</span> 纸箱里的吉他英雄 <span>✦</span> 下北泽，集合！ <span>✦</span> 结束乐队练习中 <span>✦</span> 今天也向前一点 <span>✦</span> 粉色运动服 <span>✦</span> 蓝黄小发饰 <span>✦</span></div></div>
-    <section class="about section-shell" id="about" aria-labelledby="about-title">
-      <div class="section-label"><span>01 / 结束乐队</span><span class="hair-clips" aria-hidden="true"><i></i><i></i></span></div>
-      <div class="about-heading character-section-heading"><h2 id="about-title">结束乐队，集合。<span>結束バンド · 一起走向舞台</span></h2><p>一个人的练习，<br>四个人的回响。</p></div>
+    <section class="about scene" id="about" data-scene-name="结束乐队" aria-labelledby="about-title">
+      <div class="scene-inner">
+        <div class="scene-heading"><div><span class="scene-kicker">02 / 聚光灯亮起</span><h2 id="about-title">四种颜色，同一支乐队。</h2></div><p>一个人的练习，<br>四个人的回响。</p></div>
       <div class="character-showcase" id="character-showcase" data-member="hitori">
         <div class="character-stage-top"><span><i aria-hidden="true"></i> KESSOKU BAND / MEMBER FILE</span><div class="character-controls"><span id="character-counter">01 / 04</span><button type="button" id="character-prev" aria-label="上一位成员">←</button><button type="button" id="character-next" aria-label="下一位成员">→</button></div></div>
         <div id="character-tabs" class="character-tabs" role="tablist" aria-label="结束乐队成员">
@@ -71,8 +70,14 @@
         <div class="character-stage-bottom"><span>四种颜色，同一支乐队。</span><span class="character-keyboard-hint">点击头像切换 · 支持 ← → 方向键</span></div>
         <p id="character-status" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></p>
       </div>
-      <div class="theater-section" id="theater">
-        <div class="subsection-heading"><div><span class="handwritten-note">轻敲纸箱，进入脑内频道 ↘</span><h3>一里的脑内小剧场</h3></div><span class="fan-imagination">如果此刻是她…</span></div>
+      </div>
+    </section>
+    <section class="theater-scene scene" id="theater" data-scene-name="纸箱剧场" aria-labelledby="theater-title">
+      <div class="scene-inner">
+        <div class="scene-heading"><div><span class="scene-kicker">03 / 社交电量充电站</span><h2 id="theater-title">嘘，纸箱里有人。</h2></div><span class="theater-sticker">本人很安静<br><strong>脑内很热闹！</strong></span></div>
+        <p class="scene-intro">如果此刻是一里，她的脑内小剧场大概已经开演了。</p>
+      <div class="theater-section">
+
         <div class="scene-controls" role="group" aria-label="选择脑内小剧场情境"><button type="button" data-scene="name" aria-pressed="false">突然被叫到名字</button><button type="button" data-scene="box" aria-pressed="true" class="active">躲进纸箱充电</button><button type="button" data-scene="guitar" aria-pressed="false">终于拿起吉他</button></div>
         <div class="bocchi-theater" id="bocchi-theater" data-scene="box">
           <div class="theater-visual" aria-hidden="true">
@@ -85,21 +90,28 @@
         </div>
       </div>
       <details class="growth-note"><summary><span><span class="growth-dot" aria-hidden="true"></span> 从房间到舞台，那些很小、很重要的变化</span><span class="details-symbol" aria-hidden="true">＋</span></summary><ol><li><strong>一个人，也认真练习。</strong><p>在房间里反复磨练技巧，在网络上以「吉他英雄」的身份分享演奏。</p></li><li><strong>有人邀请，就试着迈一步。</strong><p>虹夏的出现，让一个人的吉他声有了与鼓、贝斯和歌声相遇的机会。</p></li><li><strong>带着紧张，继续站上舞台。</strong><p>信心没有突然变满。但她开始为了伙伴，尝试把练习过的声音真正弹出来。</p></li></ol></details>
+        <span class="theater-doodle-note" aria-hidden="true">今日任务：再勇敢一点点。 ↖</span>
+      </div>
     </section>
-    <section class="gallery-section section-shell" id="gallery" aria-labelledby="gallery-title">
-      <div class="section-label"><span>02 / 心动收藏</span><span>把喜欢，认真收藏。</span></div>
-      <div class="section-heading"><div><h2 id="gallery-title">心动收藏<span class="pink-period">.</span></h2><p>一些舍不得划走的瞬间，一些属于一里的颜色。</p></div><div class="filters" role="group" aria-label="筛选收藏"><button type="button" class="filter active" aria-pressed="true" data-filter="all">全部 <span>03</span></button><button type="button" class="filter" aria-pressed="false" data-filter="illustration">同人插画</button><button type="button" class="filter" aria-pressed="false" data-filter="poster">设计海报</button></div></div>
+    <section class="gallery-section scene" id="gallery" data-scene-name="心动收藏" aria-labelledby="gallery-title">
+      <div class="scene-inner">
+      <div class="section-label"><span>04 / 把喜欢贴在墙上</span><span>把喜欢，认真收藏。</span></div>
+      <div class="section-heading"><div><h2 id="gallery-title">心动，有迹可循<span class="pink-period">.</span></h2><p>像收集票根一样，收集每一次舍不得划走的瞬间。</p></div><div class="filters" role="group" aria-label="筛选收藏"><button type="button" class="filter active" aria-pressed="true" data-filter="all">全部 <span>03</span></button><button type="button" class="filter" aria-pressed="false" data-filter="illustration">同人插画</button><button type="button" class="filter" aria-pressed="false" data-filter="poster">设计海报</button></div></div>
       <div class="gallery-grid" id="gallery-grid"></div>
       <p class="gallery-note"><span aria-hidden="true">↗</span> 点击图片放大 · 点击爱心收藏到这台设备 <span id="gallery-status" role="status" aria-live="polite"></span></p>
+        <div class="gallery-stamp" aria-hidden="true">KEEP<br>THE FEELING.</div>
+      </div>
     </section>
-    <section class="video-section section-shell" id="video" aria-labelledby="video-title">
-      <div class="section-label"><span>03 / 放映时间</span><span>给今天，配一段旋律。</span></div>
-      <div class="section-heading"><div><h2 id="video-title">放映时间<span class="pink-period">.</span></h2><p>想把那些闪闪发光的现场，再看一遍。</p></div><span class="video-counter">给喜欢的片段，留个座位</span></div>
+    <section class="video-section scene" id="video" data-scene-name="放映时间" aria-labelledby="video-title">
+      <div class="scene-inner">
+      <div class="section-label"><span>05 / 今晚的私人放映</span><span>给今天，配一段旋律。</span></div>
+      <div class="section-heading"><div><h2 id="video-title">把灯调暗，再看一遍<span class="pink-period">.</span></h2><p>给最喜欢的演出和片段，留一个安静的座位。</p></div><span class="video-counter">给喜欢的片段，留个座位</span></div>
       <div class="video-layout"><div class="video-stage" id="video-stage"><div class="video-empty" id="video-empty"><div class="record" aria-hidden="true"><div class="record-label">HITORI<br><strong>33⅓</strong><span>SIDE A</span></div></div><span class="screen-corner top-left" aria-hidden="true"></span><span class="screen-corner bottom-right" aria-hidden="true"></span><p class="screen-label">想再看一遍的瞬间</p><button class="play-button" type="button" id="choose-video" aria-label="选择本地视频预览"><span aria-hidden="true">▶</span></button><span class="screen-caption">把喜欢的片段，留在这里。</span></div><video id="video-player" controls playsinline preload="metadata" hidden aria-label="收藏的视频"></video></div><div class="video-info"><span class="pill">小小放映室</span><h3 id="video-name">下一场心动，<br>由你来选。</h3><p id="video-description">这里留给你最喜欢的演出、片段，或自己剪辑的视频。</p><label class="button button-outline" for="video-file">选择本地视频 <span aria-hidden="true">＋</span></label><input id="video-file" type="file" accept="video/mp4,video/webm,video/ogg,video/*" class="visually-hidden"><p class="local-note">仅在当前浏览器预览，不会上传。<br>公开展示的视频将在选好素材后加入。</p><p id="video-status" class="video-status" role="status" aria-live="polite"></p></div></div>
+        <div class="cinema-closing"><span aria-hidden="true">✦</span><p>即使步伐很小，也有正在前进的声音。</p><a href="#home">回到开场 ↑</a></div>
+        <footer class="site-footer"><a class="brand" href="#home"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span>一里小屋</a><p>把喜欢的心情，一点点弹出来。</p></footer>
+      </div>
     </section>
-    <section class="closing section-shell"><span class="closing-star" aria-hidden="true">✦</span><p>即使步伐很小，<br><span>也有正在前进的声音。</span></p><span class="closing-note">写给一里，也写给每一个慢慢努力的我们。</span><a href="#home" aria-label="返回顶部" class="back-top">↑</a></section>
   </main>
-  <footer class="site-footer section-shell"><a class="brand" href="#home"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span>一里小屋</a><p>把喜欢的心情，一点点弹出来。</p></footer>
   <dialog id="lightbox" class="lightbox" aria-labelledby="lightbox-title"><div class="lightbox-toolbar"><span id="lightbox-count"></span><button type="button" id="lightbox-close" class="icon-button" aria-label="关闭图片">×</button></div><div class="lightbox-image-wrap"><button type="button" id="lightbox-prev" class="icon-button lightbox-prev" aria-label="上一张">←</button><img id="lightbox-image" src="assets/bocchi-cover.png" alt=""><button type="button" id="lightbox-next" class="icon-button lightbox-next" aria-label="下一张">→</button></div><div class="lightbox-bottom"><h3 id="lightbox-title"></h3><p id="lightbox-credit"></p></div></dialog>
   <noscript><p class="noscript-note">开启 JavaScript 后可切换乐队成员，并使用相册和视频预览。</p></noscript>
 </body>
