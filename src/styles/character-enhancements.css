@@ -1,0 +1,60 @@
+/* 数据驱动的角色舞台：沿用五幕色调，新增信息保持自然高度。 */
+.about.character-scene .character-showcase { --member: #f1a8ca; --member-wash: #673a573b; --member-deep: #362434; }
+.about.character-scene .character-panel { background: linear-gradient(118deg, #171b29 10%, var(--member-deep)); }
+.about.character-scene .character-copy { padding: 22px 12px 22px 36px; }
+.about.character-scene .character-copy h3 { font-size: 38px; margin: 9px 0 5px; }
+.about.character-scene .character-names { display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px 12px; }
+.about.character-scene .character-jp { letter-spacing: 2px; font-size: 12px; }
+.character-romanized { margin: 0; font: 10px var(--mono); letter-spacing: 1px; color: #a9b3c9; }
+.character-personality { display: flex; flex-wrap: wrap; list-style: none; padding: 0; margin: 12px 0 14px; gap: 7px 12px; color: #c2c9d7; font-size: 11px; }
+.character-personality li::before { content: '/'; color: var(--member); padding-right: 5px; }
+.character-line-label { display: block; color: #a5acbf; font-size: 9px; letter-spacing: 2px; }
+.about.character-scene .character-headline { font-size: 21px; line-height: 1.5; margin: 5px 0 12px; min-height: 32px; max-width: 370px; }
+.about.character-scene .character-description { font-size: 13px; line-height: 1.85; }
+.about.character-scene .character-connection { margin: 13px 0; }
+.about.character-scene .character-connection p { font-size: 12px; margin-top: 4px; }
+.about.character-scene .character-view { grid-template-columns: 46% 54%; min-height: 470px; }
+.about.character-scene .character-art { min-height: 470px; touch-action: pan-y; }
+.about.character-scene .character-portrait { height: 430px; bottom: 23px; animation: none; filter: drop-shadow(12px 15px 0 #070d2233); }
+.character-portrait-trigger { position: absolute; inset: 0; display: block; width: 100%; height: 100%; background: none; border: 0; padding: 0; cursor: pointer; transform-origin: 50% 80%; }
+.character-portrait-trigger:focus-visible { outline: 2px dashed var(--member); outline-offset: -8px; }
+.about.character-scene .character-art-note { bottom: 12px; font-size: 10px; pointer-events: none; }
+.about.character-scene .character-art-index { pointer-events: none; }
+.about.character-scene .tab-portrait img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 14%; transform: scale(1.8); transform-origin: 50% 18%; margin: 0; }
+.about.character-scene .character-tabs > button { transition: transform .2s, border-color .2s, background .2s; }
+@media (hover:hover) and (pointer:fine) {
+  .about.character-scene .character-tabs > button:hover { transform: translateY(-2px); border-color: var(--member); }
+}
+@media (min-width:1100px) and (max-height:850px) {
+  .about.character-scene .scene-heading { margin-bottom: 15px; }
+  .about.character-scene .character-copy { padding-block: 17px; }
+  .about.character-scene .character-copy h3 { font-size: 31px; margin-top: 7px; }
+  .about.character-scene .character-personality { margin: 9px 0; }
+  .about.character-scene .character-headline { font-size: 19px; margin: 3px 0 9px; min-height: 29px; }
+  .about.character-scene .character-description { font-size: 12px; line-height: 1.85; }
+  .about.character-scene .character-connection { margin: 10px 0; }
+  .about.character-scene .character-view, .about.character-scene .character-art { min-height: 400px; }
+  .about.character-scene .character-portrait { height: 360px; }
+}
+@media (max-width:760px) {
+  .about.character-scene .character-view { grid-template-columns: 1fr; min-height: 0; }
+  .about.character-scene .character-art { min-height: 390px; }
+  .about.character-scene .character-portrait { height: 350px; bottom: 25px; }
+  .about.character-scene .character-copy { padding: 23px; }
+  .about.character-scene .character-copy h3 { font-size: 32px; }
+  .about.character-scene .character-names { gap: 6px 12px; }
+  .about.character-scene .character-personality { font-size: 11px; gap: 7px 9px; margin: 13px 0; }
+  .about.character-scene .character-headline { font-size: 20px; min-height: 60px; }
+  .about.character-scene .character-description { font-size: 14px; line-height: 1.9; }
+  .about.character-scene .character-connection { margin: 16px 0; }
+  .about.character-scene .character-connection p { font-size: 13px; }
+  .about.character-scene .character-stage-bottom { font-size: 10px; letter-spacing: 0; }
+}
+@media (max-width:370px) {
+  .about.character-scene .character-copy { padding-inline: 18px; }
+  .about.character-scene .character-personality { gap: 5px 8px; font-size: 10px; }
+  .about.character-scene .character-stage-bottom { padding-inline: 14px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .about.character-scene .character-tabs > button { transition: none; transform: none; }
+}

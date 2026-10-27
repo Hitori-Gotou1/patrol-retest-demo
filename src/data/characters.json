@@ -1,0 +1,126 @@
+[
+  {
+    "id": "hitori",
+    "name": "后藤一里",
+    "nameJa": "後藤 ひとり",
+    "romanizedName": "Gotoh Hitori",
+    "role": "主音吉他 · 作词",
+    "shortRole": "主音吉他",
+    "headline": [
+      "想藏起来，",
+      "也想被听见。"
+    ],
+    "description": "网上的「吉他英雄」，现实里却连打招呼都要排练。那些独自练习的夜晚，正慢慢变成和伙伴一起站上舞台的勇气。",
+    "personality": [
+      "内向害羞",
+      "想象力丰富",
+      "认真努力"
+    ],
+    "connectionTitle": "迈出的那一步",
+    "connection": "虹夏的一次邀请，让一个人的练习有了回响。",
+    "originalLine": "想藏起来，也想被听见。",
+    "lineKind": "原创角色印象",
+    "cv": "青山吉能",
+    "portrait": "assets/characters/hitori.svg",
+    "portraitAlt": "后藤一里主题原创几何人物海报，作为角色立绘占位",
+    "artNote": "粉色运动服 / 蓝黄发饰",
+    "lettering": "HITORI",
+    "instrument": "Gt.",
+    "color": "#f1a8ca",
+    "wash": "#673a573b",
+    "deep": "#362434"
+  },
+  {
+    "id": "nijika",
+    "name": "伊地知虹夏",
+    "nameJa": "伊地知 虹夏",
+    "romanizedName": "Ijichi Nijika",
+    "role": "鼓手",
+    "shortRole": "鼓手",
+    "headline": [
+      "先伸出手的人，",
+      "也有自己的梦想。"
+    ],
+    "description": "开朗、善于照顾人，是把大家聚到一起的鼓手。她邀请一里加入，也在一次次合奏与日常里，认真守护属于乐队的梦想。",
+    "personality": [
+      "开朗亲切",
+      "善于照顾人",
+      "坚定执着"
+    ],
+    "connectionTitle": "和一里一起",
+    "connection": "对一里来说，她是通往结束乐队的第一扇门。",
+    "originalLine": "先伸出手的人，也有自己的梦想。",
+    "lineKind": "原创角色印象",
+    "cv": "铃代纱弓",
+    "portrait": "assets/characters/nijika.svg",
+    "portraitAlt": "伊地知虹夏主题原创几何人物海报，作为角色立绘占位",
+    "artNote": "金色侧马尾 / 温柔的节拍",
+    "lettering": "NIJIKA",
+    "instrument": "Dr.",
+    "color": "#f2d982",
+    "wash": "#82703f33",
+    "deep": "#302b23"
+  },
+  {
+    "id": "ryo",
+    "name": "山田凉",
+    "nameJa": "山田 リョウ",
+    "romanizedName": "Yamada Ryo",
+    "role": "贝斯",
+    "shortRole": "贝斯",
+    "headline": [
+      "安静，也可以",
+      "很有自己的声音。"
+    ],
+    "description": "喜欢独处，对音乐有鲜明的喜好，也会为乐器花光零用钱。她的从容和古怪，让一里看到：自己的个性，也值得被留下。",
+    "personality": [
+      "独立从容",
+      "特立独行",
+      "热爱音乐"
+    ],
+    "connectionTitle": "和一里一起",
+    "connection": "一起做音乐，也一起保留各自的棱角。",
+    "originalLine": "安静，也可以很有自己的声音。",
+    "lineKind": "原创角色印象",
+    "cv": "水野朔",
+    "portrait": "assets/characters/ryo.svg",
+    "portraitAlt": "山田凉主题原创几何人物海报，作为角色立绘占位",
+    "artNote": "蓝色短发 / 自成一派",
+    "lettering": "RYO",
+    "instrument": "Ba.",
+    "color": "#90c7e5",
+    "wash": "#3d6c883b",
+    "deep": "#222c36"
+  },
+  {
+    "id": "kita",
+    "name": "喜多郁代",
+    "nameJa": "喜多 郁代",
+    "romanizedName": "Kita Ikuyo",
+    "role": "吉他 · 主唱",
+    "shortRole": "吉他 · 主唱",
+    "headline": [
+      "耀眼的笑容里，",
+      "也有认真的努力。"
+    ],
+    "description": "擅长与人相处，像一束明亮的光。憧憬乐队的她，从吉他练习开始一步步追赶；与一里不同的步调，也能在合奏里相遇。",
+    "personality": [
+      "外向明朗",
+      "善于交际",
+      "积极上进"
+    ],
+    "connectionTitle": "和一里一起",
+    "connection": "从一起练习吉他，到一起面向观众。",
+    "originalLine": "耀眼的笑容里，也有认真的努力。",
+    "lineKind": "原创角色印象",
+    "cv": "长谷川育美",
+    "portrait": "assets/characters/kita.svg",
+    "portraitAlt": "喜多郁代主题原创几何人物海报，作为角色立绘占位",
+    "artNote": "红色长发 / 迎面而来的阳光",
+    "lettering": "KITA",
+    "instrument": "Gt. / Vo.",
+    "color": "#f2a09a",
+    "wash": "#8e474137",
+    "deep": "#342425"
+  }
+]

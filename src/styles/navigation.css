@@ -1,0 +1,37 @@
+/* 关于页是普通文档，不继承首页的桌面分屏吸附。 */
+html:not(.has-scene-pages) { scroll-snap-type: none; }
+.site-header.site-navigation-header { gap: 22px; }
+.navigation-brand-row { display: flex; align-items: center; gap: 20px; min-width: 0; }
+.navigation-about { white-space: nowrap; font-size: 12px; opacity: .75; padding-block: 12px; }
+.navigation-about:hover, .navigation-about[aria-current] { opacity: 1; }
+.navigation-about[aria-current] { text-decoration: underline; text-underline-offset: 6px; }
+.site-header.site-navigation-header nav { flex-shrink: 0; }
+.site-header.site-navigation-header .brand { flex-shrink: 0; }
+@media(max-width:1200px) {
+  .site-header.site-navigation-header { padding-inline: 28px; gap: 16px; }
+  .site-header.site-navigation-header .brand-en { display: none; }
+  .site-header.site-navigation-header nav { gap: 19px; }
+  .navigation-brand-row { gap: 16px; }
+}
+@media(max-width:900px) and (min-width:761px) {
+  .site-header.site-navigation-header { padding-inline: 22px; gap: 12px; }
+  .site-header.site-navigation-header nav { gap: 14px; font-size: 12px; }
+  .site-header.site-navigation-header .brand { font-size: 17px; gap: 9px; }
+  .navigation-brand-row { gap: 11px; }
+  .site-header.site-navigation-header .header-scene-count { font-size: 9px; letter-spacing: 1px; }
+}
+@media(max-width:760px) {
+  .site-header.site-navigation-header { height: 102px; padding: 10px 21px 8px; gap: 3px 12px; }
+  .navigation-brand-row { gap: 18px; }
+  .navigation-about { font-size: 11px; padding-block: 9px; }
+  .site-header.site-navigation-header nav { width: 100%; gap: 8px; justify-content: space-between; font-size: 11px; }
+  .site-header.site-navigation-header nav a { white-space: nowrap; min-height: 38px; display: inline-flex; align-items: center; }
+  .site-header.site-navigation-header .header-scene-count { right: 21px; }
+}
+@media(max-width:370px) {
+  .site-header.site-navigation-header { padding-inline: 18px; }
+  .site-header.site-navigation-header .brand { font-size: 16px; }
+  .site-header.site-navigation-header .header-scene-count { right: 18px; }
+  .site-header.site-navigation-header nav { gap: 6px; font-size: 10px; }
+  .navigation-brand-row { gap: 13px; }
+}

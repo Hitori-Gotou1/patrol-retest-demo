@@ -1,0 +1,32 @@
+[
+  {
+    "id": "pink-room",
+    "title": "粉色练习室 · Demo",
+    "subtitle": "原创拨弦练习 / PINK ROOM",
+    "src": "assets/audio/demo-pink-room.wav",
+    "duration": 12,
+    "credit": "本站程序合成的原创演示音频，非结束乐队原曲",
+    "color": "#f1a8ca",
+    "cover": "assets/pink-frequency.svg"
+  },
+  {
+    "id": "blue-hour",
+    "title": "蓝调休息时刻 · Demo",
+    "subtitle": "原创轻柔练习 / BLUE HOUR",
+    "src": "assets/audio/demo-blue-hour.wav",
+    "duration": 12,
+    "credit": "本站程序合成的原创演示音频，非结束乐队原曲",
+    "color": "#90c7e5",
+    "cover": "assets/live-ticket.svg"
+  },
+  {
+    "id": "soundcheck",
+    "title": "开场前的试音 · Demo",
+    "subtitle": "原创节拍练习 / SOUNDCHECK",
+    "src": "assets/audio/demo-soundcheck.wav",
+    "duration": 12,
+    "credit": "本站程序合成的原创演示音频，非结束乐队原曲",
+    "color": "#f2d982",
+    "cover": "assets/live-ticket.svg"
+  }
+]
