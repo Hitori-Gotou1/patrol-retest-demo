@@ -3,7 +3,7 @@
     "id": "hitori",
     "name": "后藤一里",
     "nameJa": "後藤 ひとり",
-    "romanizedName": "Gotoh Hitori",
+    "romanizedName": "Hitori Gotoh",
     "role": "主音吉他 · 作词",
     "shortRole": "主音吉他",
     "headline": [
@@ -26,15 +26,41 @@
     "artNote": "粉色运动服 / 蓝黄发饰",
     "lettering": "HITORI",
     "instrument": "Gt.",
-    "color": "#f1a8ca",
-    "wash": "#673a573b",
-    "deep": "#362434"
+    "nameLines": [
+      "HITORI",
+      "GOTOH"
+    ],
+    "theme": {
+      "primary": "#F48FB1",
+      "deep": "#AC456E",
+      "ink": "#321723",
+      "paper": "#FFF8EC"
+    },
+    "motion": {
+      "enterX": 54,
+      "exitX": -42,
+      "ease": "back.out(1.05)",
+      "floatY": 3
+    },
+    "decoration": "ripple",
+    "reactions": [
+      "等、等一下，刚刚是在叫我吗？",
+      "让吉他先替我说一句，你好。",
+      "今天没有躲回纸箱，已经很厉害了。"
+    ],
+    "portraitLayout": {
+      "scale": 1,
+      "x": 0,
+      "y": 0,
+      "objectPosition": "50% 50%"
+    },
+    "placeholder": true
   },
   {
     "id": "nijika",
     "name": "伊地知虹夏",
     "nameJa": "伊地知 虹夏",
-    "romanizedName": "Ijichi Nijika",
+    "romanizedName": "Nijika Ijichi",
     "role": "鼓手",
     "shortRole": "鼓手",
     "headline": [
@@ -57,15 +83,40 @@
     "artNote": "金色侧马尾 / 温柔的节拍",
     "lettering": "NIJIKA",
     "instrument": "Dr.",
-    "color": "#f2d982",
-    "wash": "#82703f33",
-    "deep": "#302b23"
+    "nameLines": [
+      "NIJIKA",
+      "IJICHI"
+    ],
+    "theme": {
+      "primary": "#F6C945",
+      "deep": "#BD8515",
+      "ink": "#342605",
+      "paper": "#FFF8EC"
+    },
+    "motion": {
+      "enterX": 64,
+      "exitX": -46,
+      "ease": "back.out(1.2)",
+      "floatY": 4
+    },
+    "decoration": "sun",
+    "reactions": [
+      "节拍已经准备好了，一起开始吧。",
+      "下一次练习，大家也要到齐。"
+    ],
+    "portraitLayout": {
+      "scale": 1,
+      "x": 0,
+      "y": 0,
+      "objectPosition": "50% 50%"
+    },
+    "placeholder": true
   },
   {
     "id": "ryo",
     "name": "山田凉",
     "nameJa": "山田 リョウ",
-    "romanizedName": "Yamada Ryo",
+    "romanizedName": "Ryo Yamada",
     "role": "贝斯",
     "shortRole": "贝斯",
     "headline": [
@@ -88,15 +139,40 @@
     "artNote": "蓝色短发 / 自成一派",
     "lettering": "RYO",
     "instrument": "Ba.",
-    "color": "#90c7e5",
-    "wash": "#3d6c883b",
-    "deep": "#222c36"
+    "nameLines": [
+      "RYO",
+      "YAMADA"
+    ],
+    "theme": {
+      "primary": "#76B9E8",
+      "deep": "#377DAD",
+      "ink": "#122E41",
+      "paper": "#FFF8EC"
+    },
+    "motion": {
+      "enterX": 50,
+      "exitX": -40,
+      "ease": "power3.out",
+      "floatY": 3
+    },
+    "decoration": "lines",
+    "reactions": [
+      "安静一点，听见贝斯的声音了吗？",
+      "自己的声音，值得被留下。"
+    ],
+    "portraitLayout": {
+      "scale": 1,
+      "x": 0,
+      "y": 0,
+      "objectPosition": "50% 50%"
+    },
+    "placeholder": true
   },
   {
     "id": "kita",
     "name": "喜多郁代",
     "nameJa": "喜多 郁代",
-    "romanizedName": "Kita Ikuyo",
+    "romanizedName": "Ikuyo Kita",
     "role": "吉他 · 主唱",
     "shortRole": "吉他 · 主唱",
     "headline": [
@@ -119,8 +195,33 @@
     "artNote": "红色长发 / 迎面而来的阳光",
     "lettering": "KITA",
     "instrument": "Gt. / Vo.",
-    "color": "#f2a09a",
-    "wash": "#8e474137",
-    "deep": "#342425"
+    "nameLines": [
+      "IKUYO",
+      "KITA"
+    ],
+    "theme": {
+      "primary": "#E96670",
+      "deep": "#AB3548",
+      "ink": "#38191E",
+      "paper": "#FFF8EC"
+    },
+    "motion": {
+      "enterX": 68,
+      "exitX": -50,
+      "ease": "back.out(1.3)",
+      "floatY": 5
+    },
+    "decoration": "stars",
+    "reactions": [
+      "先认真练习，再把笑容送到台下。",
+      "如果有点紧张，我们就一起上场。"
+    ],
+    "portraitLayout": {
+      "scale": 1,
+      "x": 0,
+      "y": 0,
+      "objectPosition": "50% 50%"
+    },
+    "placeholder": true
   }
 ]
