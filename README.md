@@ -70,7 +70,7 @@ scripts/generate-demo-audio.py   标准库生成原创练习音频
 
 ## 继续补充内容
 
-- **角色**：修改 `src/data/characters.json`。一里与虹夏已使用站主上传的透明 PNG，凉与喜多暂用原有 SVG 占位。收到后两位素材后放入 `public/assets/characters/`，替换 `portrait`、`portraitAlt`、`portraitSize`，并将 `placeholder` 设为 `false`。在 `portraitLayout` 单独配置全身比例/位置与头像取景，`theme` 管理配色、`motion` 管理动作参数；具体字段与素材记录见 [人物素材说明](public/assets/characters/SOURCES.md)。`originalLine` 明确标为原创角色印象，未核实的文案不冒充动画台词。
+- **角色**：修改 `src/data/characters.json`。四位成员均已使用站主上传的透明 PNG。以后更换素材时放入 `public/assets/characters/`，替换 `portrait`、`portraitAlt`、`portraitSize`，并将 `placeholder` 设为 `false`。在 `portraitLayout` 单独配置全身比例/位置与头像取景，`theme` 管理配色、`motion` 管理动作参数；具体字段与素材记录见 [人物素材说明](public/assets/characters/SOURCES.md)。`originalLine` 明确标为原创角色印象，未核实的文案不冒充动画台词。
 - **相册**：将素材放入 `public/assets/`，修改 `src/data/gallery.js`。支持 `illustration`、`poster`；计数自动更新。只有三张素材时，流动视图会有意重复，之后增加图片即可丰富内容。
 - **音乐**：修改 `src/data/music.json`。目前三段 12 秒音频是本站合成练习，不是结束乐队原曲。详情与重生成命令见 [音频来源](public/assets/audio/SOURCES.md)。替换为已获授权的文件，或另外接入允许嵌入的平台播放器；普通视频网站观看页不能直接作为 `audio.src`。
 - **背景视频**：`src/data/site.js` 的 `backgroundVideo` 默认空，使用插画与灯光动画。填入 `assets/your-background.webm` 等授权素材路径后，页面会静音播放；加载失败或减少动态效果模式使用静态封面。

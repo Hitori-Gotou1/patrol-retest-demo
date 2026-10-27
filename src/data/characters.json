@@ -148,8 +148,8 @@
     "originalLine": "安静，也可以很有自己的声音。",
     "lineKind": "原创角色印象",
     "cv": "水野朔",
-    "portrait": "assets/characters/ryo.svg",
-    "portraitAlt": "山田凉主题原创几何人物海报，作为角色立绘占位",
+    "portrait": "assets/characters/ryo.png",
+    "portraitAlt": "山田凉透明背景全身立绘，蓝色短发、深色制服与黑色长袜",
     "artNote": "蓝色短发 / 自成一派",
     "lettering": "RYO",
     "instrument": "Ba.",
@@ -175,18 +175,18 @@
       "自己的声音，值得被留下。"
     ],
     "portraitLayout": {
-      "scale": 1,
-      "x": 0,
-      "y": 0,
+      "scale": 1.04,
+      "x": 1,
+      "y": 1.4,
       "objectPosition": "50% 50%",
-      "thumbnailPosition": "50% 15%",
+      "thumbnailPosition": "50% 4%",
       "thumbnailScale": 1.85,
-      "thumbnailOrigin": "50% 14%"
+      "thumbnailOrigin": "35% 0%"
     },
-    "placeholder": true,
+    "placeholder": false,
     "portraitSize": {
-      "width": 406,
-      "height": 620
+      "width": 1040,
+      "height": 3000
     }
   },
   {
@@ -211,8 +211,8 @@
     "originalLine": "耀眼的笑容里，也有认真的努力。",
     "lineKind": "原创角色印象",
     "cv": "长谷川育美",
-    "portrait": "assets/characters/kita.svg",
-    "portraitAlt": "喜多郁代主题原创几何人物海报，作为角色立绘占位",
+    "portrait": "assets/characters/kita.png",
+    "portraitAlt": "喜多郁代透明背景全身立绘，红色长发、浅棕色制服与红色领结",
     "artNote": "红色长发 / 迎面而来的阳光",
     "lettering": "KITA",
     "instrument": "Gt. / Vo.",
@@ -238,18 +238,18 @@
       "如果有点紧张，我们就一起上场。"
     ],
     "portraitLayout": {
-      "scale": 1,
-      "x": 0,
-      "y": 0,
+      "scale": 1.07,
+      "x": 3.5,
+      "y": 1.7,
       "objectPosition": "50% 50%",
-      "thumbnailPosition": "50% 15%",
+      "thumbnailPosition": "50% 7%",
       "thumbnailScale": 1.85,
-      "thumbnailOrigin": "50% 14%"
+      "thumbnailOrigin": "35% 0%"
     },
-    "placeholder": true,
+    "placeholder": false,
     "portraitSize": {
-      "width": 406,
-      "height": 620
+      "width": 1130,
+      "height": 3000
     }
   }
 ]
