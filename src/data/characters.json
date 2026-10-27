@@ -21,8 +21,8 @@
     "originalLine": "想藏起来，也想被听见。",
     "lineKind": "原创角色印象",
     "cv": "青山吉能",
-    "portrait": "assets/characters/hitori.svg",
-    "portraitAlt": "后藤一里主题原创几何人物海报，作为角色立绘占位",
+    "portrait": "assets/characters/hitori.png",
+    "portraitAlt": "后藤一里透明背景全身立绘，粉色运动服、蓝黄发饰与黑色长袜",
     "artNote": "粉色运动服 / 蓝黄发饰",
     "lettering": "HITORI",
     "instrument": "Gt.",
@@ -52,9 +52,16 @@
       "scale": 1,
       "x": 0,
       "y": 0,
-      "objectPosition": "50% 50%"
+      "objectPosition": "50% 50%",
+      "thumbnailPosition": "50% 0%",
+      "thumbnailScale": 2.4,
+      "thumbnailOrigin": "50% 0%"
     },
-    "placeholder": true
+    "placeholder": false,
+    "portraitSize": {
+      "width": 977,
+      "height": 1610
+    }
   },
   {
     "id": "nijika",
@@ -78,8 +85,8 @@
     "originalLine": "先伸出手的人，也有自己的梦想。",
     "lineKind": "原创角色印象",
     "cv": "铃代纱弓",
-    "portrait": "assets/characters/nijika.svg",
-    "portraitAlt": "伊地知虹夏主题原创几何人物海报，作为角色立绘占位",
+    "portrait": "assets/characters/nijika.png",
+    "portraitAlt": "伊地知虹夏透明背景人物立绘，金色侧马尾、制服与红色鞋子",
     "artNote": "金色侧马尾 / 温柔的节拍",
     "lettering": "NIJIKA",
     "instrument": "Dr.",
@@ -105,12 +112,19 @@
       "下一次练习，大家也要到齐。"
     ],
     "portraitLayout": {
-      "scale": 1,
-      "x": 0,
-      "y": 0,
-      "objectPosition": "50% 50%"
+      "scale": 1.04,
+      "x": 3,
+      "y": 0.8,
+      "objectPosition": "50% 50%",
+      "thumbnailPosition": "50% 10%",
+      "thumbnailScale": 1.85,
+      "thumbnailOrigin": "30% 0%"
     },
-    "placeholder": true
+    "placeholder": false,
+    "portraitSize": {
+      "width": 1038,
+      "height": 3000
+    }
   },
   {
     "id": "ryo",
@@ -164,9 +178,16 @@
       "scale": 1,
       "x": 0,
       "y": 0,
-      "objectPosition": "50% 50%"
+      "objectPosition": "50% 50%",
+      "thumbnailPosition": "50% 15%",
+      "thumbnailScale": 1.85,
+      "thumbnailOrigin": "50% 14%"
     },
-    "placeholder": true
+    "placeholder": true,
+    "portraitSize": {
+      "width": 406,
+      "height": 620
+    }
   },
   {
     "id": "kita",
@@ -220,8 +241,15 @@
       "scale": 1,
       "x": 0,
       "y": 0,
-      "objectPosition": "50% 50%"
+      "objectPosition": "50% 50%",
+      "thumbnailPosition": "50% 15%",
+      "thumbnailScale": 1.85,
+      "thumbnailOrigin": "50% 14%"
     },
-    "placeholder": true
+    "placeholder": true,
+    "portraitSize": {
+      "width": 406,
+      "height": 620
+    }
   }
 ]
