@@ -1,6 +1,8 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, shallowRef, onBeforeUnmount } from 'vue';
 import { useChord } from '../composables/useChord.js';
+import { interactionFeatures } from '../data/interactions.js';
+import { liveModeActive } from '../composables/useInteractionSession.js';
 const selected = ref('box');
 const scenes = {
  name:{label:'突然被叫到名字',title:'叫、叫的是我吗？',text:'脑内已经排练了十种打招呼方式。现实进度：抬头，停顿，再停顿。',note:'社交电量：正在重新连接'},
@@ -9,6 +11,28 @@ const scenes = {
 };
 const current = computed(() => scenes[selected.value]);
 const { playing, message, play } = useChord();
+const liveOpen = ref(false);
+const liveLoading = ref(false);
+const liveMessage = ref('');
+const liveEntry = ref(null);
+const LiveStage = shallowRef(null);
+let disposed = false;
+async function enterLive() {
+  if (liveLoading.value || liveOpen.value) return;
+  liveLoading.value = true;
+  liveMessage.value = '';
+  try {
+    // 舞台与专属样式仅在首次入场时下载，之后重复使用已缓存的模块。
+    LiveStage.value ||= (await import('./StarryLiveMode.vue')).default;
+    if (disposed) return;
+    liveModeActive.value = true;
+    liveOpen.value = true;
+  } catch {
+    liveMessage.value = '舞台暂时没有准备好，请稍后再试一次。';
+  } finally { liveLoading.value = false; }
+}
+function leaveLive() { liveOpen.value = false; liveModeActive.value = false; }
+onBeforeUnmount(() => { disposed = true; liveModeActive.value = false; });
 </script>
 <template>
     <section class="theater-scene scene" id="theater" data-scene-name="纸箱剧场" aria-labelledby="theater-title">
@@ -29,7 +53,30 @@ const { playing, message, play } = useChord();
         </div>
       </div>
       <details class="growth-note"><summary><span><span class="growth-dot" aria-hidden="true"></span> 从房间到舞台，那些很小、很重要的变化</span><span class="details-symbol" aria-hidden="true">＋</span></summary><ol><li><strong>一个人，也认真练习。</strong><p>在房间里反复磨练技巧，在网络上以「吉他英雄」的身份分享演奏。</p></li><li><strong>有人邀请，就试着迈一步。</strong><p>虹夏的出现，让一个人的吉他声有了与鼓、贝斯和歌声相遇的机会。</p></li><li><strong>带着紧张，继续站上舞台。</strong><p>信心没有突然变满。但她开始为了伙伴，尝试把练习过的声音真正弹出来。</p></li></ol></details>
+      <div v-if="interactionFeatures.liveMode" class="starry-ticket">
+        <div class="starry-ticket-copy"><span>ONE NIGHT / FOUR COLORS</span><h3>房间之外，舞台之上。</h3><p>灯光就位。今晚的 STARRY，也为你留了位置。</p></div>
+        <button id="enter-starry" ref="liveEntry" type="button" :disabled="liveLoading" :aria-busy="liveLoading" @click="enterLive"><small>LIVE HOUSE / 下北沢</small><strong>{{ liveLoading ? '准备舞台…' : 'ENTER STARRY' }} <span aria-hidden="true">↗</span></strong><span class="starry-ticket-tear" aria-hidden="true"></span></button>
+        <p v-if="liveMessage" class="starry-entry-status" role="status">{{ liveMessage }}</p>
+      </div>
         <span class="theater-doodle-note" aria-hidden="true">今日任务：再勇敢一点点。 ↖</span>
       </div>
     </section>
+    <component :is="LiveStage" v-if="liveOpen" :return-focus="liveEntry" @close="leaveLive" />
 </template>
+
+<style scoped>
+.starry-ticket { margin-top:32px; display:grid; grid-template-columns:1fr auto; align-items:center; gap:24px; padding:25px 30px; background:#251d2c; color:#fff8ec; position:relative; border:1px solid #66516a; }
+.starry-ticket-copy > span { font:8px var(--mono); letter-spacing:2.5px; color:#f6c945; }
+.starry-ticket-copy h3 { font-size:24px; margin:10px 0 6px; letter-spacing:1px; font-weight:600; }
+.starry-ticket-copy p { font-size:11px; line-height:1.7; margin:0; color:#c7b6c9; }
+#enter-starry { position:relative; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:7px; background:#f6c945; color:#292012; border:0; padding:17px 24px; min-height:85px; min-width:225px; transform:rotate(-2deg); transition:transform .2s; }
+#enter-starry:hover { transform:rotate(0deg) translateY(-2px); }
+#enter-starry:active { transform:scale(.98); }
+#enter-starry small { font:8px var(--mono); letter-spacing:1px; }
+#enter-starry strong { font:800 19px Arial,sans-serif; letter-spacing:-.3px; }
+#enter-starry strong > span { margin-left:12px; }
+.starry-ticket-tear { position:absolute; top:0; bottom:0; left:-4px; width:8px; background:radial-gradient(circle at 50% 50%,#251d2c 0 3px,transparent 3.5px) 0 0/8px 13px; }
+.starry-entry-status { grid-column:1/-1; font-size:11px; margin:0; color:#f6c945; }
+@media (max-width:600px) { .starry-ticket { padding:23px; grid-template-columns:1fr; gap:21px; } .starry-ticket-copy h3 { font-size:22px; } #enter-starry { width:100%; min-width:0; align-items:center; } #enter-starry strong { font-size:20px; } }
+@media (prefers-reduced-motion:reduce) { #enter-starry,#enter-starry:hover,#enter-starry:active { transform:none; transition:none; } }
+</style>

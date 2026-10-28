@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" fill="none">
+  <path d="m36 67 124-30 124 30v121l-124 25-124-25Z" fill="#C68F5E" stroke="#422C29" stroke-width="3"/>
+  <path d="m36 67 124 29 124-29-124-30Z" fill="#845633" stroke="#422C29" stroke-width="3"/>
+  <path d="M160 96v117l124-25V67Z" fill="#AF764A" stroke="#422C29" stroke-width="3"/>
+  <path d="M36 67 12 34l126-22 22 25Zm124-30 24-25 124 22-24 33ZM36 67l124 29-28 35L8 101Zm124 29 124-29 28 34-124 30Z" fill="#E5B985" stroke="#422C29" stroke-width="3" stroke-linejoin="round"/>
+  <path d="m75 117 56 13v61l-56-12Z" fill="#F7DFC0" transform="rotate(-4 100 153)"/>
+  <path d="m219 151 6-12 7 9m-7-9v28m20-21 6-12 7 9m-7-9v28" stroke="#422C29" stroke-width="3" stroke-linecap="round"/>
+  <text x="86" y="155" fill="#422C29" font-size="12" font-family="sans-serif" transform="rotate(7 86 155)">ひとり</text>
+  <path d="m88 164 29 6M58 182l12 3m112 10 20-4" stroke="#845633" stroke-width="2"/>
+</svg>

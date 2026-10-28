@@ -2,6 +2,7 @@
 import { RouterLink } from 'vue-router';
 import { useSceneNavigation } from '../composables/useSceneNavigation';
 import '../styles/navigation.css';
+import InteractionSoundControl from './InteractionSoundControl.vue';
 
 const { scenes, isHome, activeScene, activeIndex, navigateToScene, navigateToAbout, skipToContent } = useSceneNavigation();
 </script>
@@ -25,7 +26,7 @@ const { scenes, isHome, activeScene, activeIndex, navigateToScene, navigateToAbo
         <a :href="href" :aria-current="isHome && activeScene === scene.id ? 'location' : undefined" @click="navigateToScene($event, scene.id, navigate)">{{ scene.label }}</a>
       </RouterLink>
     </nav>
-    <span class="header-scene-count" id="scene-current-index">{{ isHome ? `${activeIndex} / 05` : 'ABOUT' }}</span>
+    <div class="navigation-sound"><span class="header-scene-count" id="scene-current-index">{{ isHome ? `${activeIndex} / 05` : 'ABOUT' }}</span><InteractionSoundControl compact /></div>
   </header>
   <nav v-if="isHome" id="scene-nav" class="scene-navigation" aria-label="分屏导航">
     <RouterLink v-for="scene in scenes" :key="scene.id" :to="{ path: '/', hash: `#${scene.id}` }" custom v-slot="{ href, navigate }">
@@ -33,3 +34,8 @@ const { scenes, isHome, activeScene, activeIndex, navigateToScene, navigateToAbo
     </RouterLink>
   </nav>
 </template>
+
+<style scoped>
+.navigation-sound{display:flex;align-items:center;gap:14px}
+@media(max-width:760px){.navigation-sound{position:absolute;right:18px;top:13px}.navigation-sound .header-scene-count{display:none}}
+</style>

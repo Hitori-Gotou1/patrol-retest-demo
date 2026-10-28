@@ -2,6 +2,10 @@
 import { computed, nextTick, ref, watch } from 'vue';
 import members from '../data/characters.json';
 import { useCharacterTransition } from '../composables/useCharacterTransition.js';
+import { liveModeActive } from '../composables/useInteractionSession.js';
+import { interactionFeatures } from '../data/interactions.js';
+import CharacterEasterEgg from './CharacterEasterEgg.vue';
+import InstrumentPanel from './InstrumentPanel.vue';
 import '../styles/character-enhancements.css';
 
 const scene = ref(null);
@@ -9,7 +13,9 @@ const baseLayer = ref(null);
 const revealLayer = ref(null);
 const content = ref(null);
 const reaction = ref('');
-const { selectedIndex, requestedIndex, member, busy, selectMember, react, pointerMove, pointerLeave } = useCharacterTransition({ members, scene, baseLayer, revealLayer, content });
+const easterEgg = ref(null);
+const interactionBlocked = computed(() => busy.value || liveModeActive.value);
+const { selectedIndex, requestedIndex, member, busy, selectMember, react, pointerMove, pointerLeave } = useCharacterTransition({ members, scene, baseLayer, revealLayer, content, suspended: liveModeActive });
 const counter = computed(() => `${String(selectedIndex.value + 1).padStart(2, '0')} / ${String(members.length).padStart(2, '0')}`);
 const themeStyle = computed(() => ({
   '--cast-primary': member.value.theme.primary,
@@ -43,7 +49,7 @@ function onTabKey(event) {
   choose(targets[event.key], { focus: true });
 }
 function onSectionKey(event) {
-  if (event.altKey || event.ctrlKey || event.metaKey || event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+  if (event.altKey || event.ctrlKey || event.metaKey || event.target.closest('input, textarea, select, [contenteditable="true"], .instrument-panel')) return;
   if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
   event.preventDefault();
   choose(requestedIndex.value + (event.key === 'ArrowRight' ? 1 : -1));
@@ -63,7 +69,8 @@ function finishSwipe(event) {
   }
 }
 function portraitReaction() {
-  if (busy.value || performance.now() - lastSwipe < 450) return;
+  if (interactionBlocked.value || performance.now() - lastSwipe < 450) return;
+  if (interactionFeatures.easterEggs) { easterEgg.value?.trigger(); return; }
   const lines = member.value.reactions;
   reaction.value = lines[reactionIndex++ % lines.length];
   react();
@@ -88,6 +95,7 @@ watch(selectedIndex, () => { reaction.value = ''; reactionIndex = 0; });
             <p class="cast-description cast-reveal-item">{{ member.description }}</p>
             <blockquote class="cast-quote cast-reveal-item"><span>{{ member.lineKind }}</span><p aria-live="polite">{{ reaction || member.originalLine }}</p></blockquote>
             <p class="cast-connection cast-reveal-item"><span>{{ member.connectionTitle }}</span>{{ member.connection }}</p>
+            <InstrumentPanel v-if="interactionFeatures.instruments" :member="member" :disabled="interactionBlocked" />
           </div>
           <div class="cast-art" @pointerdown="startSwipe" @pointerup="finishSwipe" @pointercancel="pointerStart = null">
             <div class="cast-decorations" :data-kind="member.decoration" aria-hidden="true">
@@ -95,7 +103,7 @@ watch(selectedIndex, () => { reaction.value = ''; reactionIndex = 0; });
               <span class="cast-mark cast-mark-one">{{ member.decoration === 'stars' ? '✦' : member.decoration === 'sun' ? '✳' : member.decoration === 'lines' ? '＋' : '♪' }}</span><span class="cast-mark cast-mark-two">{{ member.decoration === 'stars' ? '✧' : member.decoration === 'sun' ? '＋' : member.decoration === 'lines' ? '＝' : '♩' }}</span><span class="cast-rhythm"></span>
             </div>
             <span class="cast-instrument cast-peripheral" aria-hidden="true">{{ member.instrument }}</span>
-            <div class="cast-portrait-motion"><div class="cast-portrait-parallax"><div class="cast-portrait-float"><button class="cast-portrait-trigger" type="button" :aria-label="`轻点${member.name}，查看原创角色印象`" @click="portraitReaction"><img :key="member.id" class="character-portrait cast-portrait-image" :src="asset(member.portrait)" :alt="member.portraitAlt" :style="portraitStyle" :width="member.portraitSize?.width" :height="member.portraitSize?.height" loading="lazy" decoding="async"></button></div></div></div>
+            <div class="cast-portrait-motion"><div class="cast-portrait-parallax"><div class="cast-portrait-float"><CharacterEasterEgg ref="easterEgg" :member="member" :blocked="interactionBlocked" @message="reaction = $event"><button class="cast-portrait-trigger" type="button" :aria-label="`轻点${member.name}，查看原创角色印象`" @click="portraitReaction"><img :key="member.id" class="character-portrait cast-portrait-image" :src="asset(member.portrait)" :alt="member.portraitAlt" :style="portraitStyle" :width="member.portraitSize?.width" :height="member.portraitSize?.height" loading="lazy" decoding="async"></button></CharacterEasterEgg></div></div></div>
             <div class="cast-art-caption cast-peripheral"><span>{{ member.artNote }}</span><small v-if="member.placeholder">原创图形占位</small><small v-else>轻点人物，听听她的心声</small></div>
           </div>
         </article>

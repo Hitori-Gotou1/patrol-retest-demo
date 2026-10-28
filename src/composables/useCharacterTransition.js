@@ -1,4 +1,4 @@
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { gsap } from 'gsap';
 
 /** 使用最远角的距离，而不是视口宽度，保证长手机页面和边缘点击也能完全覆盖。 */
@@ -8,7 +8,7 @@ export function revealGeometry(width, height, x, y) {
   return { x: cx, y: cy, radius: Math.hypot(Math.max(cx, width - cx), Math.max(cy, height - cy)) + 6 };
 }
 
-export function useCharacterTransition({ members, scene, baseLayer, revealLayer, content }) {
+export function useCharacterTransition({ members, scene, baseLayer, revealLayer, content, suspended = ref(false) }) {
   const selectedIndex = ref(0);
   const requestedIndex = ref(0);
   const member = computed(() => members[selectedIndex.value]);
@@ -44,7 +44,7 @@ export function useCharacterTransition({ members, scene, baseLayer, revealLayer,
   }
   function startAmbient() {
     stopAmbient();
-    if (disposed || !visible || document.hidden || media?.matches || busy.value) return;
+    if (disposed || !visible || document.hidden || media?.matches || busy.value || suspended.value) return;
     const floating = $('.cast-portrait-float');
     if (floating) idleTween = gsap.to(floating, { y: -member.value.motion.floatY, duration: 2.8, repeat: -1, yoyo: true, ease: 'sine.inOut' });
     const parallax = $('.cast-portrait-parallax');
@@ -159,7 +159,7 @@ export function useCharacterTransition({ members, scene, baseLayer, revealLayer,
     if (!busy.value && selectedIndex.value !== target) transition(target, originElement);
   }
   function react() {
-    if (busy.value || media?.matches || !visible) return;
+    if (busy.value || media?.matches || !visible || suspended.value) return;
     reactionTween?.kill(); idleTween?.kill();
     const floating = $('.cast-portrait-float');
     reactionTween = gsap.fromTo(floating, { rotation: -1, y: 0 }, {
@@ -168,7 +168,7 @@ export function useCharacterTransition({ members, scene, baseLayer, revealLayer,
     });
   }
   function pointerMove(event) {
-    if (busy.value || media?.matches || event.pointerType !== 'mouse' || !parallaxX) return;
+    if (busy.value || media?.matches || suspended.value || event.pointerType !== 'mouse' || !parallaxX) return;
     const bounds = event.currentTarget.getBoundingClientRect();
     parallaxX((event.clientX - bounds.left - bounds.width / 2) / bounds.width * 9);
     parallaxY((event.clientY - bounds.top - bounds.height / 2) / bounds.height * 7);
@@ -181,9 +181,17 @@ export function useCharacterTransition({ members, scene, baseLayer, revealLayer,
     } else startAmbient();
   }
   function visibilityChanged() {
+    scene.value?.classList.toggle('cast-is-visible', visible && !document.hidden && !suspended.value);
     if (document.hidden) { stopAmbient(); if (busy.value) settleInstant(requestedIndex.value); }
     else startAmbient();
   }
+
+  // 舞台模态窗口只暂停环境动画，保留原先选中的人物及圆形转场状态。
+  watch(suspended, paused => {
+    scene.value?.classList.toggle('cast-is-visible', visible && !paused && !document.hidden);
+    if (paused) { stopAmbient(); if (busy.value) settleInstant(requestedIndex.value); }
+    else startAmbient();
+  });
 
   onMounted(() => {
     previousPrimary = document.body.style.getPropertyValue('--active-character-primary');
@@ -194,7 +202,7 @@ export function useCharacterTransition({ members, scene, baseLayer, revealLayer,
     synchronizeTheme();
     observer = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting;
-      scene.value?.classList.toggle('cast-is-visible', visible);
+      scene.value?.classList.toggle('cast-is-visible', visible && !suspended.value && !document.hidden);
       if (visible) startAmbient();
       else { stopAmbient(); if (busy.value) settleInstant(requestedIndex.value); }
     }, { threshold: 0 });
