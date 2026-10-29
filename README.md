@@ -86,7 +86,7 @@ scripts/generate-demo-audio.py   标准库生成原创练习音频
 2. **乐器**：角色资料下展开乐器面板，点击琴弦或鼓面。虹夏鼓面获得焦点后可按 A / S / D。喜多面板带麦克风装饰，不录音。导航「音效 关」是全站互动声开关，旁边设置可调节音量；音乐播放器仍使用自己的播放和音量控制。
 3. **演出模式**：在第三幕「纸箱剧场」点击 **ENTER STARRY**。开场约 3.65 秒，可跳过；三种灯光与成员按钮控制聚光，节拍按钮触发短灯光反馈。右上角「离开舞台」或 Esc 退出，回到入口，角色选择不变。
 
-`src/data/interactions.js` 中的 `interactionFeatures.easterEggs / instruments / liveMode` 可分别设为 `false`，然后重新构建发布。连击阈值、时间窗口、台词和纸箱路径在同文件调整。纸箱是本站绘制 SVG，可用自备素材替换 `public/assets/interactions/bocchi-box.svg`。立绘复用现有四张 PNG；无需补充素材。
+`src/data/interactions.js` 中的 `interactionFeatures.easterEggs / instruments / liveMode` 可分别设为 `false`，然后重新构建发布。连击阈值、时间窗口、台词和纸箱路径在同文件调整。纸箱是本站绘制 SVG，可用自备素材替换 `public/assets/interactions/bocchi-box.svg`。上方大立绘与 STARRY 舞台沿用原有四张全身 PNG；下方角色选择按钮的小图标和大立绘右下方的 Q 版小伙伴共用站主提供的四张 `*-chibi.png`，无需补充素材。小伙伴等比完整展示，与大立绘共用转场、漂浮和彩蛋容器，一起躲箱和恢复，不增加循环动画或依赖。
 
 音效由 Web Audio 合成吉他、贝斯、底鼓、军鼓、镲片和短和弦，最多同时 5 个声部；它们是互动示范音色。STARRY 是视觉舞台，使用原有站姿立绘，没有人物弹奏动作或自动播放的演唱会歌曲。浏览器减少动画设置下，纸箱、成员切换和舞台仍可操作，省去大幅动画。
 
@@ -115,7 +115,7 @@ HITORI_QA_URL=http://127.0.0.1:4173/patrol-retest-demo/ .venv/bin/python tests/b
 
 ## 继续补充内容
 
-- **角色**：修改 `src/data/characters.json`。四位成员均已使用站主上传的透明 PNG。以后更换素材时放入 `public/assets/characters/`，替换 `portrait`、`portraitAlt`、`portraitSize`，并将 `placeholder` 设为 `false`。在 `portraitLayout` 单独配置全身比例/位置与头像取景，`theme` 管理配色、`motion` 管理动作参数；具体字段与素材记录见 [人物素材说明](public/assets/characters/SOURCES.md)。`originalLine` 明确标为原创角色印象，未核实的文案不冒充动画台词。
+- **角色**：修改 `src/data/characters.json`。上方大立绘与 STARRY 舞台沿用站主提供的 `hitori.png`、`nijika.png`、`ryo.png`、`kita.png`。下方角色选择按钮与大立绘旁的小伙伴通过独立的 `thumbnail`、`thumbnailSize` 共用四张 `*-chibi.png`，原图没有像素修改。以后更换素材时放入 `public/assets/characters/`；大立绘修改 `portrait`、`portraitAlt`、`portraitSize`，Q 版素材修改 `thumbnail`、`thumbnailSize`。在 `portraitLayout.scale/x/y/objectPosition` 配置完整人物比例/位置，在 `portraitLayout.thumbnailPosition/thumbnailScale/thumbnailOrigin` 单独配置头像取景；`companionLayout.scale/x` 调整完整 Q 版小伙伴的留白补偿与横向位置。`theme` 管理配色、`motion` 管理动作参数；具体字段与素材记录见 [人物素材说明](public/assets/characters/SOURCES.md)。`originalLine` 明确标为原创角色印象，未核实的文案不冒充动画台词。
 - **相册**：将素材放入 `public/assets/`，修改 `src/data/gallery.js`。支持 `illustration`、`poster`；计数自动更新。只有三张素材时，流动视图会有意重复，之后增加图片即可丰富内容。
 - **音乐**：修改 `src/data/music.json`。目前三段 12 秒音频是本站合成练习，不是结束乐队原曲。详情与重生成命令见 [音频来源](public/assets/audio/SOURCES.md)。替换为已获授权的文件，或另外接入允许嵌入的平台播放器；普通视频网站观看页不能直接作为 `audio.src`。
 - **背景视频**：`src/data/site.js` 的 `backgroundVideo` 默认空，使用插画与灯光动画。填入 `assets/your-background.webm` 等授权素材路径后，页面会静音播放；加载失败或减少动态效果模式使用静态封面。

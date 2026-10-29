@@ -29,6 +29,10 @@ const portraitStyle = computed(() => ({
   '--portrait-y': `${member.value.portraitLayout.y}%`,
   objectPosition: member.value.portraitLayout.objectPosition
 }));
+const companionStyle = computed(() => ({
+  '--companion-scale': member.value.companionLayout?.scale ?? 1,
+  '--companion-x': `${member.value.companionLayout?.x ?? 0}%`
+}));
 const asset = path => `${import.meta.env.BASE_URL}${path}`;
 let reactionIndex = 0;
 let pointerStart = null;
@@ -103,7 +107,17 @@ watch(selectedIndex, () => { reaction.value = ''; reactionIndex = 0; });
               <span class="cast-mark cast-mark-one">{{ member.decoration === 'stars' ? '✦' : member.decoration === 'sun' ? '✳' : member.decoration === 'lines' ? '＋' : '♪' }}</span><span class="cast-mark cast-mark-two">{{ member.decoration === 'stars' ? '✧' : member.decoration === 'sun' ? '＋' : member.decoration === 'lines' ? '＝' : '♩' }}</span><span class="cast-rhythm"></span>
             </div>
             <span class="cast-instrument cast-peripheral" aria-hidden="true">{{ member.instrument }}</span>
-            <div class="cast-portrait-motion"><div class="cast-portrait-parallax"><div class="cast-portrait-float"><CharacterEasterEgg ref="easterEgg" :member="member" :blocked="interactionBlocked" @message="reaction = $event"><button class="cast-portrait-trigger" type="button" :aria-label="`轻点${member.name}，查看原创角色印象`" @click="portraitReaction"><img :key="member.id" class="character-portrait cast-portrait-image" :src="asset(member.portrait)" :alt="member.portraitAlt" :style="portraitStyle" :width="member.portraitSize?.width" :height="member.portraitSize?.height" loading="lazy" decoding="async"></button></CharacterEasterEgg></div></div></div>
+            <div class="cast-portrait-motion"><div class="cast-portrait-parallax"><div class="cast-portrait-float">
+              <CharacterEasterEgg ref="easterEgg" :member="member" :blocked="interactionBlocked" @message="reaction = $event">
+                <button class="cast-portrait-trigger" type="button" :aria-label="`轻点${member.name}，查看原创角色印象`" @click="portraitReaction">
+                  <img :key="member.id" class="character-portrait cast-portrait-image" :src="asset(member.portrait)" :alt="member.portraitAlt" :style="portraitStyle" :width="member.portraitSize?.width" :height="member.portraitSize?.height" loading="lazy" decoding="async">
+                  <!-- 共用人物的转场和反应容器，切换、漂浮及躲箱时两种形象保持同步。 -->
+                  <span v-if="member.thumbnail" class="cast-companion" :style="companionStyle" aria-hidden="true">
+                    <img :key="`${member.id}-chibi`" :src="asset(member.thumbnail)" :width="member.thumbnailSize?.width" :height="member.thumbnailSize?.height" alt="" loading="lazy" decoding="async">
+                  </span>
+                </button>
+              </CharacterEasterEgg>
+            </div></div></div>
             <div class="cast-art-caption cast-peripheral"><span>{{ member.artNote }}</span><small v-if="member.placeholder">原创图形占位</small><small v-else>轻点人物，听听她的心声</small></div>
           </div>
         </article>
@@ -112,7 +126,7 @@ watch(selectedIndex, () => { reaction.value = ''; reactionIndex = 0; });
         <div class="cast-selector-label"><span>CHOOSE YOUR COLOR</span><small>选一种颜色，听一种心跳。</small></div>
         <div id="character-tabs" class="cast-tabs" role="tablist" aria-label="结束乐队成员">
           <button v-for="(person, index) in members" :id="`tab-${person.id}`" :key="person.id" type="button" role="tab" :data-member="person.id" :data-pending="busy && index === requestedIndex" :style="{ '--tab-color': person.theme.primary, '--tab-ink': person.theme.ink }" aria-controls="character-panel" :aria-selected="index === selectedIndex" :tabindex="index === requestedIndex ? 0 : -1" @click="choose(index)" @keydown="onTabKey">
-            <span class="cast-tab-portrait" aria-hidden="true"><img :src="asset(person.portrait)" :style="{ objectPosition: person.portraitLayout.thumbnailPosition, transform: `scale(${person.portraitLayout.thumbnailScale})`, transformOrigin: person.portraitLayout.thumbnailOrigin }" :width="person.portraitSize?.width" :height="person.portraitSize?.height" alt="" loading="lazy" decoding="async"></span><span class="cast-tab-copy"><strong>{{ person.name }}</strong><small>{{ person.shortRole }}</small></span><span class="cast-tab-indicator" aria-hidden="true">↗</span>
+            <span class="cast-tab-portrait" aria-hidden="true"><img :src="asset(person.thumbnail || person.portrait)" :style="{ objectPosition: person.portraitLayout.thumbnailPosition, transform: `scale(${person.portraitLayout.thumbnailScale})`, transformOrigin: person.portraitLayout.thumbnailOrigin }" :width="(person.thumbnailSize || person.portraitSize)?.width" :height="(person.thumbnailSize || person.portraitSize)?.height" alt="" loading="lazy" decoding="async"></span><span class="cast-tab-copy"><strong>{{ person.name }}</strong><small>{{ person.shortRole }}</small></span><span class="cast-tab-indicator" aria-hidden="true">↗</span>
           </button>
         </div>
         <div class="cast-controls"><span id="character-counter">{{ counter }}</span><button id="character-prev" type="button" aria-label="上一位成员" @click="choose(requestedIndex - 1)">←</button><button id="character-next" type="button" aria-label="下一位成员" @click="choose(requestedIndex + 1)">→</button></div>

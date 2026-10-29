@@ -54,13 +54,22 @@
       "y": 0,
       "objectPosition": "50% 50%",
       "thumbnailPosition": "50% 0%",
-      "thumbnailScale": 2.4,
-      "thumbnailOrigin": "50% 0%"
+      "thumbnailScale": 1.4,
+      "thumbnailOrigin": "70% 0%"
     },
     "placeholder": false,
     "portraitSize": {
       "width": 977,
       "height": 1610
+    },
+    "thumbnail": "assets/characters/hitori-chibi.png",
+    "thumbnailSize": {
+      "width": 659,
+      "height": 715
+    },
+    "companionLayout": {
+      "scale": 1,
+      "x": 0
     }
   },
   {
@@ -116,14 +125,23 @@
       "x": 3,
       "y": 0.8,
       "objectPosition": "50% 50%",
-      "thumbnailPosition": "50% 10%",
-      "thumbnailScale": 1.85,
-      "thumbnailOrigin": "30% 0%"
+      "thumbnailPosition": "55% 0%",
+      "thumbnailScale": 1.65,
+      "thumbnailOrigin": "48% 15%"
     },
     "placeholder": false,
     "portraitSize": {
       "width": 1038,
       "height": 3000
+    },
+    "thumbnail": "assets/characters/nijika-chibi.png",
+    "thumbnailSize": {
+      "width": 1284,
+      "height": 1225
+    },
+    "companionLayout": {
+      "scale": 1.22,
+      "x": -3
     }
   },
   {
@@ -179,14 +197,23 @@
       "x": 1,
       "y": 1.4,
       "objectPosition": "50% 50%",
-      "thumbnailPosition": "50% 4%",
-      "thumbnailScale": 1.85,
-      "thumbnailOrigin": "35% 0%"
+      "thumbnailPosition": "40% 0%",
+      "thumbnailScale": 1.45,
+      "thumbnailOrigin": "30% 0%"
     },
     "placeholder": false,
     "portraitSize": {
       "width": 1040,
       "height": 3000
+    },
+    "thumbnail": "assets/characters/ryo-chibi.png",
+    "thumbnailSize": {
+      "width": 594,
+      "height": 724
+    },
+    "companionLayout": {
+      "scale": 1,
+      "x": 0
     }
   },
   {
@@ -242,14 +269,23 @@
       "x": 3.5,
       "y": 1.7,
       "objectPosition": "50% 50%",
-      "thumbnailPosition": "50% 7%",
-      "thumbnailScale": 1.85,
-      "thumbnailOrigin": "35% 0%"
+      "thumbnailPosition": "40% 0%",
+      "thumbnailScale": 1.4,
+      "thumbnailOrigin": "32% 0%"
     },
     "placeholder": false,
     "portraitSize": {
       "width": 1130,
       "height": 3000
+    },
+    "thumbnail": "assets/characters/kita-chibi.png",
+    "thumbnailSize": {
+      "width": 627,
+      "height": 724
+    },
+    "companionLayout": {
+      "scale": 1,
+      "x": 0
     }
   }
 ]
