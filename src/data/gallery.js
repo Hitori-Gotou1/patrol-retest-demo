@@ -1,4 +1,6 @@
-// 图片路径相对于 public/，新增素材后只需维护此数组。
+import uploadedCollection from './gallery-upload.json';
+
+// 图片路径相对于 public/；站主上传的作品单独维护，保留既有收藏 ID。
 export const galleryImages = [
   {
     id: 'quiet-guitar', category: 'illustration', src: 'assets/bocchi-cover.webp',
@@ -17,5 +19,6 @@ export const galleryImages = [
     title: '下一站，Live House', subtitle: '下一场，舞台见 · 03', tag: '设计海报',
     alt: '深紫色与荧光黄的音乐现场主题票根海报',
     credit: '本站原创图形海报 · 非官方设计'
-  }
+  },
+  ...uploadedCollection
 ];

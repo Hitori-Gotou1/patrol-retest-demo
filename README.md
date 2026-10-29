@@ -113,10 +113,12 @@ HITORI_QA_URL=http://127.0.0.1:4173/patrol-retest-demo/ .venv/bin/python tests/b
 
 默认测试端口为 5173；测试构建结果时加 `HITORI_QA_URL=http://127.0.0.1:4173/patrol-retest-demo/`。结果及截图默认写入 `/tmp/hitori-v3-qa/`，可通过 `HITORI_QA_OUTPUT` 更改。后台清理用例模拟 `visibilitychange`，浏览器测试目前覆盖 Chromium，尚未实测 Safari / Firefox。
 
+新增收藏的分页、分类、流动视图、焦点恢复和全部 39 张图片预览，使用 `python tests/browser-gallery.py` 检查，默认连接 4173 生产预览。它同样支持 `HITORI_QA_URL`、`HITORI_QA_OUTPUT`、`HITORI_CHROMIUM`，默认输出 `/tmp/gallery-qa/`；`HITORI_QA_CASE=layouts` 或 `assets` 可只复测一组。
+
 ## 继续补充内容
 
 - **角色**：修改 `src/data/characters.json`。上方大立绘与 STARRY 舞台沿用站主提供的 `hitori.png`、`nijika.png`、`ryo.png`、`kita.png`。下方角色选择按钮与大立绘旁的小伙伴通过独立的 `thumbnail`、`thumbnailSize` 共用四张 `*-chibi.png`，原图没有像素修改。以后更换素材时放入 `public/assets/characters/`；大立绘修改 `portrait`、`portraitAlt`、`portraitSize`，Q 版素材修改 `thumbnail`、`thumbnailSize`。在 `portraitLayout.scale/x/y/objectPosition` 配置完整人物比例/位置，在 `portraitLayout.thumbnailPosition/thumbnailScale/thumbnailOrigin` 单独配置头像取景；`companionLayout.scale/x` 调整完整 Q 版小伙伴的留白补偿与横向位置。`theme` 管理配色、`motion` 管理动作参数；具体字段与素材记录见 [人物素材说明](public/assets/characters/SOURCES.md)。`originalLine` 明确标为原创角色印象，未核实的文案不冒充动画台词。
-- **相册**：将素材放入 `public/assets/`，修改 `src/data/gallery.js`。支持 `illustration`、`poster`；计数自动更新。只有三张素材时，流动视图会有意重复，之后增加图片即可丰富内容。
+- **相册**：原有 3 张作品和 `src/data/gallery-upload.json` 中的 39 张站主收藏合并为 42 张，入口在 `src/data/gallery.js`。支持 `collection`、`illustration`、`poster`，收藏墙每次展示 9 张；预览和流动视图仍能浏览完整分类。新增素材放入 `public/assets/`，配置 `src`（预览）、可选的 `thumbnail`（列表）、`originalSrc`（查看原图）、真实 `width/height` 与来源。小图不强制放大；大图在列表使用轻量副本，原文件保留。详细映射见 [收藏素材记录](public/assets/gallery/2026-10-29/SOURCES.md)。原有收藏 ID 和本机收藏记录继续有效。
 - **音乐**：修改 `src/data/music.json`。目前三段 12 秒音频是本站合成练习，不是结束乐队原曲。详情与重生成命令见 [音频来源](public/assets/audio/SOURCES.md)。替换为已获授权的文件，或另外接入允许嵌入的平台播放器；普通视频网站观看页不能直接作为 `audio.src`。
 - **背景视频**：`src/data/site.js` 的 `backgroundVideo` 默认空，使用插画与灯光动画。填入 `assets/your-background.webm` 等授权素材路径后，页面会静音播放；加载失败或减少动态效果模式使用静态封面。
 - **公开视频**：填写 `site.video.src/title/description/poster`。页面上的本地视频选择只在当前浏览器预览，不会发布给其他访客。
