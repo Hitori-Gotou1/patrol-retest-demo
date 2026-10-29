@@ -70,7 +70,7 @@ def test_layouts(browser):
             assert title in page.evaluate('document.activeElement.textContent')
 
         # 小幅上传原图应按原始像素显示，不能被灯箱强行撑满。
-        small = next(item for item in COLLECTION if max(item['width'], item['height']) <= 300)
+        small = min(COLLECTION, key=lambda item: max(item['width'], item['height']))
         entry = page.locator(f'.gallery-flow-access button[data-preview-id="{small["id"]}"]')
         entry.click()
         image = page.locator('#lightbox-image')
