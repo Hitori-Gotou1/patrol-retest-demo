@@ -10,7 +10,7 @@ permissions:
   pages: write
   id-token: write
 concurrency:
-  group: pages
+  group: pages-${{ github.event_name == 'pull_request' && github.ref || 'production' }}
   cancel-in-progress: true
 jobs:
   build:
@@ -23,18 +23,43 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r tests/requirements-routing.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Inspect current public Pages routing (read only)
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        run: python scripts/inspect-pages.py https://hitori-gotou1.github.io/patrol-retest-demo/ --browser
+      - name: Build and test routing without cloud configuration
+        env:
+          VITE_SUPABASE_URL: ''
+          VITE_SUPABASE_PUBLISHABLE_KEY: ''
+        run: |
+          npm run build -- --outDir /tmp/hitori-routes-unconfigured
+          python tests/browser-routing.py --dist /tmp/hitori-routes-unconfigured --configuration unconfigured
+      - name: Build and test signed-out management routing
+        env:
+          VITE_SUPABASE_URL: https://gallery-test.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_routing_fixture
+        run: |
+          npm run build -- --outDir /tmp/hitori-routes-configured
+          python tests/browser-routing.py --dist /tmp/hitori-routes-configured --configuration login
       - run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
-      - if: github.event_name != 'pull_request'
+      - name: Check the exact artifact intended for Pages
+        run: python tests/browser-routing.py
+      - if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v5
-      - if: github.event_name != 'pull_request'
+      - if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
   deploy:
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
