@@ -112,6 +112,8 @@ def run(dist, configuration):
                 expect(page).to_have_url(url + '#/#gallery')
                 cases.append(f'{width}: gallery link, return, back and forward')
 
+                # Legacy shared links are normalized on application startup.
+                page.goto('about:blank')
                 page.goto(url + '#gallery', wait_until='networkidle')
                 expect(page).to_have_url(url + '#/#gallery')
                 expect(page.locator('#gallery')).to_be_visible()
