@@ -77,3 +77,8 @@
   .gallery-lightbox .lightbox-image-wrap > img { animation: none; }
   .gallery-flow-photo img { transition: none; }
 }
+
+.gallery-manage-link { display: inline-block; margin-top: 24px; color: var(--ink, #282129); font-size: 13px; text-underline-offset: 4px; }
+.gallery-manage-link:focus-visible { outline: 2px solid currentColor; outline-offset: 5px; }
+.gallery-cloud-notice { font-size: 14px; padding: 12px 0; }
+.gallery-cloud-notice button { margin-left: 8px; color: inherit; text-decoration: underline; background: transparent; border: 0; cursor: pointer; }
