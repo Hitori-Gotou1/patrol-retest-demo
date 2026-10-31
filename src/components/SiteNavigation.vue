@@ -1,9 +1,10 @@
 <script setup>
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRoute } from 'vue-router';
 import { useSceneNavigation } from '../composables/useSceneNavigation';
 import '../styles/navigation.css';
 import InteractionSoundControl from './InteractionSoundControl.vue';
 
+const route = useRoute();
 const { scenes, isHome, activeScene, activeIndex, navigateToScene, navigateToAbout, skipToContent } = useSceneNavigation();
 </script>
 
@@ -18,7 +19,7 @@ const { scenes, isHome, activeScene, activeIndex, navigateToScene, navigateToAbo
         </a>
       </RouterLink>
       <RouterLink to="/about" custom v-slot="{ href, navigate }">
-        <a :href="href" class="navigation-about" :aria-current="!isHome ? 'page' : undefined" @click="navigateToAbout($event, navigate)">关于<span aria-hidden="true"> ↗</span></a>
+        <a :href="href" class="navigation-about" :aria-current="route.path === '/about' ? 'page' : undefined" @click="navigateToAbout($event, navigate)">关于<span aria-hidden="true"> ↗</span></a>
       </RouterLink>
     </div>
     <nav aria-label="主导航">
@@ -26,7 +27,7 @@ const { scenes, isHome, activeScene, activeIndex, navigateToScene, navigateToAbo
         <a :href="href" :aria-current="isHome && activeScene === scene.id ? 'location' : undefined" @click="navigateToScene($event, scene.id, navigate)">{{ scene.label }}</a>
       </RouterLink>
     </nav>
-    <div class="navigation-sound"><span class="header-scene-count" id="scene-current-index">{{ isHome ? `${activeIndex} / 05` : 'ABOUT' }}</span><InteractionSoundControl compact /></div>
+    <div class="navigation-sound"><span class="header-scene-count" id="scene-current-index">{{ isHome ? `${activeIndex} / 05` : route.path === '/manage-gallery' ? 'COLLECTION' : 'ABOUT' }}</span><InteractionSoundControl compact /></div>
   </header>
   <nav v-if="isHome" id="scene-nav" class="scene-navigation" aria-label="分屏导航">
     <RouterLink v-for="scene in scenes" :key="scene.id" :to="{ path: '/', hash: `#${scene.id}` }" custom v-slot="{ href, navigate }">

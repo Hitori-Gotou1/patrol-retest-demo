@@ -1,6 +1,26 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { galleryImages } from '../data/gallery.js';
+import { cloudConfigured, loadCloudGallery } from '../services/galleryCloud.js';
+const remoteImages = ref([]);
+const cloudError = ref('');
+const cloudLoading = ref(false);
+const allImages = computed(() => [...remoteImages.value, ...galleryImages]);
+let cloudRequest;
+let cloudTimeout;
+async function refreshCloud() {
+  if (!cloudConfigured || cloudLoading.value) return;
+  cloudLoading.value = true;
+  cloudError.value = '';
+  cloudRequest = new AbortController();
+  cloudTimeout = setTimeout(() => cloudRequest?.abort(), 12000);
+  try {
+    const items = await loadCloudGallery(cloudRequest.signal);
+    if (mounted) remoteImages.value = items;
+  } catch {
+    if (mounted) cloudError.value = '新上传的收藏暂时无法加载，原有收藏仍可浏览。';
+  } finally { clearTimeout(cloudTimeout); cloudLoading.value = false; }
+}
 import '../styles/gallery-enhancements.css';
 
 const section = ref(null);
@@ -20,7 +40,7 @@ const wallPageSize = 9;
 const wallLimit = ref(wallPageSize);
 const storageKey = 'hitori-room:favorites:v1';
 const filters = [{ id: 'all', label: '全部' }, { id: 'collection', label: '站主收藏' }, { id: 'illustration', label: '同人插画' }, { id: 'poster', label: '设计海报' }];
-const images = computed(() => galleryImages.filter(item => activeFilter.value === 'all' || item.category === activeFilter.value));
+const images = computed(() => allImages.value.filter(item => activeFilter.value === 'all' || item.category === activeFilter.value));
 const visibleImages = computed(() => images.value.slice(0, wallLimit.value));
 const selectedIndex = computed(() => images.value.findIndex(item => item.id === selectedId.value));
 const selectedImage = computed(() => images.value[selectedIndex.value]);
@@ -34,7 +54,7 @@ const rows = computed(() => [0, 1, 2].map(offset => {
   const length = Math.max(4, source.length);
   return Array.from({ length }, (_, index) => source[index % source.length]);
 }));
-const asset = path => `${import.meta.env.BASE_URL}${path}`;
+const asset = path => path.startsWith('https://') ? path : `${import.meta.env.BASE_URL}${path}`;
 const isSmallImage = item => Number.isFinite(item.width) && Number.isFinite(item.height) && Math.max(item.width, item.height) <= 300;
 const imageStyle = item => isSmallImage(item) ? { '--gallery-image-width': `${item.width}px`, '--gallery-image-height': `${item.height}px` } : undefined;
 const flowDuration = (length, index) => `${([47, 57, 39][index] * length / 3).toFixed(1)}s`;
@@ -132,9 +152,10 @@ function syncVisibility() { pageVisible.value = document.visibilityState === 'vi
 
 onMounted(() => {
   mounted = true;
+  refreshCloud();
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    if (Array.isArray(saved)) favorites.value = new Set(saved.filter(id => galleryImages.some(image => image.id === id)));
+    if (Array.isArray(saved)) favorites.value = new Set(saved.filter(id => typeof id === 'string' && (id.startsWith('cloud-') || galleryImages.some(image => image.id === id))));
   } catch { /* 隐私模式下仍可在当前页面收藏。 */ }
   motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
   syncMotion();
@@ -146,6 +167,8 @@ onMounted(() => {
 });
 onBeforeUnmount(() => {
   mounted = false;
+  clearTimeout(cloudTimeout);
+  cloudRequest?.abort();
   observer?.disconnect();
   motionQuery?.removeEventListener('change', syncMotion);
   document.removeEventListener('visibilitychange', syncVisibility);
@@ -161,7 +184,7 @@ onBeforeUnmount(() => {
       <div class="section-heading">
         <div><h2 id="gallery-title">心动，有迹可循<span class="pink-period">.</span></h2><p>像收集票根一样，收集每一次舍不得划走的瞬间。</p></div>
         <div class="filters" role="group" aria-label="筛选收藏">
-          <button v-for="filter in filters" :key="filter.id" type="button" class="filter" :class="{ active: activeFilter === filter.id }" :data-filter="filter.id" :aria-pressed="activeFilter === filter.id" @click="setFilter(filter.id)">{{ filter.label }}<span v-if="filter.id === 'all'">{{ String(galleryImages.length).padStart(2, '0') }}</span></button>
+          <button v-for="filter in filters" :key="filter.id" type="button" class="filter" :class="{ active: activeFilter === filter.id }" :data-filter="filter.id" :aria-pressed="activeFilter === filter.id" @click="setFilter(filter.id)">{{ filter.label }}<span v-if="filter.id === 'all'">{{ String(allImages.length).padStart(2, '0') }}</span></button>
         </div>
       </div>
       <div class="gallery-view-bar">
@@ -172,6 +195,7 @@ onBeforeUnmount(() => {
         <button v-if="mode === 'flow'" type="button" class="gallery-motion-toggle" :disabled="reducedMotion" :aria-pressed="paused || reducedMotion" @click="paused = !paused">{{ reducedMotion ? '已减少动态效果' : paused ? '继续流动 ▶' : '暂停流动 Ⅱ' }}</button>
         <span v-else class="gallery-view-note">小小收藏，慢慢翻阅。</span>
       </div>
+      <p v-if="cloudError" class="gallery-cloud-notice" role="status">{{ cloudError }} <button type="button" :disabled="cloudLoading" @click="refreshCloud">重试</button></p>
       <div v-if="mode === 'wall'" id="gallery-grid" class="gallery-grid">
         <article v-for="item in visibleImages" :key="item.id" class="gallery-card" :data-category="item.category">
           <button type="button" class="gallery-image-button" :aria-label="`放大图片：${item.title}`" @click="openImage(item, $event)">
@@ -203,6 +227,7 @@ onBeforeUnmount(() => {
         <button v-if="visibleImages.length < images.length" type="button" class="gallery-load-more" @click="loadMore">再翻 {{ Math.min(wallPageSize, images.length - visibleImages.length) }} 张 <span aria-hidden="true">↓</span></button>
       </div>
       <p v-if="!images.length" class="gallery-empty">这一页还在等待新的心动。</p>
+      <RouterLink to="/manage-gallery" class="gallery-manage-link">站主管理收藏 ↗</RouterLink>
       <p class="gallery-note"><span aria-hidden="true">↗</span> 点击图片放大 · 左右滑动预览 · 收藏留在这台设备 <span id="gallery-status" role="status" aria-live="polite">{{ status }}</span></p>
       <div v-if="mode === 'wall'" class="gallery-stamp" aria-hidden="true">KEEP<br>THE FEELING.</div>
     </div>

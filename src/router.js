@@ -8,6 +8,7 @@ export default createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', component: () => import('./views/HomeView.vue') },
+    { path: '/manage-gallery', component: () => import('./views/GalleryAdminView.vue') },
     { path: '/about', component: () => import('./views/AboutView.vue') },
     { path: '/:pathMatch(.*)*', redirect: '/' }
   ],
