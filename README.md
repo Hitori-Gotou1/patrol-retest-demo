@@ -139,7 +139,7 @@ npm run gallery:check
 
 ## 部署
 
-Vite 的 `base` 为 `/patrol-retest-demo/`。GitHub Pages 的 Source 使用 **GitHub Actions**；导入校验和大图加载回归通过后，推送 `main` 的工作流运行 `npm ci`、`npm test`、`npm run build` 并上传 `dist/`。升级前的已验收版本保存在 `v2.0-stable` 标签中。
+Vite 的 `base` 为 `/patrol-retest-demo/`。GitHub Pages 的 Source 使用 **GitHub Actions**；推送 `main` 后工作流运行 `npm ci`、`npm test`、`npm run build` 并上传 `dist/`。构建、图片导入校验和大图加载回归均通过后才发布。升级前的已验收版本保存在 `v2.0-stable` 标签中。
 
 Vue Router 使用 Hash 路由，关于页 `/#/about` 可直接刷新，无需服务器 rewrite。首页各幕链接形如 `/#/#gallery`；迁移前的 `/#gallery` 链接也会转换到对应幕。更换仓库名或部署到域名根目录时，同步修改 `vite.config.js` 的 `base`。
 
