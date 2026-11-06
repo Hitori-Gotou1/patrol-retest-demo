@@ -74,6 +74,7 @@ def test_layouts(browser):
         entry = page.locator(f'.gallery-flow-access button[data-preview-id="{small["id"]}"]')
         entry.click()
         image = page.locator('#lightbox-image')
+        expect(image).to_have_attribute('data-state', 'ready')
         image.evaluate('e=>e.decode()')
         dimensions = image.evaluate('e=>({width:e.getBoundingClientRect().width,height:e.getBoundingClientRect().height,nw:e.naturalWidth,nh:e.naturalHeight})')
         assert dimensions['width'] <= dimensions['nw'] + 1 and dimensions['height'] <= dimensions['nh'] + 1, dimensions
@@ -103,6 +104,7 @@ def test_assets(browser):
         expect(page.locator('#lightbox-count')).to_have_text(f'{index + 1:02} / {len(COLLECTION):02}')
         expect(page.locator('#lightbox-title')).to_have_text(item['title'])
         image = page.locator('#lightbox-image')
+        expect(image).to_have_attribute('data-state', 'ready')
         assert image.get_attribute('src').endswith(item['src']), item['id']
         width, height = image.evaluate('e=>e.decode().then(()=>[e.naturalWidth,e.naturalHeight])')
         assert width > 0 and height > 0, item['id']
@@ -113,6 +115,7 @@ def test_assets(browser):
         page.locator('#lightbox-next').click()
     expect(page.locator('#lightbox-count')).to_have_text(f'01 / {len(COLLECTION):02}')
     expect(page.locator('#lightbox-title')).to_have_text(COLLECTION[0]['title'])
+    expect(page.locator('#lightbox-image')).to_have_attribute('data-state', 'ready')
     page.locator('#lightbox-image').evaluate('e=>e.decode()')
     page.screenshot(path=str(OUTPUT / 'gallery-lightbox.png'))
     page.locator('#lightbox-close').click()

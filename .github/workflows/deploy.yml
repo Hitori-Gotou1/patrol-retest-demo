@@ -39,8 +39,10 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, gallery-checks]
     steps:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+  gallery-checks:
+    uses: ./.github/workflows/gallery-checks.yml
