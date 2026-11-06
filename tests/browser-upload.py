@@ -76,6 +76,7 @@ with sync_playwright() as p:
    expect(page.locator('[data-filter=all] span')).to_have_text('55')
    expect(page.locator('.gallery-card h3').first).to_have_text('测试上传的心动')
    page.locator('.gallery-image-button').first.click()
+   expect(page.locator('#lightbox-image')).to_have_attribute('data-state','ready')
    page.locator('#lightbox-image').evaluate('e=>e.decode()')
    page.locator('#lightbox-close').click()
    page.locator('.favorite').first.click();page.reload(wait_until='networkidle')

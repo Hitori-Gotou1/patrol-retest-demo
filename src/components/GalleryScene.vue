@@ -1,7 +1,8 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { galleryImages } from '../data/gallery.js';
 import { cloudConfigured, loadCloudGallery } from '../services/galleryCloud.js';
+import { createProgressiveImage } from '../services/progressiveImage.js';
 const remoteImages = ref([]);
 const cloudError = ref('');
 const cloudLoading = ref(false);
@@ -34,7 +35,7 @@ const pageVisible = ref(true);
 const dialogOpen = ref(false);
 const favorites = ref(new Set());
 const status = ref('');
-const imageError = ref(false);
+const imageState = ref({ source: '', status: 'idle', unavailable: false });
 const selectedId = ref('');
 const wallPageSize = 9;
 const wallLimit = ref(wallPageSize);
@@ -55,6 +56,11 @@ const rows = computed(() => [0, 1, 2].map(offset => {
   return Array.from({ length }, (_, index) => source[index % source.length]);
 }));
 const asset = path => path.startsWith('https://') ? path : `${import.meta.env.BASE_URL}${path}`;
+const progressiveImage = createProgressiveImage({ onChange: state => { imageState.value = state; } });
+watch(selectedImage, item => {
+  if (item) progressiveImage.load(asset(item.src), item.thumbnail ? asset(item.thumbnail) : undefined);
+  else progressiveImage.clear();
+}, { flush: 'sync' });
 const isSmallImage = item => Number.isFinite(item.width) && Number.isFinite(item.height) && Math.max(item.width, item.height) <= 300;
 const imageStyle = item => isSmallImage(item) ? { '--gallery-image-width': `${item.width}px`, '--gallery-image-height': `${item.height}px` } : undefined;
 const flowDuration = (length, index) => `${([47, 57, 39][index] * length / 3).toFixed(1)}s`;
@@ -64,6 +70,7 @@ let returnFocus;
 let originalOverflow = '';
 let touchOrigin;
 let mounted = false;
+let openRequest = 0;
 
 function setFilter(id) {
   activeFilter.value = id;
@@ -93,14 +100,14 @@ function favoriteLabel(item) {
   return `${favorites.value.has(item.id) ? '取消收藏' : '收藏'}：${item.title}`;
 }
 async function openImage(item, event) {
+  const request = ++openRequest;
   selectedId.value = item.id;
-  imageError.value = false;
   const trigger = event?.currentTarget || document.activeElement;
   returnFocus = trigger?.closest('[aria-hidden="true"]')
     ? section.value?.querySelector(`[data-preview-id="${item.id}"]`)
     : trigger;
   await nextTick();
-  if (!lightbox.value || !selectedImage.value || dialogOpen.value) return;
+  if (!mounted || request !== openRequest || !lightbox.value || !selectedImage.value || dialogOpen.value) return;
   // 终止尚未结束的分屏滚动，再冻结背景；关闭时恢复原先的 overflow。
   window.scrollTo({ top: window.scrollY, behavior: 'instant' });
   originalOverflow = document.body.style.overflow;
@@ -113,6 +120,10 @@ function closeImage() {
   releaseDialog();
 }
 function releaseDialog() {
+  // A queued close event from the previous opening must not close a new one.
+  if (lightbox.value?.open) return;
+  openRequest++;
+  selectedId.value = '';
   if (!dialogOpen.value) return;
   dialogOpen.value = false;
   document.body.style.overflow = originalOverflow;
@@ -122,7 +133,6 @@ function stepImage(step) {
   if (images.value.length < 2) return;
   const index = (selectedIndex.value + step + images.value.length) % images.value.length;
   selectedId.value = images.value[index].id;
-  imageError.value = false;
 }
 function dialogKeydown(event) {
   if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
@@ -167,6 +177,7 @@ onMounted(() => {
 });
 onBeforeUnmount(() => {
   mounted = false;
+  progressiveImage.cancel();
   clearTimeout(cloudTimeout);
   cloudRequest?.abort();
   observer?.disconnect();
@@ -237,11 +248,11 @@ onBeforeUnmount(() => {
           <div class="lightbox-toolbar"><span id="lightbox-count" aria-live="polite">{{ imageCounter }}</span><span class="lightbox-hint">左右滑动 / 方向键切换</span><button id="lightbox-close" type="button" class="icon-button" aria-label="关闭图片" @click="closeImage">×</button></div>
           <div class="lightbox-image-wrap" @touchstart.passive="startTouch" @touchend.passive="endTouch" @touchcancel="touchOrigin = null">
             <button v-if="images.length > 1" id="lightbox-prev" type="button" class="icon-button lightbox-prev" aria-label="上一张" @click="stepImage(-1)">←</button>
-            <img v-show="!imageError" id="lightbox-image" :key="selectedImage.id" :src="asset(selectedImage.src)" :alt="selectedImage.alt" :class="{ 'is-small-image': isSmallImage(selectedImage) }" :style="imageStyle(selectedImage)" decoding="async" @error="imageError = true">
-            <p v-if="imageError" class="lightbox-image-error" role="status">这张图片暂时没有加载成功，可以切换到下一张。</p>
+            <img v-show="!imageState.unavailable" id="lightbox-image" :key="selectedImage.id" :src="imageState.source" :data-state="imageState.status" :alt="selectedImage.alt" :class="{ 'is-small-image': isSmallImage(selectedImage) }" :style="imageStyle(selectedImage)" decoding="async" @error="progressiveImage.displayError($event.currentTarget.getAttribute('src'))">
+            <p v-if="imageState.status === 'error'" class="lightbox-image-error" role="status">这张图片暂时没有加载成功，可以切换到下一张。</p>
             <button v-if="images.length > 1" id="lightbox-next" type="button" class="icon-button lightbox-next" aria-label="下一张" @click="stepImage(1)">→</button>
           </div>
-          <div class="lightbox-bottom"><h3 id="lightbox-title">{{ selectedImage.title }}</h3><p id="lightbox-credit">{{ selectedImage.credit }}</p><div class="lightbox-actions"><button type="button" class="lightbox-favorite" :aria-label="favoriteLabel(selectedImage)" :aria-pressed="favorites.has(selectedImage.id)" @click="toggleFavorite(selectedImage)">{{ favorites.has(selectedImage.id) ? '♥ 已收藏' : '♡ 收藏这张' }}</button><a v-if="selectedImage.originalSrc" class="lightbox-original" :href="asset(selectedImage.originalSrc)" target="_blank" rel="noopener noreferrer">查看原图 <span aria-hidden="true">↗</span></a></div></div>
+          <div class="lightbox-bottom"><h3 id="lightbox-title">{{ selectedImage.title }}</h3><p id="lightbox-credit">{{ selectedImage.credit }}</p><p v-if="imageState.status === 'loading'" class="visually-hidden" role="status">正在加载高清图片…</p><p v-if="imageState.status === 'fallback'" class="lightbox-preview-notice" role="status">高清图片暂时无法加载，正在显示预览图。</p><div class="lightbox-actions"><button type="button" class="lightbox-favorite" :aria-label="favoriteLabel(selectedImage)" :aria-pressed="favorites.has(selectedImage.id)" @click="toggleFavorite(selectedImage)">{{ favorites.has(selectedImage.id) ? '♥ 已收藏' : '♡ 收藏这张' }}</button><a v-if="selectedImage.originalSrc" class="lightbox-original" :href="asset(selectedImage.originalSrc)" target="_blank" rel="noopener noreferrer">查看原图 <span aria-hidden="true">↗</span></a></div></div>
         </template>
       </dialog>
     </Teleport>

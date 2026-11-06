@@ -125,9 +125,21 @@ HITORI_QA_URL=http://127.0.0.1:4173/patrol-retest-demo/ .venv/bin/python tests/b
 
 数据中路径写成 `assets/example.webp`，不要带域名或开头 `/`；组件统一加 `import.meta.env.BASE_URL`。本站使用系统字体，不下载未知授权字体。
 
+## 批量整理要提交到 GitHub 的新图片
+
+```sh
+python -m pip install -r tests/requirements-gallery.txt
+npm run gallery:import -- /path/to/new-images
+npm run gallery:check
+```
+
+工具会保留新图片的原文件，自动生成 WebP 预览与缩略图，并追加收藏清单；重复运行不会重复收录同一文件。标题默认取文件名，也可提供标题、描述和来源。提交前检查变更并正常创建 PR，工具本身不提交或发布。完整用法和校验范围见 [GitHub 收藏图片导入](docs/gallery-import.md)。
+
+大图预览会先使用已有缩略图，等预览图加载和解码完成后再替换；加载失败时保留可用缩略图，快速切换不会让上一张的迟到请求覆盖当前图片。
+
 ## 部署
 
-Vite 的 `base` 为 `/patrol-retest-demo/`。GitHub Pages 的 Source 使用 **GitHub Actions**；推送 `main` 后工作流运行 `npm ci`、`npm test`、`npm run build` 并上传 `dist/`。升级前的已验收版本保存在 `v2.0-stable` 标签中。
+Vite 的 `base` 为 `/patrol-retest-demo/`。GitHub Pages 的 Source 使用 **GitHub Actions**；导入校验和大图加载回归通过后，推送 `main` 的工作流运行 `npm ci`、`npm test`、`npm run build` 并上传 `dist/`。升级前的已验收版本保存在 `v2.0-stable` 标签中。
 
 Vue Router 使用 Hash 路由，关于页 `/#/about` 可直接刷新，无需服务器 rewrite。首页各幕链接形如 `/#/#gallery`；迁移前的 `/#gallery` 链接也会转换到对应幕。更换仓库名或部署到域名根目录时，同步修改 `vite.config.js` 的 `base`。
 

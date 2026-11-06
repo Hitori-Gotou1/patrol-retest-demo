@@ -13,7 +13,10 @@ concurrency:
   group: pages
   cancel-in-progress: true
 jobs:
+  gallery-checks:
+    uses: ./.github/workflows/gallery-checks.yml
   build:
+    needs: gallery-checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
