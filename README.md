@@ -32,7 +32,7 @@ npm run preview
 - 角色专属彩蛋：轻点人物出现原创回应；波奇连续互动会害羞、慌张并躲进可点击的 SVG 纸箱。
 - 可展开的吉他、贝斯和电子鼓互动。全站互动音效默认静音，由导航开关主动开启；音量独立于音乐播放器，原有纸箱短和弦也遵守该开关。
 - STARRY 演出模式：按需加载、四人依次登场、三种灯光、成员聚光、节拍反馈，以及跳过、重播、退出。
-- 相册「收藏墙 / 流动视图」双模式：分类、本机收藏、三排交错循环、暂停、懒加载、全屏预览、方向键和触摸切图。
+- 相册「收藏墙 / 流动视图」双模式：分类、关键词搜索、角色筛选、我的收藏、收藏备份、单图分享、三排交错循环、暂停、懒加载、全屏预览、方向键和触摸切图。
 - 音乐播放器：三首本站原创 Demo、播放/暂停、上下首、进度拖动、音量、旋转唱片、实际音频频谱。不会自动播放有声音乐。
 - 私人视频预览保留，与音乐互斥播放；本地文件不上传。关于页包含简介、GitHub 与致谢。
 - 减少动态效果、离屏暂停图片墙、页面隐藏暂停音频，卸载时清理监听器、音频、对象 URL 和 GSAP 动画。
@@ -125,6 +125,21 @@ HITORI_QA_URL=http://127.0.0.1:4173/patrol-retest-demo/ .venv/bin/python tests/b
 
 数据中路径写成 `assets/example.webp`，不要带域名或开头 `/`；组件统一加 `import.meta.env.BASE_URL`。本站使用系统字体，不下载未知授权字体。
 
+## 查找、备份和分享收藏
+
+收藏区支持按标题、描述、作者或来源搜索；空格分隔的多个关键词需要同时匹配。搜索可与现有分类、角色和“我的收藏”组合使用，收藏墙与流动视图共享筛选结果。角色根据标题和画面描述中明确提到的名字识别，“四位成员”对应结束乐队四人；未注明角色的图片可选“未标注角色”。仓库中的图片记录也可以显式提供 `characters` 数组，支持 `hitori`、`nijika`、`ryo`、`kita`；显式数组优先于文字推断。
+
+“收藏备份”可导出 JSON，在另一台设备导入。备份只保存图片编号，不保存原图、账号或登录信息；导入与本机收藏合并，不覆盖已有收藏。暂时不可用或尚未加载的图片编号仍保留；同一浏览器的多个标签页会同步收藏变化。支持至多 5000 条记录、1 MiB 的备份文件，格式错误时整份拒绝导入。
+
+大图内的“复制分享链接”生成形如 `/#/?image=quiet-guitar#gallery` 的地址。直接访问、刷新都能回到对应图片；从图库打开时，浏览器后退关闭预览、前进恢复预览，切图不会不断增加历史记录。直接通过分享链接进入时，关闭预览会回到本站图库。云端图片会等待数据加载；失败或失效链接保留其他收藏入口。无法访问剪贴板时可手动复制显示的链接。
+
+浏览器回归会拦截所有云端服务请求，使用模拟数据覆盖搜索、收藏导入导出、分享链接、历史记录、延迟加载、存储受限和手机布局，不访问实际 Supabase 数据：
+
+```sh
+VITE_SUPABASE_URL=https://gallery-test.supabase.co VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_discovery_fixture npm run build -- --outDir /tmp/hitori-gallery-discovery
+python tests/browser-gallery-discovery.py --dist /tmp/hitori-gallery-discovery
+```
+
 ## 批量整理要提交到 GitHub 的新图片
 
 ```sh
@@ -139,7 +154,7 @@ npm run gallery:check
 
 ## 部署
 
-Vite 的 `base` 为 `/patrol-retest-demo/`。GitHub Pages 的 Source 使用 **GitHub Actions**；推送 `main` 后工作流运行 `npm ci`、`npm test`、`npm run build` 并上传 `dist/`。构建、图片导入校验和大图加载回归均通过后才发布。升级前的已验收版本保存在 `v2.0-stable` 标签中。
+Vite 的 `base` 为 `/patrol-retest-demo/`。GitHub Pages 的 Source 使用 **GitHub Actions**；推送 `main` 后工作流运行 `npm ci`、`npm test`、`npm run build` 并上传 `dist/`。构建、图库校验和浏览器回归均通过后才发布。升级前的已验收版本保存在 `v2.0-stable` 标签中。
 
 Vue Router 使用 Hash 路由，关于页 `/#/about` 可直接刷新，无需服务器 rewrite。首页各幕链接形如 `/#/#gallery`；迁移前的 `/#gallery` 链接也会转换到对应幕。更换仓库名或部署到域名根目录时，同步修改 `vite.config.js` 的 `base`。
 
