@@ -6,7 +6,7 @@ permissions:
 jobs:
   gallery:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,3 +26,10 @@ jobs:
           VITE_SUPABASE_URL: ''
           VITE_SUPABASE_PUBLISHABLE_KEY: ''
       - run: npm run test:lightbox
+      - name: Build the gallery interaction fixture
+        run: npm run build -- --outDir /tmp/hitori-gallery-discovery
+        env:
+          VITE_SUPABASE_URL: https://gallery-test.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_discovery_fixture
+      - name: Test search, favorites backup, and share links
+        run: python tests/browser-gallery-discovery.py --dist /tmp/hitori-gallery-discovery
