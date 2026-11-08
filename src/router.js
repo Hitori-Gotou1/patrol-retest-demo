@@ -10,6 +10,16 @@ export default createRouter({
     { path: '/', component: () => import('./views/HomeView.vue') },
     { path: '/manage-gallery', component: () => import('./views/GalleryAdminView.vue') },
     { path: '/about', component: () => import('./views/AboutView.vue') },
+    { path: '/room', component: () => import('./views/RoomLayout.vue'), children: [
+      { path: '', redirect: '/room/rhythm' },
+      { path: 'rhythm', component: () => import('./components/room/RhythmGame.vue') },
+      { path: 'stories', component: () => import('./components/room/BranchingStories.vue') },
+      { path: 'studio', component: () => import('./components/room/PatternStudio.vue') },
+      { path: 'practice', component: () => import('./components/room/PracticeTimer.vue') },
+      { path: 'notes', component: () => import('./components/room/JournalView.vue') },
+      { path: 'notes/:slug', component: () => import('./components/room/JournalView.vue') },
+      { path: 'guestbook', component: () => import('./components/room/GuestbookWall.vue') }
+    ] },
     { path: '/:pathMatch(.*)*', redirect: '/' }
   ],
   scrollBehavior(to, from, savedPosition) {

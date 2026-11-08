@@ -1,0 +1,27 @@
+name: Creative room checks
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  room:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: node --test tests/room-core.test.js tests/room-moderation.test.js
+      - run: pip install -r tests/requirements-browser.txt
+      - run: python -m playwright install --with-deps chromium
+      - run: npm run build
+        env:
+          VITE_SUPABASE_URL: ''
+          VITE_SUPABASE_PUBLISHABLE_KEY: ''
+      - run: python tests/browser-room.py
