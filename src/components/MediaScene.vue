@@ -35,6 +35,7 @@ onUnmounted(() => { pauseVideo(); if (objectUrl) URL.revokeObjectURL(objectUrl);
         </div>
         <div class="video-info"><span class="pill">小小放映室</span><h3 id="video-name">{{ videoSource ? videoTitle : '下一场心动，由你来选。' }}</h3><p id="video-description">{{ videoSource ? videoDescription : '这里留给你最喜欢的演出、片段，或自己剪辑的视频。' }}</p><button class="button button-outline" type="button" @click="fileInput?.click()">选择本地视频 <span aria-hidden="true">＋</span></button><input id="video-file" ref="fileInput" type="file" accept="video/*" hidden @change="selectFile"><p class="local-note">仅在当前浏览器预览，不会上传。<br>公开展示的视频将在选好素材后加入。</p><p id="video-status" class="video-status" role="status">{{ videoStatus }}</p></div>
       </div>
+      <RouterLink to="/room/practice" class="room-entry-link">给今天留一段练习 · 练琴计时 ↗</RouterLink>
       <div class="cinema-closing"><span aria-hidden="true">✦</span><p>即使步伐很小，也有正在前进的声音。</p><RouterLink :to="{path:'/',hash:'#home'}">回到开场 ↑</RouterLink></div>
       <footer class="site-footer"><RouterLink class="brand" :to="{path:'/',hash:'#home'}"><span class="brand-mark" aria-hidden="true"><i></i><i></i></span>一里小屋</RouterLink><RouterLink to="/about" class="about-site-link">关于这个小小的空间 ↗</RouterLink></footer>
     </div>

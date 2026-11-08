@@ -64,10 +64,30 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: [build, gallery-checks]
+    needs: [build, gallery-checks, room-checks, community-setup]
     steps:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
   gallery-checks:
     uses: ./.github/workflows/gallery-checks.yml
+  room-checks:
+    uses: ./.github/workflows/room-checks.yml
+  community-setup:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { pathToFileURL } = require('node:url');
+            const { setupCommunity } = await import(pathToFileURL(process.env.GITHUB_WORKSPACE + '/scripts/moderate-guestbook.mjs').href);
+            await setupCommunity(github, context.repo);
+            core.info('Guestbook moderation labels are ready.');

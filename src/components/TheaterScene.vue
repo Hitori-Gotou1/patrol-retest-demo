@@ -59,6 +59,7 @@ onBeforeUnmount(() => { disposed = true; liveModeActive.value = false; });
         <p v-if="liveMessage" class="starry-entry-status" role="status">{{ liveMessage }}</p>
       </div>
         <span class="theater-doodle-note" aria-hidden="true">今日任务：再勇敢一点点。 ↖</span>
+        <RouterLink to="/room/stories" class="room-entry-link">把故事接下去 · 分支小剧场 ↗</RouterLink>
       </div>
     </section>
     <component :is="LiveStage" v-if="liveOpen" :return-focus="liveEntry" @close="leaveLive" />

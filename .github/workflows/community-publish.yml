@@ -1,0 +1,27 @@
+name: Publish reviewed community letters
+on:
+  issues:
+    types: [labeled, unlabeled, edited, closed, reopened, deleted]
+permissions:
+  contents: write
+  issues: write
+  actions: write
+concurrency:
+  group: community-issue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { pathToFileURL } = require('node:url');
+            const { moderateGuestbook } = await import(pathToFileURL(process.env.GITHUB_WORKSPACE + '/scripts/moderate-guestbook.mjs').href);
+            const result = await moderateGuestbook(github, context.repo, context.payload);
+            core.info(result.changed ? 'Reviewed wall snapshot updated and publication requested.' : 'No wall change required.');

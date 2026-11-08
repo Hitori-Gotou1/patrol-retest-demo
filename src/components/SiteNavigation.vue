@@ -26,8 +26,9 @@ const { scenes, isHome, activeScene, activeIndex, navigateToScene, navigateToAbo
       <RouterLink v-for="scene in scenes" :key="scene.id" :to="{ path: '/', hash: `#${scene.id}` }" custom v-slot="{ href, navigate }">
         <a :href="href" :aria-current="isHome && activeScene === scene.id ? 'location' : undefined" @click="navigateToScene($event, scene.id, navigate)">{{ scene.label }}</a>
       </RouterLink>
+      <RouterLink to="/room/rhythm" :aria-current="route.path.startsWith('/room') ? 'page' : undefined">活动室</RouterLink>
     </nav>
-    <div class="navigation-sound"><span class="header-scene-count" id="scene-current-index">{{ isHome ? `${activeIndex} / 05` : route.path === '/manage-gallery' ? 'COLLECTION' : 'ABOUT' }}</span><InteractionSoundControl compact /></div>
+    <div class="navigation-sound"><span class="header-scene-count" id="scene-current-index">{{ isHome ? `${activeIndex} / 05` : route.path.startsWith('/room') ? 'ROOM' : route.path === '/manage-gallery' ? 'COLLECTION' : 'ABOUT' }}</span><InteractionSoundControl compact /></div>
   </header>
   <nav v-if="isHome" id="scene-nav" class="scene-navigation" aria-label="分屏导航">
     <RouterLink v-for="scene in scenes" :key="scene.id" :to="{ path: '/', hash: `#${scene.id}` }" custom v-slot="{ href, navigate }">
