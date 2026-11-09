@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router';
 import { galleryImages } from '../data/gallery.js';
 import { cloudConfigured, loadCloudGallery } from '../services/galleryCloud.js';
+import { cloudServiceMessage } from '../services/cloudConnection.js';
 import { createProgressiveImage } from '../services/progressiveImage.js';
 import { useGalleryPreview } from '../composables/useGalleryPreview.js';
 import { filterGallery, galleryCharacters, galleryImageLocation, favoritesStorageKey, maxBackupBytes, readSavedFavorites, createFavoritesBackup, parseFavoritesBackup, mergeFavorites } from '../services/galleryDiscovery.js';
@@ -11,20 +12,19 @@ const cloudError = ref('');
 const cloudLoading = ref(false);
 const allImages = computed(() => [...remoteImages.value, ...galleryImages]);
 let cloudRequest;
-let cloudTimeout;
 async function refreshCloud() {
   if (!cloudConfigured || cloudLoading.value) return;
   cloudLoading.value = true;
   cloudError.value = '';
   cloudRequest = new AbortController();
-  cloudTimeout = setTimeout(() => cloudRequest?.abort(), 12000);
   try {
     const items = await loadCloudGallery(cloudRequest.signal);
     if (mounted) remoteImages.value = items;
-  } catch {
-    if (mounted) cloudError.value = '新上传的收藏暂时无法加载，原有收藏仍可浏览。';
-  } finally { clearTimeout(cloudTimeout); cloudLoading.value = false; }
+  } catch (cause) {
+    if (mounted) cloudError.value = `新上传的收藏暂时无法加载，原有收藏仍可浏览。${cloudServiceMessage(cause)}`;
+  } finally { if (mounted) cloudLoading.value = false; }
 }
+function reconnectCloud() { if (cloudError.value) refreshCloud(); }
 import '../styles/gallery-enhancements.css';
 import '../styles/gallery-discovery.css';
 
@@ -214,6 +214,7 @@ onMounted(() => {
     favorites.value = readSavedFavorites(localStorage.getItem(favoritesStorageKey));
   } catch { /* 隐私模式下仍可在当前页面收藏。 */ }
   window.addEventListener('storage', syncFavorites);
+  window.addEventListener('online', reconnectCloud);
   motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
   syncMotion();
   syncVisibility();
@@ -226,12 +227,12 @@ onBeforeUnmount(() => {
   mounted = false;
   importRevision++; shareRevision++;
   progressiveImage.cancel();
-  clearTimeout(cloudTimeout);
   cloudRequest?.abort();
   observer?.disconnect();
   motionQuery?.removeEventListener('change', syncMotion);
   document.removeEventListener('visibilitychange', syncVisibility);
   window.removeEventListener('storage', syncFavorites);
+  window.removeEventListener('online', reconnectCloud);
 });
 </script>
 
@@ -270,8 +271,9 @@ onBeforeUnmount(() => {
           <button type="button" :aria-pressed="mode === 'flow'" @click="mode = 'flow'"><span aria-hidden="true">≋</span> 流动视图</button>
         </div>
         <button v-if="mode === 'flow'" type="button" class="gallery-motion-toggle" :disabled="reducedMotion" :aria-pressed="paused || reducedMotion" @click="paused = !paused">{{ reducedMotion ? '已减少动态效果' : paused ? '继续流动 ▶' : '暂停流动 Ⅱ' }}</button>
-        <span v-else class="gallery-view-note">小小收藏，慢慢翻阅。</span>
+        <RouterLink to="/manage-gallery" class="gallery-upload-link">站主上传图片 ↗</RouterLink>
       </div>
+      <p v-if="cloudLoading" class="gallery-cloud-loading" role="status">正在读取云端收藏，原有收藏可继续浏览…</p>
       <p v-if="cloudError" class="gallery-cloud-notice" role="status">{{ cloudError }} <button type="button" :disabled="cloudLoading" @click="refreshCloud">重试</button></p>
       <p v-if="linkNotice" class="gallery-link-notice" role="status">{{ linkNotice }} <button type="button" @click="clearLink">清除图片定位</button></p>
       <div v-if="mode === 'wall'" id="gallery-grid" class="gallery-grid">

@@ -1,5 +1,5 @@
 /* 收藏墙与流动视图共享素材。仅轨道做 transform 动画，离屏时由组件暂停。 */
-.gallery-section .gallery-view-bar { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin: -9px 0 24px; }
+.gallery-section .gallery-view-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 15px; margin: -9px 0 24px; }
 .gallery-view-switch { display: flex; border-bottom: 1px solid #b9a394; gap: 20px; }
 .gallery-view-switch button { min-height: 40px; padding: 6px 0; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #8a7569; font-size: 12px; }
 .gallery-view-switch button[aria-pressed='true'] { color: #5a3d54; border-bottom-color: #76516e; font-weight: 700; }
@@ -80,5 +80,7 @@
 
 .gallery-manage-link { display: inline-block; margin-top: 24px; color: var(--ink, #282129); font-size: 13px; text-underline-offset: 4px; }
 .gallery-manage-link:focus-visible { outline: 2px solid currentColor; outline-offset: 5px; }
+.gallery-upload-link { color: var(--ink, #282129); font-size: 12px; min-height: 44px; display: inline-flex; align-items: center; text-decoration: underline; text-underline-offset: 4px; }
+.gallery-cloud-loading { font-size: 13px; padding: 12px 0; color: #715869; }
 .gallery-cloud-notice { font-size: 14px; padding: 12px 0; }
 .gallery-cloud-notice button { margin-left: 8px; color: inherit; text-decoration: underline; background: transparent; border: 0; cursor: pointer; }

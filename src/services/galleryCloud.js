@@ -1,5 +1,6 @@
 import { validateGalleryConfig } from './galleryCloudConfig.js';
 import { validateUploadFile, validateImageSignature, validateImageDimensions, validateGalleryText } from './galleryUploadRules.js';
+import { fetchAuthWithDeadline, withCloudDeadline } from './cloudConnection.js';
 
 const url = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
@@ -9,17 +10,22 @@ let clientPromise;
 export async function getCloudClient() {
   if (!cloudConfigured) return null;
   if (!clientPromise) clientPromise = import('@supabase/supabase-js').then(({ createClient }) => createClient(url, key, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: 'hitori-room:owner-session:v1' }
-  }));
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: 'hitori-room:owner-session:v1' },
+    global: { fetch: (input, options) => String(input instanceof Request ? input.url : input).includes('/auth/v1/')
+      ? fetchAuthWithDeadline(input, options) : fetch(input, options) }
+  })).catch(error => { clientPromise = undefined; throw error; });
   return clientPromise;
 }
-export async function isGalleryAdmin() {
+export async function isGalleryAdmin(signal) {
   const client = await getCloudClient();
   if (!client) return false;
   const { data: { user }, error } = await client.auth.getUser();
-  if (error || !user) return false;
-  const result = await client.from('gallery_admins').select('user_id').eq('user_id', user.id).maybeSingle();
-  if (result.error) throw new Error('无法验证上传权限，请检查服务配置或稍后重试。');
+  if (error) throw error;
+  if (!user) return false;
+  const query = client.from('gallery_admins').select('user_id').eq('user_id', user.id);
+  if (signal) query.abortSignal(signal);
+  const result = await query.maybeSingle();
+  if (result.error) throw Object.assign(new Error('无法验证上传权限，请检查服务配置或稍后重试。'), { status: result.status, code: result.error.code });
   return !!result.data;
 }
 const safePath = path => typeof path === 'string' && /^[a-f0-9-]+\/[a-f0-9-]+(?:-thumb)?\.(?:jpg|png|webp)$/.test(path);
@@ -35,19 +41,24 @@ export function cloudImage(row) {
 }
 export async function loadCloudGallery(signal) {
   if (!cloudConfigured) return [];
-  // 访客仅发匿名读取请求，不加载登录 SDK，不修改站主会话。
-  const records = [];
-  const pageSize = 100;
-  for (let offset = 0; ; offset += pageSize) {
-    const response = await fetch(`${url}/rest/v1/gallery_uploads?select=id,object_path,thumbnail_path,title,alt,credit,width,height&order=created_at.desc,id.desc&limit=${pageSize}&offset=${offset}`, {
-      headers: { apikey: key, ...(!key.startsWith('sb_publishable_') ? { Authorization: `Bearer ${key}` } : {}) }, signal
-    });
-    if (!response.ok) throw new Error('新上传的收藏暂时无法加载，原有收藏仍可浏览。');
-    const rows = await response.json();
-    if (!Array.isArray(rows)) throw new Error('收藏数据格式不正确。');
-    records.push(...rows.map(cloudImage).filter(Boolean));
-    if (rows.length < pageSize) return records;
-  }
+  return withCloudDeadline(async requestSignal => {
+    // 访客仅发匿名读取请求，不加载登录 SDK，不修改站主会话。
+    const records = [];
+    const pageSize = 100;
+    for (let offset = 0; ; offset += pageSize) {
+      const response = await fetch(`${url}/rest/v1/gallery_uploads?select=id,object_path,thumbnail_path,title,alt,credit,width,height&order=created_at.desc,id.desc&limit=${pageSize}&offset=${offset}`, {
+        headers: { apikey: key, ...(!key.startsWith('sb_publishable_') ? { Authorization: `Bearer ${key}` } : {}) }, signal: requestSignal
+      });
+      if (!response.ok) {
+        const detail = await response.json().catch(() => ({}));
+        throw Object.assign(new Error('Cloud gallery unavailable'), { status: response.status, code: detail.code });
+      }
+      const rows = await response.json();
+      if (!Array.isArray(rows)) throw new Error('收藏数据格式不正确。');
+      records.push(...rows.map(cloudImage).filter(Boolean));
+      if (rows.length < pageSize) return records;
+    }
+  }, { signal });
 }
 async function prepareImage(file) {
   await validateImageSignature(file);

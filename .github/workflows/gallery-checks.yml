@@ -33,3 +33,5 @@ jobs:
           VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_discovery_fixture
       - name: Test search, favorites backup, and share links
         run: python tests/browser-gallery-discovery.py --dist /tmp/hitori-gallery-discovery
+      - name: Test cloud timeouts and owner-session recovery
+        run: python tests/browser-cloud-recovery.py --dist /tmp/hitori-gallery-discovery
