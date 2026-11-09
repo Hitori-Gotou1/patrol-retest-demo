@@ -2,9 +2,11 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { onBeforeRouteLeave } from 'vue-router';
 import { cloudConfigured, getCloudClient, isGalleryAdmin, publishGalleryImage } from '../services/galleryCloud.js';
+import { cloudServiceMessage, withCloudDeadline } from '../services/cloudConnection.js';
 
 const session = ref(null);
 const checking = ref(cloudConfigured);
+const connectionFailed = ref(false);
 const admin = ref(false);
 const authBusy = ref(false);
 const uploading = ref(false);
@@ -38,21 +40,69 @@ function clearDraft() {
   alt.value = '';
   credit.value = '';
 }
-async function syncSession(nextSession) {
-  const revision = ++sessionRevision;
+function setSession(nextSession) {
   if (session.value?.user?.id !== nextSession?.user?.id) {
     clearDraft();
     published.value = false;
   }
   session.value = nextSession;
+}
+async function syncSession(nextSession) {
+  const revision = ++sessionRevision;
+  setSession(nextSession);
   admin.value = false;
   checking.value = Boolean(nextSession);
+  connectionFailed.value = false;
   if (!nextSession) return;
   try {
-    const allowed = await isGalleryAdmin();
+    const allowed = await withCloudDeadline(signal => isGalleryAdmin(signal));
     if (alive && revision === sessionRevision) admin.value = allowed;
-  } catch {
-    if (alive && revision === sessionRevision) error.value = '暂时无法确认上传权限，请稍后重新登录。';
+  } catch (cause) {
+    if (alive && revision === sessionRevision) {
+      connectionFailed.value = true;
+      error.value = `暂时无法确认上传权限。${cloudServiceMessage(cause)}`;
+    }
+  } finally {
+    if (alive && revision === sessionRevision) checking.value = false;
+  }
+}
+function subscribeToSession() {
+  if (subscription) return;
+  // Never await an API inside the SDK callback: it can hold the session lock.
+  subscription = client.auth.onAuthStateChange((event, nextSession) => {
+    if (event === 'INITIAL_SESSION') return; // checkSession owns initial recovery.
+    if (event === 'TOKEN_REFRESHED' && session.value?.user?.id === nextSession?.user?.id && !connectionFailed.value) return;
+    clearTimeout(authTimer);
+    authTimer = setTimeout(() => { if (alive) syncSession(nextSession); }, 0);
+  }).data.subscription;
+}
+async function checkSession() {
+  const revision = ++sessionRevision;
+  checking.value = true;
+  connectionFailed.value = false;
+  admin.value = false;
+  error.value = '';
+  try {
+    const allowed = await withCloudDeadline(async signal => {
+      const connection = await getCloudClient();
+      if (!alive || revision !== sessionRevision || signal.aborted) return false;
+      client = connection;
+      if (!client) return false;
+      const { data, error: sessionError } = await client.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!alive || revision !== sessionRevision || signal.aborted) return false;
+      setSession(data.session);
+      // Subscribe after SDK recovery: its recovery SIGNED_IN event must not
+      // start a second permission check and restart the initial deadline.
+      subscribeToSession();
+      return data.session ? isGalleryAdmin(signal) : false;
+    });
+    if (alive && revision === sessionRevision) admin.value = allowed;
+  } catch (cause) {
+    if (alive && revision === sessionRevision) {
+      connectionFailed.value = true;
+      error.value = `暂时无法确认登录状态。${cloudServiceMessage(cause)}可重新检查，已有收藏不受影响。`;
+    }
   } finally {
     if (alive && revision === sessionRevision) checking.value = false;
   }
@@ -63,14 +113,15 @@ async function login() {
   error.value = '';
   message.value = '';
   try {
-    const result = await client.auth.signInWithPassword({ email: email.value.trim(), password: password.value });
+    const result = await withCloudDeadline(() => client.auth.signInWithPassword({ email: email.value.trim(), password: password.value }));
     if (result.error) throw result.error;
     if (alive) {
       password.value = '';
       await syncSession(result.data.session);
     }
   } catch (cause) {
-    if (alive) error.value = cause?.code === 'email_not_confirmed' ? '请先完成邮箱验证，再登录。' : '登录失败，请检查邮箱、密码及网络连接。';
+    if (alive) error.value = cause?.code === 'email_not_confirmed' ? '请先完成邮箱验证，再登录。'
+      : cause?.code === 'CLOUD_TIMEOUT' ? cloudServiceMessage(cause) : '登录失败，请检查邮箱、密码及网络连接。';
   } finally {
     if (alive) authBusy.value = false;
   }
@@ -80,7 +131,7 @@ async function logout() {
   authBusy.value = true;
   error.value = '';
   try {
-    const result = await client.auth.signOut();
+    const result = await withCloudDeadline(() => client.auth.signOut());
     if (result.error) throw result.error;
     if (alive) {
       await syncSession(null);
@@ -151,29 +202,11 @@ function beforeUnload(event) {
   event.returnValue = '';
 }
 onBeforeRouteLeave(() => !uploading.value || window.confirm('图片仍在发布中，离开可能中断上传。确定离开吗？'));
-onMounted(async () => {
+onMounted(() => {
   document.title = '上传收藏 · HITORI ROOM';
   window.addEventListener('beforeunload', beforeUnload);
   if (!cloudConfigured) return;
-  try {
-    client = await getCloudClient();
-    if (!alive || !client) return;
-    const { data, error: sessionError } = await client.auth.getSession();
-    if (sessionError) throw sessionError;
-    if (!alive) return;
-    await syncSession(data.session);
-    if (!alive) return;
-    // Supabase 的认证回调中不直接等待 API，避免与内部会话锁互相等待。
-    subscription = client.auth.onAuthStateChange((event, nextSession) => {
-      if (event === 'TOKEN_REFRESHED' && session.value?.user?.id === nextSession?.user?.id) return;
-      clearTimeout(authTimer);
-      authTimer = setTimeout(() => { if (alive) syncSession(nextSession); }, 0);
-    }).data.subscription;
-  } catch {
-    if (alive) error.value = '暂时无法连接上传服务，请检查网络后刷新页面。';
-  } finally {
-    if (alive) checking.value = false;
-  }
+  checkSession();
 });
 onBeforeUnmount(() => {
   alive = false;
@@ -212,7 +245,15 @@ onBeforeUnmount(() => {
           <label for="owner-password">密码</label>
           <input id="owner-password" v-model="password" type="password" autocomplete="current-password" required :disabled="authBusy">
           <button class="admin-primary" type="submit" :disabled="authBusy || !client">{{ authBusy ? '正在登录…' : '进入我的收藏工作台 ↗' }}</button>
+          <button v-if="connectionFailed" type="button" class="admin-primary" :disabled="authBusy" @click="checkSession">重新检查登录状态</button>
         </form>
+        <section v-else-if="connectionFailed" class="admin-notice">
+          <span class="admin-step">CONNECTION CHECK</span>
+          <h2>暂时无法确认上传权限</h2>
+          <p>云端连接尚未完成，请检查网络后重试。确认站主权限后，这里会显示图片上传表单。</p>
+          <button type="button" class="admin-primary" :disabled="authBusy" @click="checkSession">重新检查登录状态</button>
+          <button type="button" class="admin-primary" :disabled="authBusy" @click="logout">退出并更换账号</button>
+        </section>
         <section v-else-if="!admin" class="admin-notice">
           <span class="admin-step">OWNER ONLY</span>
           <h2>这个账号没有上传权限</h2>
