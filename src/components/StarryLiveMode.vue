@@ -1,7 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { gsap } from 'gsap';
-import members from '../data/characters.json';
+import members from '../data/characters.json' with { type: 'json' };
 import { useInteractionAudio } from '../composables/useInteractionAudio.js';
 import InteractionSoundControl from './InteractionSoundControl.vue';
 

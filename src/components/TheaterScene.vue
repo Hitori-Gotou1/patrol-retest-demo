@@ -3,6 +3,7 @@ import { ref, computed, shallowRef, onBeforeUnmount } from 'vue';
 import { useChord } from '../composables/useChord.js';
 import { interactionFeatures } from '../data/interactions.js';
 import { liveModeActive } from '../composables/useInteractionSession.js';
+import PlayroomPreview from './PlayroomPreview.vue';
 const selected = ref('box');
 const scenes = {
  name:{label:'突然被叫到名字',title:'叫、叫的是我吗？',text:'脑内已经排练了十种打招呼方式。现实进度：抬头，停顿，再停顿。',note:'社交电量：正在重新连接'},
@@ -59,7 +60,8 @@ onBeforeUnmount(() => { disposed = true; liveModeActive.value = false; });
         <p v-if="liveMessage" class="starry-entry-status" role="status">{{ liveMessage }}</p>
       </div>
         <span class="theater-doodle-note" aria-hidden="true">今日任务：再勇敢一点点。 ↖</span>
-        <RouterLink to="/room/stories" class="room-entry-link">把故事接下去 · 分支小剧场 ↗</RouterLink>
+      <RouterLink to="/room/stories" class="room-entry-link">把故事接下去 · 分支小剧场 ↗</RouterLink>
+      <PlayroomPreview />
       </div>
     </section>
     <component :is="LiveStage" v-if="liveOpen" :return-focus="liveEntry" @close="leaveLive" />
