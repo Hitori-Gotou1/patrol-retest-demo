@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: npm ci
-      - run: node --test tests/room-core.test.js tests/room-moderation.test.js
+      - run: node --test tests/room-core.test.js tests/room-moderation.test.js tests/playroom.test.js tests/ambient-audio.test.js
       - run: pip install -r tests/requirements-browser.txt
       - run: python -m playwright install --with-deps chromium
       - run: npm run build
@@ -25,3 +25,4 @@ jobs:
           VITE_SUPABASE_URL: ''
           VITE_SUPABASE_PUBLISHABLE_KEY: ''
       - run: python tests/browser-room.py
+      - run: python tests/browser-playroom.py

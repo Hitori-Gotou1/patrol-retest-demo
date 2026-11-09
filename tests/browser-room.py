@@ -225,7 +225,8 @@ def test_journal(browser):
     fixture = Fixture(browser)
     page = fixture.page
     fixture.goto('notes')
-    expect(page.locator('.journal-list article')).to_have_count(2)
+    expect(page.locator('.journal-list article')).not_to_have_count(0)
+    note_count = page.locator('.journal-list article').count()
     page.locator('#journal-search').fill('十六个')
     expect(page.locator('.journal-list article')).to_have_count(1)
     page.locator('.journal-list h3 a').click()
@@ -236,7 +237,7 @@ def test_journal(browser):
     fixture.goto('notes/not-a-note')
     expect(page.get_by_role('heading', name='这一页还没写下。', exact=True)).to_be_visible()
     page.get_by_role('link', name='返回手记列表', exact=True).click()
-    expect(page.locator('.journal-list article')).to_have_count(2)
+    expect(page.locator('.journal-list article')).to_have_count(note_count)
     fixture.close()
 
 

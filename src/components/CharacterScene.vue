@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue';
-import members from '../data/characters.json';
+import members from '../data/characters.json' with { type: 'json' };
 import { useCharacterTransition } from '../composables/useCharacterTransition.js';
 import { liveModeActive } from '../composables/useInteractionSession.js';
 import { interactionFeatures } from '../data/interactions.js';
