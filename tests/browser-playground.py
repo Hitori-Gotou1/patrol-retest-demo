@@ -85,8 +85,10 @@ def layouts_lifecycle(browser):
    f.goto(route);expect(p.locator('.room-nav [aria-current=page]')).to_have_count(1);assert p.evaluate('document.documentElement.scrollWidth<=innerWidth'),(route,width);p.screenshot(path=str(OUTPUT/f'{route}-{width}.png'),full_page=width<800)
   p.get_by_role('button',name='全部 · 22',exact=True).click();expect(p.locator('.play-card')).to_have_count(22)
   if width==390:
-   f.goto('graffiti');canvas=p.locator('canvas');canvas.scroll_into_view_if_needed();b=canvas.bounding_box();x=b['x']+b['width']*.3;y=b['y']+b['height']*.5;cdp=f.context.new_cdp_session(p);cdp.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]});cdp.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x+45,'y':y+20}]});cdp.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});assert len(f.saved('graffiti')['layers'][1]['strokes'])==1
-   f.goto('platform');p.locator('#platform-start').tap();p.locator('[data-control=jump]').tap();p.wait_for_timeout(180);assert float(p.locator('#jump-player').get_attribute('data-y'))<360
+   f.goto('graffiti');canvas=p.locator('canvas');canvas.scroll_into_view_if_needed();b=canvas.bounding_box();x=b['x']+b['width']*.3;y=b['y']+b['height']*.5;cdp=f.context.new_cdp_session(p);cdp.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]});cdp.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x+45,'y':y+20}]});cdp.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});cdp.detach();assert len(f.saved('graffiti')['layers'][1]['strokes'])==1
+   # Chromium 151 suppresses the next compatibility click after a raw CDP drag,
+   # including on a plain native button. Use a fresh input session for tap tests.
+   f.close();f=Fixture(browser,width);p=f.page;f.goto('platform');p.locator('#platform-start').tap();expect(p.locator('#platform-start')).to_be_disabled();p.locator('[data-control=jump]').tap();p.wait_for_function('Number(document.querySelector("#jump-player").dataset.y)<360')
   f.close()
  f=Fixture(browser,blocked=True);p=f.page;f.goto('cards');p.locator('#card-end').click();p.wait_for_timeout(200);expect(p.locator('.pg-small').last).to_contain_text('无法保存');f.close()
  f=Fixture(browser,late=True);p=f.page;f.goto('mix');p.locator('#mix-play').click();p.wait_for_function('window.__resumeGates.length>=1');f.goto('play');p.evaluate('window.__resumeGates.forEach(r=>r())');p.wait_for_timeout(150);assert p.evaluate('window.__sourceStarts')==0;f.close()
