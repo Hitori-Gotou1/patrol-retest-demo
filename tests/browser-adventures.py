@@ -67,6 +67,14 @@ def test_effects(browser):
     assert p.evaluate('window.__audioContexts.length')==0
     panel=p.locator('.room-panel').bounding_box();strings=p.locator('.tone-strings').bounding_box()
     assert strings['x']>=panel['x'] and strings['y']>=panel['y'] and strings['height']>200
+    slider=p.locator('#tone-drive');slider.scroll_into_view_if_needed();bounds=slider.bounding_box()
+    p.mouse.move(bounds['x']+8+(bounds['width']-16)*.3,bounds['y']+bounds['height']/2)
+    p.mouse.down();p.mouse.move(bounds['x']+8+(bounds['width']-16)*.8,bounds['y']+bounds['height']/2,steps=8);p.mouse.up()
+    assert float(slider.input_value())>.7,'pedal reordering must not capture a slider drag'
+    set_range(slider,.3)
+    p.locator('.effect-pedal[data-effect=drive] header').drag_to(p.locator('.effect-pedal[data-effect=delay] header'))
+    assert p.locator('.effect-pedal').evaluate_all('(xs)=>xs.map(e=>e.dataset.effect)')==['delay','drive','reverb']
+    p.get_by_role('button',name='把失真向前移动',exact=True).click()
     clean=download(p,p.locator('#tone-wav'),'clean-tone.wav')
     p.locator('.effect-pedal[data-effect=drive] .effect-bypass').click();set_range(p.locator('#tone-drive'),.8)
     p.get_by_role('button',name='把失真向后移动',exact=True).click()
