@@ -1,4 +1,5 @@
 <script setup>
+import { recordActivity } from '../../room/activityLog.js';
 import { computed, ref } from 'vue';
 import { cast, walkPlaces } from '../../data/playroom.js';
 import { validateWalk } from '../../room/playroom.js';
@@ -10,7 +11,7 @@ const stage = ref(null), message = ref('先选一个街角。每次抵达，都�
 const selected = computed(() => walkPlaces.find(p => p.id===state.value.selected));
 const person = computed(() => cast.find(c=>c.id===selected.value.member));
 const complete = computed(() => state.value.visited.length===walkPlaces.length);
-function visit(place){state.value.selected=place.id;if(!state.value.visited.includes(place.id)){state.value.visited.push(place.id);message.value=place.detail;}else message.value='又回到了这个街角，故事还留在这里。';}
+function visit(place){state.value.selected=place.id;if(!state.value.visited.includes(place.id)){state.value.visited.push(place.id);message.value=place.detail;if(state.value.visited.length===6)recordActivity('walk','六个街角，都去过了','all-six');}else message.value='又回到了这个街角，故事还留在这里。';}
 function next(){const place=walkPlaces.find(p=>!state.value.visited.includes(p.id));if(place)visit(place);}
 function reset(){undo.value=structuredClone(validateWalk(state.value));state.value={visited:[],selected:'station'};message.value='新的一次散步，可以从任何地方开始。';}
 async function souvenir(){busy.value=true;try{await downloadStage(stage.value,'shimokita-walk-stamps.png');message.value='散步手帐已生成，把路上的小片刻带回去吧。';}catch(e){message.value=e.message;}finally{busy.value=false;}}

@@ -1,4 +1,5 @@
 <script setup>
+import { recordActivity } from '../../room/activityLog.js';
 import { computed, ref } from 'vue';
 import { cast, roomProps } from '../../data/playroom.js';
 import { defaultRoom, validateRoom } from '../../room/playroom.js';
@@ -32,7 +33,7 @@ function add(item) {
 }
 function reset(){undo.value=structuredClone(validateRoom(state.value));state.value=structuredClone(defaultRoom);boxedKey.value='';editor.selectedKey.value='';}
 function restore(){state.value=undo.value;undo.value=null;editor.selectedKey.value='';}
-async function exportRoom(){if(busy.value)return;busy.value=true;persist();try{await downloadStage(stage.value,'my-hitori-room.png');message.value='房间照片已生成。今晚的灯，替你留住了。';}catch(e){message.value=e.message;}finally{busy.value=false;}}
+async function exportRoom(){if(busy.value)return;busy.value=true;persist();try{await downloadStage(stage.value,'my-hitori-room.png');message.value='房间照片已生成。今晚的灯，替你留住了。';recordActivity('room','留下一张自己的房间照片',JSON.stringify(state.value));}catch(e){message.value=e.message;}finally{busy.value=false;}}
 </script>
 <template>
   <section class="room-panel" aria-labelledby="decorate-title">

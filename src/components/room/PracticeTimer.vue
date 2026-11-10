@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { recordActivity } from '../../room/activityLog.js';
 import { onBeforeRouteLeave } from 'vue-router';
 import { useInteractionAudio } from '../../composables/useInteractionAudio.js';
 import { practiceKey, emptyPractice, validatePractice, startPractice, advancePractice, remainingPractice, pausePractice, resumePractice, practiceStreak } from '../../room/practice.js';
@@ -33,6 +34,7 @@ function update() {
   const sound = latest.current?.alarm;
   commit(advancePractice(latest, now.value));
   if (completed) {
+    recordActivity('practice',`认真练习了 ${latest.current.minutes} 分钟`,latest.current.id);
     message.value = storageWorking ? '这一轮练习已完成并记录。' : '练习已完成，记录仅本次有效，请导出备份。';
     if (sound && !leaving && !document.hidden && now.value - latest.current.deadline <= 2000) audio.play('chord');
   } else message.value = '休息结束。准备好后，再开始下一轮。';

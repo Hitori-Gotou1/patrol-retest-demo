@@ -1,4 +1,5 @@
 <script setup>
+import { recordActivity } from '../../room/activityLog.js';
 import { computed, ref } from 'vue';
 import { cast, stickers, photoThemes } from '../../data/playroom.js';
 import { defaultPhoto, validatePhoto } from '../../room/playroom.js';
@@ -30,7 +31,7 @@ function reset() { undo.value = structuredClone(validatePhoto(state.value)); sta
 function restore() { state.value = undo.value; undo.value = null; editor.selectedKey.value = ''; }
 async function exportPhoto() {
   if (busy.value) return; busy.value = true; message.value = '正在冲洗这张合影…'; persist();
-  try { await downloadStage(stage.value, 'hitori-room-photo.png'); message.value = '合影已生成，PNG 图片会保存到设备。'; }
+  try { await downloadStage(stage.value, 'hitori-room-photo.png'); message.value = '合影已生成，PNG 图片会保存到设备。'; recordActivity('photo',state.value.caption||'今天的合影',JSON.stringify(state.value)); }
   catch (error) { message.value = error.message; } finally { busy.value = false; }
 }
 </script>
