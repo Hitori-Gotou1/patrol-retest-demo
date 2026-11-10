@@ -13,6 +13,12 @@ export default createRouter({
     { path: '/room', component: () => import('./views/RoomLayout.vue'), children: [
       { path: '', redirect: '/room/play' },
       { path: 'play', component: () => import('./components/room/PlayroomHome.vue') },
+      { path: 'maze', component: () => import('./components/room/CardboardMaze.vue') },
+      { path: 'effects', component: () => import('./components/room/GuitarEffects.vue') },
+      { path: 'companion', component: () => import('./components/room/CompanionDesk.vue') },
+      { path: 'echo', component: () => import('./components/room/MelodyEcho.vue') },
+      { path: 'escape', component: () => import('./components/room/EscapeNight.vue') },
+      { path: 'duet', component: () => import('./components/room/DuetChallenge.vue') },
       { path: 'photobooth', component: () => import('./components/room/PhotoBooth.vue') },
       { path: 'decorate', component: () => import('./components/room/RoomDecorator.vue') },
       { path: 'walk', component: () => import('./components/room/StrollMap.vue') },

@@ -1,4 +1,5 @@
 <script setup>
+import { recordActivity } from '../../room/activityLog.js';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { ambientLayers, ambientPresets } from '../../data/playroom.js';
 import { validateAmbient } from '../../room/playroom.js';
@@ -29,7 +30,7 @@ function saveScene(){
   const index=state.value.scenes.findIndex(s=>s.name===current.name);
   if(index<0&&state.value.scenes.length>=6){message.value='最多保存六种氛围，移走一张场景卡后再保存。';return;}
   if(index>=0)state.value.scenes.splice(index,1,current);else state.value.scenes.push(current);
-  message.value=`「${current.name}」已放进本机的声音收藏。`;
+  message.value=`「${current.name}」已放进本机的声音收藏。`;recordActivity('ambient',current.name,JSON.stringify(current));
 }
 function removeScene(index){removed.value=validateAmbient(state.value.scenes[index]);state.value.scenes.splice(index,1);message.value='已移走这张场景卡，可以撤销。';}
 function hidden(){if(document.hidden&&(playing.value||starting.value)){stop();message.value='离开页面时已暂停，回来后可主动继续播放。';}}

@@ -1,4 +1,5 @@
 <script setup>
+import { recordActivity } from '../../room/activityLog.js';
 import { computed, onBeforeUnmount, ref } from 'vue';
 import { searchObjects } from '../../data/playroom.js';
 import { newSearch, shuffled, validateSearch } from '../../room/playroom.js';
@@ -15,7 +16,7 @@ const complete=computed(()=>state.value.found.length===6);
 function inspect(item){
   if(complete.value)return;
   if(state.value.found.includes(item.id)){message.value='这件已经收好啦，继续看看别的地方。';return;}
-  if(state.value.targets.includes(item.id)){state.value.found.push(item.id);message.value=item.reply;if(complete.value){message.value='找齐了！大家终于可以开始排练。'+` 本轮借助 ${state.value.hints} 次提示，误认 ${state.value.mistakes} 次。`;}}
+  if(state.value.targets.includes(item.id)){state.value.found.push(item.id);message.value=item.reply;if(complete.value){recordActivity('search','找齐开演前的六件小物',String(state.value.seed));message.value='找齐了！大家终于可以开始排练。'+` 本轮借助 ${state.value.hints} 次提示，误认 ${state.value.mistakes} 次。`;}}
   else {state.value.mistakes++;message.value='这件不用找，看看清单里还少了什么。';}
 }
 function hint(){const id=state.value.targets.find(id=>!state.value.found.includes(id));if(!id)return;state.value.hints++;highlight.value=id;message.value='有件要找的东西，在发光的那一小块区域。';clearTimeout(hintTimer);hintTimer=setTimeout(()=>highlight.value='',3500);}

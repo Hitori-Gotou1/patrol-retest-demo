@@ -1,4 +1,5 @@
 <script setup>
+import { recordActivity } from '../../room/activityLog.js';
 import { computed, ref } from 'vue';
 import { cast, concertEvents, concertOptions } from '../../data/playroom.js';
 import { clamp, concertBudget, concertCost, defaultConcert, resolveConcert, shuffled, validateConcert } from '../../room/playroom.js';
@@ -21,7 +22,7 @@ const result=computed(()=>state.value.phase==='result'?resolveConcert(state.valu
 const palette=computed(()=>state.value.plan.lights==='warm'?['#3f3443','#f0cf89','#dfb2ba']:state.value.plan.lights==='colors'?['#352e49','#e4aac5','#a2c9d7']:['#242b45','#afbeda','#d5bd8c']);
 const asset=path=>`${import.meta.env.BASE_URL}${path}`;
 function launch(){if(!state.value.plan.name.trim()){message.value='先给今晚的演出取个名字吧。';return;}state.value.eventId=shuffled(concertEvents,Date.now())[0].id;state.value.phase='event';state.value.choiceId='';message.value='开演之前，还需要你做一个决定。';}
-function decide(choice){try{const outcome=resolveConcert(state.value.plan,state.value.eventId,choice.id);state.value.choiceId=choice.id;state.value.phase='result';state.value.history.unshift({name:outcome.name,grade:outcome.grade,audience:outcome.audience,quality:outcome.quality});state.value.history=state.value.history.slice(0,5);message.value=outcome.ending;}catch(e){message.value=e.message;}}
+function decide(choice){try{const outcome=resolveConcert(state.value.plan,state.value.eventId,choice.id);state.value.choiceId=choice.id;state.value.phase='result';state.value.history.unshift({name:outcome.name,grade:outcome.grade,audience:outcome.audience,quality:outcome.quality});state.value.history=state.value.history.slice(0,5);message.value=outcome.ending;recordActivity('concert',outcome.name,JSON.stringify(outcome));}catch(e){message.value=e.message;}}
 function again(){state.value.phase='plan';state.value.choiceId='';message.value='下一场，想试试怎样的安排？上次的海报记录还留着。';}
 async function poster(){busy.value=true;try{await downloadStage(stage.value,'our-starry-live-poster.png');message.value='今晚的演出海报已生成。';}catch(e){message.value=e.message;}finally{busy.value=false;}}
 </script>
