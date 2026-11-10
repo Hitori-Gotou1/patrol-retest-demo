@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "updatedAt": null,
+  "stories": [
+    {
+      "id": "before-show",
+      "accepted": [],
+      "count": 0,
+      "lastIssue": 0,
+      "lastLine": "一里在音箱后面，发现了一张写着「先别开灯」的纸条。",
+      "parts": []
+    },
+    {
+      "id": "rainy-road",
+      "accepted": [],
+      "count": 0,
+      "lastIssue": 0,
+      "lastLine": "散场时，门口多了一把谁也没见过的黄色雨伞。",
+      "parts": []
+    },
+    {
+      "id": "lost-pick",
+      "accepted": [],
+      "count": 0,
+      "lastIssue": 0,
+      "lastLine": "凉的口袋里，掉出了一枚刻着明天日期的粉色拨片。",
+      "parts": []
+    }
+  ]
+}

@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: npm ci
-      - run: node --test tests/room-core.test.js tests/room-moderation.test.js tests/playroom.test.js tests/ambient-audio.test.js tests/adventures.test.js tests/guitar-effects.test.js
+      - run: node --test tests/room-core.test.js tests/room-moderation.test.js tests/playroom.test.js tests/ambient-audio.test.js tests/adventures.test.js tests/guitar-effects.test.js tests/playground.test.js
       - run: pip install -r tests/requirements-browser.txt
       - run: python -m playwright install --with-deps chromium
       - run: npm run build
@@ -27,3 +27,4 @@ jobs:
       - run: python tests/browser-room.py
       - run: python tests/browser-playroom.py
       - run: python tests/browser-adventures.py
+      - run: python tests/browser-playground.py
