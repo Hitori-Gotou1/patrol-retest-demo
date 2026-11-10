@@ -1,4 +1,4 @@
-name: Publish reviewed community letters
+name: Publish reviewed community contributions
 on:
   issues:
     types: [labeled, unlabeled, edited, closed, reopened, deleted]
@@ -22,6 +22,6 @@ jobs:
         with:
           script: |
             const { pathToFileURL } = require('node:url');
-            const { moderateGuestbook } = await import(pathToFileURL(process.env.GITHUB_WORKSPACE + '/scripts/moderate-guestbook.mjs').href);
-            const result = await moderateGuestbook(github, context.repo, context.payload);
+            const { moderateCommunity } = await import(pathToFileURL(process.env.GITHUB_WORKSPACE + '/scripts/moderate-relay.mjs').href);
+            const result = await moderateCommunity(github, context.repo, context.payload);
             core.info(result.changed ? 'Reviewed wall snapshot updated and publication requested.' : 'No wall change required.');

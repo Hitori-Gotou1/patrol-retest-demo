@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moderateGuestbook, setupCommunity } from '../scripts/moderate-guestbook.mjs';
 import { community, guestbookIssueBody } from '../src/room/guestbook.js';
+import {relayCommunity} from '../src/room/relayStory.js';
 
 const repo = { owner:'Hitori-Gotou1',repo:'patrol-retest-demo' };
 const date = new Date('2026-11-08T12:00:00Z');
@@ -33,7 +34,7 @@ function fixture() {
 
 test('community setup creates only missing moderation labels and is idempotent', async()=>{
   const {state,github}=fixture();await setupCommunity(github,repo);await setupCommunity(github,repo);
-  assert.deepEqual([...state.labels].sort(),[community.pendingLabel,community.approvedLabel].sort());
+  assert.deepEqual([...state.labels].sort(),[community.pendingLabel,community.approvedLabel,relayCommunity.pendingLabel].sort());
 });
 test('an authorized review publishes a validated immutable snapshot and dispatches the gated Pages workflow',async()=>{
   const {state,github}=fixture();const result=await moderateGuestbook(github,repo,event(),date);

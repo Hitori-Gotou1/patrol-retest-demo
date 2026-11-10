@@ -1,8 +1,9 @@
 import { community, draftFromIssue, validateGuestbookWall } from '../src/room/guestbook.js';
 import { createHash } from 'node:crypto';
+import {relayCommunity} from '../src/room/relayStory.js';
 
 export async function setupCommunity(github, repo) {
-  for (const [name, color, description] of [[community.pendingLabel, 'd8b9cc', '小屋来信与点歌，等待站主审核'], [community.approvedLabel, '7f9e89', '站主已审核，可发布到小屋']]) {
+  for (const [name, color, description] of [[community.pendingLabel, 'd8b9cc', '小屋来信与点歌，等待站主审核'], [community.approvedLabel, '7f9e89', '站主已审核，可发布到小屋'], [relayCommunity.pendingLabel,'b8c4a5','访客故事接龙，等待站主审核']]) {
     try { await github.rest.issues.getLabel({ ...repo, name }); }
     catch (error) { if (error.status !== 404) throw error; await github.rest.issues.createLabel({ ...repo, name, color, description }); }
   }
