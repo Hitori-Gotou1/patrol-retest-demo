@@ -121,7 +121,7 @@ def test_companion(browser):
     p.reload(wait_until='networkidle');expect(p.get_by_label('在页面角落显示伙伴',exact=True)).not_to_be_checked()
     expect(p.locator('.buddy-memories')).to_contain_text('伙伴看见的合影')
     p.get_by_label('在页面角落显示伙伴',exact=True).check();expect(p.locator('#buddy-launcher')).to_be_visible()
-    p.get_by_label('收成小按钮',exact=True).check();expect(p.locator('.room-companion')).to_have_class('room-companion is-compact')
+    p.get_by_label('收成小按钮',exact=True).check();expect(p.locator('.room-companion.is-compact')).to_have_count(1)
     before=p.evaluate("JSON.parse(localStorage.getItem('hitori-room:companion:v1')).memories.length")
     p.evaluate("window.dispatchEvent(new CustomEvent('hitori:activity',{detail:{id:'bad',kind:'constructor',detail:'bad',at:0}}))")
     assert p.evaluate("JSON.parse(localStorage.getItem('hitori-room:companion:v1')).memories.length")==before
