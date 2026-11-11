@@ -21,7 +21,7 @@
     "originalLine": "想藏起来，也想被听见。",
     "lineKind": "原创角色印象",
     "cv": "青山吉能",
-    "portrait": "assets/characters/hitori.png",
+    "portrait": "assets/characters/hitori-portrait.webp",
     "portraitAlt": "后藤一里透明背景全身立绘，粉色运动服、蓝黄发饰与黑色长袜",
     "artNote": "粉色运动服 / 蓝黄发饰",
     "lettering": "HITORI",
@@ -59,17 +59,22 @@
     },
     "placeholder": false,
     "portraitSize": {
-      "width": 977,
-      "height": 1610
+      "width": 971,
+      "height": 1600
     },
-    "thumbnail": "assets/characters/hitori-chibi.png",
+    "thumbnail": "assets/characters/hitori-thumbnail.webp",
     "thumbnailSize": {
-      "width": 659,
-      "height": 715
+      "width": 236,
+      "height": 256
     },
     "companionLayout": {
       "scale": 1,
       "x": 0
+    },
+    "artwork": "assets/characters/hitori-artwork.webp",
+    "artworkSize": {
+      "width": 659,
+      "height": 715
     }
   },
   {
@@ -94,7 +99,7 @@
     "originalLine": "先伸出手的人，也有自己的梦想。",
     "lineKind": "原创角色印象",
     "cv": "铃代纱弓",
-    "portrait": "assets/characters/nijika.png",
+    "portrait": "assets/characters/nijika-portrait.webp",
     "portraitAlt": "伊地知虹夏透明背景人物立绘，金色侧马尾、制服与红色鞋子",
     "artNote": "金色侧马尾 / 温柔的节拍",
     "lettering": "NIJIKA",
@@ -131,17 +136,22 @@
     },
     "placeholder": false,
     "portraitSize": {
-      "width": 1038,
-      "height": 3000
+      "width": 554,
+      "height": 1600
     },
-    "thumbnail": "assets/characters/nijika-chibi.png",
+    "thumbnail": "assets/characters/nijika-thumbnail.webp",
     "thumbnailSize": {
-      "width": 1284,
-      "height": 1225
+      "width": 256,
+      "height": 244
     },
     "companionLayout": {
       "scale": 1.22,
       "x": -3
+    },
+    "artwork": "assets/characters/nijika-artwork.webp",
+    "artworkSize": {
+      "width": 960,
+      "height": 916
     }
   },
   {
@@ -166,7 +176,7 @@
     "originalLine": "安静，也可以很有自己的声音。",
     "lineKind": "原创角色印象",
     "cv": "水野朔",
-    "portrait": "assets/characters/ryo.png",
+    "portrait": "assets/characters/ryo-portrait.webp",
     "portraitAlt": "山田凉透明背景全身立绘，蓝色短发、深色制服与黑色长袜",
     "artNote": "蓝色短发 / 自成一派",
     "lettering": "RYO",
@@ -203,17 +213,22 @@
     },
     "placeholder": false,
     "portraitSize": {
-      "width": 1040,
-      "height": 3000
+      "width": 555,
+      "height": 1600
     },
-    "thumbnail": "assets/characters/ryo-chibi.png",
+    "thumbnail": "assets/characters/ryo-thumbnail.webp",
     "thumbnailSize": {
-      "width": 594,
-      "height": 724
+      "width": 210,
+      "height": 256
     },
     "companionLayout": {
       "scale": 1,
       "x": 0
+    },
+    "artwork": "assets/characters/ryo-artwork.webp",
+    "artworkSize": {
+      "width": 594,
+      "height": 724
     }
   },
   {
@@ -238,7 +253,7 @@
     "originalLine": "耀眼的笑容里，也有认真的努力。",
     "lineKind": "原创角色印象",
     "cv": "长谷川育美",
-    "portrait": "assets/characters/kita.png",
+    "portrait": "assets/characters/kita-portrait.webp",
     "portraitAlt": "喜多郁代透明背景全身立绘，红色长发、浅棕色制服与红色领结",
     "artNote": "红色长发 / 迎面而来的阳光",
     "lettering": "KITA",
@@ -275,17 +290,22 @@
     },
     "placeholder": false,
     "portraitSize": {
-      "width": 1130,
-      "height": 3000
+      "width": 603,
+      "height": 1600
     },
-    "thumbnail": "assets/characters/kita-chibi.png",
+    "thumbnail": "assets/characters/kita-thumbnail.webp",
     "thumbnailSize": {
-      "width": 627,
-      "height": 724
+      "width": 222,
+      "height": 256
     },
     "companionLayout": {
       "scale": 1,
       "x": 0
+    },
+    "artwork": "assets/characters/kita-artwork.webp",
+    "artworkSize": {
+      "width": 627,
+      "height": 724
     }
   }
 ]

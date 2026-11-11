@@ -1,4 +1,6 @@
+import { editorialNotes } from './editorial.js';
 export const journalNotes = [
+  ...editorialNotes,
   { slug: 'ten-more-things-after-school', title: '再多十个，可以一起玩的角落', date: '2026-11-10', category: '小屋更新', author: '小屋开发记录',
     summary: '抽一手卡牌、跳过一段屋顶，也把灯光、漫画与涂鸦做成今天的作品。', sections: [
       { heading: '把挑战接成一场演出', text: '卡牌的三幕难题，可以用练习、即兴与成员接力一点点推进。收藏拼图从九块开始，也有旋转与二十五块的挑战。乐器店里，配好琴弦与踏板、调准测试弦，就能用店币添置柜台装饰。横版跳跃和音乐弹珠台则把操作交给方向键和触屏：接住一枚音符，再往前一点。' },

@@ -2,18 +2,11 @@
 import { recordActivity } from '../../room/activityLog.js';
 import { computed, ref } from 'vue';
 import { cast, concertEvents, concertOptions } from '../../data/playroom.js';
-import { clamp, concertBudget, concertCost, defaultConcert, resolveConcert, shuffled, validateConcert } from '../../room/playroom.js';
+import { concertBudget, concertCost, defaultConcert, resolveConcert, shuffled, validateConcertDraft } from '../../room/playroom.js';
 import { useLocalDraft } from '../../composables/useLocalDraft.js';
 import { downloadStage } from '../../room/exportImage.js';
 const initial={version:1,phase:'plan',plan:defaultConcert,eventId:'rain',choiceId:'',history:[]};
-function validate(v){
-  if(!v||v.version!==1)throw new Error('invalid concert');
-  const plan=validateConcert(v.plan),eventId=concertEvents.some(e=>e.id===v.eventId)?v.eventId:'rain';
-  const phase=['plan','event','result'].includes(v.phase)?v.phase:'plan';
-  if(phase==='result')resolveConcert(plan,eventId,v.choiceId);
-  return {version:1,phase,plan,eventId,choiceId:String(v.choiceId||''),history:(Array.isArray(v.history)?v.history:[]).slice(0,5).filter(x=>x&&typeof x.name==='string'&&typeof x.grade==='string').map(x=>({name:x.name.slice(0,28),grade:x.grade.slice(0,28),audience:Math.round(clamp(x.audience,0,100)),quality:Math.round(clamp(x.quality,0,100))}))};
-}
-const {state,saved}=useLocalDraft('hitori-room:concert:v1',initial,validate);
+const {state,saved}=useLocalDraft('hitori-room:concert:v1',initial,validateConcertDraft);
 const message=ref('先决定预算怎么花，再迎接开演前的小插曲。'),stage=ref(null),busy=ref(false);
 const cost=computed(()=>concertCost(state.value.plan));
 const remaining=computed(()=>concertBudget-cost.value);

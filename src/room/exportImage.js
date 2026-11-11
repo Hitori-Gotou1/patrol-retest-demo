@@ -1,5 +1,5 @@
 // Embed same-origin artwork before rasterizing: exported SVG images cannot load external image URLs.
-export async function downloadStage(svg, filename, { scale = 1.5 } = {}) {
+export async function renderStage(svg, { scale = 1.5 } = {}) {
   if (!svg) throw new Error('画面还没有准备好，请稍后再试。');
   const copy = svg.cloneNode(true);
   copy.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
@@ -23,9 +23,23 @@ export async function downloadStage(svg, filename, { scale = 1.5 } = {}) {
     const canvas = document.createElement('canvas'); canvas.width = width * scale; canvas.height = height * scale;
     const context = canvas.getContext('2d'); if (!context) throw new Error('当前浏览器暂不支持保存图片。');
     context.scale(scale, scale); context.drawImage(image, 0, 0, width, height);
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-    if (!blob) throw new Error('图片未能生成，请重试。');
-    const png = URL.createObjectURL(blob), link = document.createElement('a'); link.href = png; link.download = filename; link.click();
-    setTimeout(() => URL.revokeObjectURL(png), 10000);
+    return canvas;
   } finally { URL.revokeObjectURL(url); }
+}
+export async function downloadStage(svg, filename, options) {
+  const canvas = await renderStage(svg, options);
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+  if (!blob) throw new Error('图片未能生成，请重试。');
+  const png = URL.createObjectURL(blob), link = document.createElement('a'); link.href = png; link.download = filename; link.click();
+  setTimeout(() => URL.revokeObjectURL(png), 10000);
+}
+export async function captureWorkPreview(root) {
+  const svg = root?.querySelector('svg[viewBox]');
+  const source = root?.querySelector('canvas') || (svg ? await renderStage(svg, { scale: Math.min(1, 360 / svg.viewBox.baseVal.width) }) : null);
+  if (!source) return '';
+  const canvas = document.createElement('canvas'), scale = Math.min(360 / source.width, 420 / source.height, 1);
+  canvas.width = Math.max(1, Math.round(source.width * scale)); canvas.height = Math.max(1, Math.round(source.height * scale));
+  canvas.getContext('2d').drawImage(source, 0, 0, canvas.width, canvas.height);
+  const preview = canvas.toDataURL('image/webp', .76);
+  return preview.length <= 180000 ? preview : '';
 }

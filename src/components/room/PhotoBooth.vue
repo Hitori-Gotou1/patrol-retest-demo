@@ -61,7 +61,7 @@ async function exportPhoto() {
       </div>
       <div class="play-settings">
         <h3 class="play-subheading">01 / 选择今天的颜色</h3><div class="play-toolbar"><button v-for="item in photoThemes" :key="item.id" type="button" :aria-pressed="state.theme === item.id" @click="state.theme=item.id">{{ item.label }}</button></div>
-        <h3 class="play-subheading">02 / 谁来入镜？</h3><div class="play-palette"><button v-for="person in cast" :key="person.id" type="button" :aria-pressed="objects.some(o=>o.id===person.id)" @click="toggleCast(person)"><img :src="asset(person.image)" alt="" width="52" height="52">{{ person.name }}</button></div>
+        <h3 class="play-subheading">02 / 谁来入镜？</h3><div class="play-palette"><button v-for="person in cast" :key="person.id" type="button" :aria-pressed="objects.some(o=>o.id===person.id)" @click="toggleCast(person)"><img :src="asset(person.thumbnail || person.image)" alt="" width="52" height="52">{{ person.name }}</button></div>
         <h3 class="play-subheading">03 / 加一点小心情</h3><div class="play-toolbar"><button v-for="item in stickers" :key="item.id" type="button" :aria-label="`添加${item.name}贴纸`" @click="add(item.id)">{{ item.text }}</button></div>
         <label class="room-field" for="photo-caption">相片上的一句话<input id="photo-caption" v-model="state.caption" maxlength="36"></label>
         <label class="room-field" for="photo-object">选择画面里的元素<select id="photo-object" v-model="editor.selectedKey.value"><option value="">选择成员或贴纸</option><option v-for="(item,index) in objects" :key="item.key" :value="item.key">{{index+1}} / {{objectLabel(item)}}</option></select></label>

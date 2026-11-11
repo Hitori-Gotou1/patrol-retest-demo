@@ -8,7 +8,7 @@ export const playroomCards = [
   { id: 'concert', number: '05', title: '今晚的演出由你筹备', en: 'ONE NIGHT LIVE', icon: '★', color: '#d9b3ca', description: '分配预算、应对意外，办一场自己的小小演出。', action: '接过筹备清单' },
   { id: 'ambient', number: '06', title: '雨夜 STARRY', en: 'SOUNDS OF THE NIGHT', icon: '☂', color: '#b2bfdc', description: '把雨声、街道和试音，混成今晚的背景。', action: '听一听这座城市' }
 ];
-export const cast = characters.map(c => ({ id: c.id, name: c.name, image: c.thumbnail, width: c.thumbnailSize.width, height: c.thumbnailSize.height, color: c.theme.primary }));
+export const cast = characters.map(c => ({ id: c.id, name: c.name, image: c.artwork || c.thumbnail, thumbnail: c.thumbnail, width: (c.artworkSize || c.thumbnailSize).width, height: (c.artworkSize || c.thumbnailSize).height, color: c.theme.primary }));
 export const stickers = [
   { id: 'star', text: '✦', name: '小星星', color: '#b08521' }, { id: 'heart', text: '♥', name: '心动', color: '#bd547e' },
   { id: 'note', text: '♪', name: '音符', color: '#5c709f' }, { id: 'bocchi', text: 'ぼっち！', name: '波奇签名', color: '#8e5b81' },

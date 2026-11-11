@@ -79,9 +79,10 @@ async function copy() {
   catch { if (!alive) return; message.value = '请选中下方链接复制。'; await nextTick(); shareInput.value?.focus(); shareInput.value?.select(); }
 }
 function hidden() { if (document.hidden) { stop(); message.value = '已暂停播放，返回后可从头播放。'; } }
-onMounted(() => document.addEventListener('visibilitychange', hidden));
+function captureDraft(event) { if(event.detail?.key===key) { try { event.detail.snapshot=validatePattern(pattern.value); } catch(error) { event.detail.error=error.message; } } }
+onMounted(() => { document.addEventListener('visibilitychange', hidden); window.addEventListener('hitori:capture-draft',captureDraft); });
 onBeforeRouteLeave(stop);
-onBeforeUnmount(() => { alive = false; importRevision++; stop(); toneEngine.dispose(); document.removeEventListener('visibilitychange', hidden); });
+onBeforeUnmount(() => { alive = false; importRevision++; stop(); toneEngine.dispose(); document.removeEventListener('visibilitychange', hidden); window.removeEventListener('hitori:capture-draft',captureDraft); });
 </script>
 <template>
   <section class="room-panel" aria-labelledby="studio-title"><h2 id="studio-title">把四种声音，排成一句。</h2><p class="room-intro">每行十六步，每四步是一拍。点亮格子，再听它们一起走一圈。</p>

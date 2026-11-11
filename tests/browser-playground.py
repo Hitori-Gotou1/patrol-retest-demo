@@ -83,7 +83,7 @@ def layouts_lifecycle(browser):
   f=Fixture(browser,width);p=f.page
   for route in TITLES:
    f.goto(route);expect(p.locator('.room-nav [aria-current=page]')).to_have_count(1);assert p.evaluate('document.documentElement.scrollWidth<=innerWidth'),(route,width);p.screenshot(path=str(OUTPUT/f'{route}-{width}.png'),full_page=width<800)
-  p.get_by_role('button',name='全部 · 22',exact=True).click();expect(p.locator('.play-card')).to_have_count(22)
+  f.goto('play');p.get_by_role('button',name='全部活动 · 28',exact=True).click();expect(p.locator('.activity-card')).to_have_count(28)
   if width==390:
    f.goto('graffiti');canvas=p.locator('canvas');canvas.scroll_into_view_if_needed();b=canvas.bounding_box();x=b['x']+b['width']*.3;y=b['y']+b['height']*.5;cdp=f.context.new_cdp_session(p);cdp.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]});cdp.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x+45,'y':y+20}]});cdp.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});cdp.detach();assert len(f.saved('graffiti')['layers'][1]['strokes'])==1
    # Chromium 151 suppresses the next compatibility click after a raw CDP drag,

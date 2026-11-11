@@ -13,6 +13,7 @@ export default createRouter({
     { path: '/room', component: () => import('./views/RoomLayout.vue'), children: [
       { path: '', redirect: '/room/play' },
       { path: 'play', component: () => import('./components/room/PlayroomHome.vue') },
+      { path: 'works', component: () => import('./components/room/WorkshelfView.vue') },
       { path: 'cards', component: () => import('./components/room/BandCardGame.vue') },
       { path: 'jigsaw', component: () => import('./components/room/GalleryJigsaw.vue') },
       { path: 'shop', component: () => import('./components/room/InstrumentShop.vue') },

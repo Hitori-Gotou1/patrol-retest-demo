@@ -57,3 +57,10 @@ export function validateAmbient(v) {
   if (!v || typeof v !== 'object') throw new Error('invalid scene');
   return { name: String(v.name || '今晚的小屋').slice(0, 28), light: allowed(v.light, ['violet', 'amber', 'blue'], 'violet'), levels: Object.fromEntries(ambientLayers.map(l => [l.id, clamp(v.levels?.[l.id], 0, 1)])) };
 }
+export function validateConcertDraft(v) {
+  if (!v || v.version !== 1) throw new Error('演出筹备记录无法读取。');
+  const plan=validateConcert(v.plan),eventId=concertEvents.some(e=>e.id===v.eventId)?v.eventId:'rain';
+  const phase=['plan','event','result'].includes(v.phase)?v.phase:'plan';
+  if(phase==='result')resolveConcert(plan,eventId,v.choiceId);
+  return {version:1,phase,plan,eventId,choiceId:String(v.choiceId||''),history:(Array.isArray(v.history)?v.history:[]).slice(0,5).filter(x=>x&&typeof x.name==='string'&&typeof x.grade==='string').map(x=>({name:x.name.slice(0,28),grade:x.grade.slice(0,28),audience:Math.round(clamp(x.audience,0,100)),quality:Math.round(clamp(x.quality,0,100))}))};
+}

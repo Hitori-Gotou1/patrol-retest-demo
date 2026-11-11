@@ -13,7 +13,7 @@ OUTPUT.mkdir(parents=True, exist_ok=True)
 OUT = OUTPUT / 'results.json'
 REPORT = {'results': [], 'errors': [], 'httpErrors': []}
 COLORS = {'hitori': 'rgb(244, 143, 177)', 'nijika':'rgb(246, 201, 69)', 'ryo':'rgb(118, 185, 232)', 'kita':'rgb(233, 102, 112)'}
-DIMENSIONS = {'hitori':[977,1610], 'nijika':[1038,3000], 'ryo':[1040,3000], 'kita':[1130,3000]}
+DIMENSIONS = {member['id']:[member['portraitSize']['width'],member['portraitSize']['height']] for member in json.loads((Path(__file__).resolve().parents[1]/'src/data/characters.json').read_text())}
 AUDIO_SPY = '''(() => {
   const Original = window.AudioContext || window.webkitAudioContext;
   const contexts=[], sources=new Map(); let starts=0, nextId=0;
@@ -158,6 +158,7 @@ def test_audio_instruments(browser):
     page.locator('#strum-button').click()
     assert page.evaluate('__audioQA().contexts')==0
     # Music playback owns its own context; interaction mute must leave its state and volume alone.
+    page.get_by_role('button',name='练习唱片',exact=True).click()
     page.locator('.music-play').click()
     page.wait_for_function("document.querySelector('.music-player audio').paused===false")
     volume=page.locator('.music-player audio').evaluate('a=>a.volume')
@@ -340,6 +341,7 @@ def test_keyboard_egg(browser):
 
 def test_existing_media_smoke(browser):
     page=page_for(browser,reduced=True)
+    page.get_by_role('button',name='练习唱片',exact=True).click()
     page.locator('.music-play').click()
     page.wait_for_function("document.querySelector('.music-player audio').paused===false")
     page.locator('.music-play').click()

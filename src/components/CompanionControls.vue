@@ -8,7 +8,7 @@ const asset=path=>`${import.meta.env.BASE_URL}${path}`;
 </script>
 <template>
   <div class="buddy-controls">
-    <div class="buddy-members" role="group" aria-label="选择小屋伙伴"><button v-for="person in cast" :key="person.id" type="button" :aria-pressed="state.member===person.id" @click="choose(person.id)"><img :src="asset(person.image)" alt="" width="44" height="48"><span>{{person.name}}</span></button></div>
+    <div class="buddy-members" role="group" aria-label="选择小屋伙伴"><button v-for="person in cast" :key="person.id" type="button" :aria-pressed="state.member===person.id" @click="choose(person.id)"><img :src="asset(person.thumbnail || person.image)" alt="" width="44" height="48"><span>{{person.name}}</span></button></div>
     <p class="buddy-reply" role="status">{{state.reply}}</p>
     <div class="buddy-meters"><label>社交电量 <strong>{{state.energy}}</strong><meter min="0" max="100" :value="state.energy" aria-label="伙伴社交电量"></meter></label><label>勇气手帐 <strong>{{state.courage}}</strong><meter min="0" max="100" :value="state.courage" aria-label="伙伴勇气"></meter></label></div>
     <div class="buddy-actions"><button type="button" @click="greet">打个招呼</button><button type="button" @click="rest">一起休息</button><RouterLink to="/room/practice" @click="state.reply='那就一起，给今天留下一段练习吧。'">邀请练习 ↗</RouterLink></div>

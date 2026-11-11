@@ -284,7 +284,8 @@ def test_lifecycle_and_storage(browser):
     fixture.goto('studio')
     page.get_by_role('button', name='播放并开启音效', exact=True).click()
     page.wait_for_function('typeof window.__releaseAudio === "function"')
-    page.get_by_role('link', name='站主手记', exact=True).click()
+    page.get_by_role('button', name='全部玩法 ＋', exact=True).click()
+    page.locator('#room-directory').get_by_role('link', name='小屋手记', exact=True).click()
     page.evaluate('window.__releaseAudio()')
     page.wait_for_timeout(200)
     assert page.evaluate('window.__audioStarts') == 0
