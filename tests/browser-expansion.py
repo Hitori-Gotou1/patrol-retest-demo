@@ -43,6 +43,9 @@ def fixture(browser, width=390, **options):
 
 def go(page, path):
     page.goto(BASE + '#/room/' + path, wait_until='networkidle')
+    title = {'play': 'playroom', 'decorate': 'decorate'}.get(path, path)
+    if '/' not in title:
+        expect(page.locator('#' + title + '-title')).to_be_visible()
 
 def download(page, control, name):
     with page.expect_download(timeout=25000) as pending: control.click()
