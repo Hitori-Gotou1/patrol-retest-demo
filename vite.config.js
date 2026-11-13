@@ -1,3 +1,4 @@
+import {execFileSync} from 'node:child_process';
 import { defineConfig, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { validateGalleryConfig } from './src/services/galleryCloudConfig.js';
@@ -11,6 +12,7 @@ const buildInfo = {
   transformIndexHtml() {
     return [{ tag: 'meta', attrs: { name: 'hitori-build', content: commit }, injectTo: 'head' }];
   },
+  writeBundle(options) {execFileSync(process.execPath,['scripts/build-journal.mjs',options.dir||'dist'],{stdio:'inherit'});},
   generateBundle(_options, bundle) {
     const entry = Object.values(bundle).find(file => file.type === 'chunk' && file.isEntry);
     this.emitFile({
