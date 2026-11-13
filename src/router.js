@@ -1,3 +1,4 @@
+import {motionPreference as createMotionQuery} from './room/preferences.js';
 import { createRouter, createWebHashHistory } from 'vue-router';
 // 兼容迁移前分享过的 #gallery 等锚点，不额外产生一条历史记录。
 const legacyScenes = new Set(['#home', '#about', '#theater', '#gallery', '#video']);
@@ -13,6 +14,11 @@ export default createRouter({
     { path: '/room', component: () => import('./views/RoomLayout.vue'), children: [
       { path: '', redirect: '/room/play' },
       { path: 'play', component: () => import('./components/room/PlayroomHome.vue') },
+      { path: 'pilgrimage', component: () => import('./components/room/PilgrimageGuide.vue') },
+      { path: 'project', component: () => import('./components/room/ProjectStudio.vue') },
+      { path: 'sources', component: () => import('./components/room/SourceArchive.vue') },
+      { path: 'stats', component: () => import('./components/room/UsageDashboard.vue') },
+      { path: 'calendar', component: () => import('./components/room/BandCalendar.vue') },
       { path: 'works', component: () => import('./components/room/WorkshelfView.vue') },
       { path: 'cards', component: () => import('./components/room/BandCardGame.vue') },
       { path: 'jigsaw', component: () => import('./components/room/GalleryJigsaw.vue') },
@@ -53,7 +59,7 @@ export default createRouter({
       && (to.query.image != null || from.query.image != null)
       && (to.hash === from.hash || (to.query.image != null && from.query.image == null && !from.hash && to.hash === '#gallery'))) return false;
     if (savedPosition) return savedPosition;
-    if (to.hash) return { el: to.hash, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' };
+    if (to.hash) return { el: to.hash, behavior: createMotionQuery().matches ? 'instant' : 'smooth' };
     return { top: 0, behavior: 'instant' };
   }
 });

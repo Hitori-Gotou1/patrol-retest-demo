@@ -1,3 +1,4 @@
+import {motionPreference as createMotionQuery} from '../room/preferences.js';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { gsap } from 'gsap';
 
@@ -196,7 +197,7 @@ export function useCharacterTransition({ members, scene, baseLayer, revealLayer,
   onMounted(() => {
     previousPrimary = document.body.style.getPropertyValue('--active-character-primary');
     previousInk = document.body.style.getPropertyValue('--active-character-ink');
-    media = matchMedia('(prefers-reduced-motion: reduce)');
+    media = createMotionQuery();
     media.addEventListener('change', motionChanged);
     document.addEventListener('visibilitychange', visibilityChanged);
     synchronizeTheme();

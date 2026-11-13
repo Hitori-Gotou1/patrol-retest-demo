@@ -1,3 +1,4 @@
+import {motionPreference as createMotionQuery} from '../room/preferences.js';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
@@ -241,7 +242,7 @@ export function useSceneNavigation() {
   watch(() => route.fullPath, bindScenes, { flush: 'post' });
   onMounted(() => {
     mounted = true;
-    reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+    reducedMotion = createMotionQuery();
     desktopPaging = matchMedia('(min-width: 1100px) and (min-height: 700px) and (hover: hover) and (pointer: fine)');
     listen(window, 'scroll', scheduleActiveUpdate, { passive: true });
     listen(window, 'resize', scheduleActiveUpdate, { passive: true });

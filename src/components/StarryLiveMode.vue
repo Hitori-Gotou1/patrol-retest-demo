@@ -1,4 +1,5 @@
 <script setup>
+import {motionPreference as createMotionQuery} from '../room/preferences.js';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { gsap } from 'gsap';
 import members from '../data/characters.json' with { type: 'json' };
@@ -126,7 +127,7 @@ onMounted(() => {
   entranceFocus = props.returnFocus || document.activeElement;
   previousOverflow = document.body.style.overflow;
   document.body.style.overflow = 'hidden';
-  motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
+  motionPreference = createMotionQuery();
   reduced.value = motionPreference.matches;
   compactEffects.value = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
   motionPreference.addEventListener('change', onMotionChange);

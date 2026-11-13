@@ -16,14 +16,15 @@ export function imageCharacters(item) {
     || (character.id === 'ryo' && /(?:^|[、，,与和的：\s])凉(?=[、，,与和的在戴蹲坐穿举]|$)/u.test(text)));
 }
 
-export function filterGallery(items, { category = 'all', query = '', character = 'all', favoritesOnly = false } = {}, favorites = new Set()) {
+export function filterGallery(items, { category = 'all', query = '', character = 'all', creator='all', favoritesOnly = false } = {}, favorites = new Set()) {
   const terms = normalized(query).split(/\s+/u).filter(Boolean);
   return items.filter(item => {
     if (category !== 'all' && item.category !== category) return false;
+    if(creator==='pending'?Boolean(item.creator):creator!=='all'&&item.creator!==creator)return false;
     if (favoritesOnly && !favorites.has(item.id)) return false;
     const characters = imageCharacters(item);
     if (character === 'unmarked' ? characters.length > 0 : character !== 'all' && !characters.some(member => member.id === character)) return false;
-    const text = normalized([item.title, item.subtitle, item.alt, item.credit, item.tag,
+    const text = normalized([item.title, item.subtitle, item.alt, item.credit, item.tag, item.creator, item.sourceUrl,
       ...characters.flatMap(member => [member.label, ...member.names, ...member.latin])].join(' '));
     return terms.every(term => text.includes(term));
   });

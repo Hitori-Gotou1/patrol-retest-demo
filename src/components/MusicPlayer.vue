@@ -1,4 +1,5 @@
 <script setup>
+import {motionPreference as createMotionQuery} from '../room/preferences.js';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import tracks from '../data/music.json'
 import '../styles/music-player.css'
@@ -234,7 +235,7 @@ function onVisibilityChange() {
 
 onMounted(() => {
   audioElement.value.volume = volume.value
-  mediaQuery = matchMedia('(prefers-reduced-motion: reduce)')
+  mediaQuery = createMotionQuery()
   updateMotionPreference()
   mediaQuery.addEventListener('change', updateMotionPreference)
   document.addEventListener('visibilitychange', onVisibilityChange)

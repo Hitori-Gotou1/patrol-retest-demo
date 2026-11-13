@@ -1,6 +1,8 @@
 <script setup>
+import {motionPreference as createMotionQuery} from '../room/preferences.js';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import {withAttribution} from '../data/galleryAttributions.js';
 import { galleryImages } from '../data/gallery.js';
 import { cloudConfigured, loadCloudGallery } from '../services/galleryCloud.js';
 import { cloudServiceMessage } from '../services/cloudConnection.js';
@@ -10,7 +12,9 @@ import { filterGallery, galleryCharacters, galleryImageLocation, favoritesStorag
 const remoteImages = ref([]);
 const cloudError = ref('');
 const cloudLoading = ref(false);
-const allImages = computed(() => [...remoteImages.value, ...galleryImages]);
+const allImages = computed(() => [...remoteImages.value, ...galleryImages].map(withAttribution));
+const creator=ref('all');
+const creators=computed(()=>[...new Set(allImages.value.map(i=>i.creator).filter(Boolean))]);
 let cloudRequest;
 async function refreshCloud() {
   if (!cloudConfigured || cloudLoading.value) return;
@@ -45,8 +49,8 @@ const imageState = ref({ source: '', status: 'idle', unavailable: false });
 const wallPageSize = 9;
 const wallLimit = ref(wallPageSize);
 const filters = [{ id: 'all', label: '全部' }, { id: 'collection', label: '站主收藏' }, { id: 'illustration', label: '同人插画' }, { id: 'poster', label: '设计海报' }];
-const images = computed(() => filterGallery(allImages.value, { category: activeFilter.value, query: query.value, character: character.value, favoritesOnly: favoritesOnly.value }, favorites.value));
-const hasFilters = computed(() => activeFilter.value !== 'all' || query.value.trim() || character.value !== 'all' || favoritesOnly.value);
+const images = computed(() => filterGallery(allImages.value, { category: activeFilter.value, query: query.value, character: character.value, creator:creator.value, favoritesOnly: favoritesOnly.value }, favorites.value));
+const hasFilters = computed(() => activeFilter.value !== 'all' || query.value.trim() || character.value !== 'all' || creator.value!=='all' || favoritesOnly.value);
 const knownFavoriteCount = computed(() => allImages.value.filter(item => favorites.value.has(item.id)).length);
 const visibleImages = computed(() => images.value.slice(0, wallLimit.value));
 const { selectedImage, imageCounter, dialogOpen, previewImages, linkNotice, openImage, closeImage, stepImage, onDialogClose, clearLink } = useGalleryPreview({ allImages, images, section, lightbox, loading: cloudLoading });
@@ -83,7 +87,7 @@ let motionQuery;
 let touchOrigin;
 let mounted = false;
 
-watch([activeFilter, query, character, favoritesOnly], () => {
+watch([activeFilter, query, character, creator, favoritesOnly], () => {
   wallLimit.value = wallPageSize;
   status.value = `找到 ${images.value.length} 张`;
 });
@@ -93,7 +97,7 @@ function setFilter(id) {
   activeFilter.value = id;
 }
 function resetFilters() {
-  activeFilter.value = 'all'; query.value = ''; character.value = 'all'; favoritesOnly.value = false;
+  activeFilter.value = 'all'; query.value = ''; character.value = 'all'; creator.value='all'; favoritesOnly.value = false;
 }
 async function loadMore() {
   const firstNewIndex = visibleImages.value.length;
@@ -215,7 +219,7 @@ onMounted(() => {
   } catch { /* 隐私模式下仍可在当前页面收藏。 */ }
   window.addEventListener('storage', syncFavorites);
   window.addEventListener('online', reconnectCloud);
-  motionQuery = matchMedia('(prefers-reduced-motion: reduce)');
+  motionQuery = createMotionQuery();
   syncMotion();
   syncVisibility();
   motionQuery.addEventListener('change', syncMotion);
@@ -249,6 +253,7 @@ onBeforeUnmount(() => {
       <div class="gallery-discovery" role="search" aria-label="查找收藏图片">
         <label class="gallery-search-field" for="gallery-search"><span>找一份心动</span><input id="gallery-search" v-model="query" type="search" maxlength="200" placeholder="搜索标题、描述或作者 / 来源"></label>
         <label class="gallery-character-field" for="gallery-character"><span>角色</span><select id="gallery-character" v-model="character" aria-describedby="gallery-character-hint"><option value="all">全部角色</option><option v-for="member in galleryCharacters" :key="member.id" :value="member.id">{{ member.label }}</option><option value="unmarked">未标注角色</option></select></label>
+        <label class="gallery-character-field" for="gallery-creator"><span>画师 / 来源</span><select id="gallery-creator" v-model="creator"><option value="all">全部画师与来源</option><option v-for="name in creators" :key="name" :value="name">{{name}}</option><option value="pending">原作者待确认</option></select></label>
         <button type="button" class="gallery-favorites-only" :aria-pressed="favoritesOnly" @click="favoritesOnly = !favoritesOnly">♥ 我的收藏 <span>{{ knownFavoriteCount }}</span></button>
       </div>
       <p id="gallery-character-hint" class="gallery-character-hint">角色依据标题和画面描述筛选。</p>
@@ -321,7 +326,7 @@ onBeforeUnmount(() => {
             <p v-if="imageState.status === 'error'" class="lightbox-image-error" role="status">这张图片暂时没有加载成功，可以切换到下一张。</p>
             <button v-if="previewImages.length > 1" id="lightbox-next" type="button" class="icon-button lightbox-next" aria-label="下一张" @click="stepImage(1)">→</button>
           </div>
-          <div class="lightbox-bottom"><h3 id="lightbox-title">{{ selectedImage.title }}</h3><p id="lightbox-credit">{{ selectedImage.credit }}</p><p v-if="imageState.status === 'loading'" class="visually-hidden" role="status">正在加载高清图片…</p><p v-if="imageState.status === 'fallback'" class="lightbox-preview-notice" role="status">高清图片暂时无法加载，正在显示预览图。</p><div class="lightbox-actions"><button type="button" class="lightbox-favorite" :aria-label="favoriteLabel(selectedImage)" :aria-pressed="favorites.has(selectedImage.id)" @click="toggleFavorite(selectedImage)">{{ favorites.has(selectedImage.id) ? '♥ 已收藏' : '♡ 收藏这张' }}</button><a v-if="selectedImage.originalSrc" class="lightbox-original" :href="asset(selectedImage.originalSrc)" target="_blank" rel="noopener noreferrer">查看原图 <span aria-hidden="true">↗</span></a><button type="button" class="lightbox-share" @click="copyShareLink">复制分享链接 ↗</button></div><div v-if="shareLink" class="lightbox-share-field"><label for="gallery-share-link">图片分享链接</label><input id="gallery-share-link" ref="shareInput" :value="shareLink" readonly @focus="$event.target.select()"><p role="status">{{ shareMessage }}</p></div></div>
+          <div class="lightbox-bottom"><h3 id="lightbox-title">{{ selectedImage.title }}</h3><p id="lightbox-credit">{{ selectedImage.credit }}</p><p v-if="imageState.status === 'loading'" class="visually-hidden" role="status">正在加载高清图片…</p><p v-if="imageState.status === 'fallback'" class="lightbox-preview-notice" role="status">高清图片暂时无法加载，正在显示预览图。</p><p class="source-label">{{selectedImage.creator||'原作者待确认'}} · {{selectedImage.method}}</p><div class="source-links"><a v-if="selectedImage.sourceUrl" :href="selectedImage.sourceUrl" target="_blank" rel="noopener noreferrer">原作发布页 ↗</a><a v-if="selectedImage.creatorUrl" :href="selectedImage.creatorUrl" target="_blank" rel="noopener noreferrer">画师主页 ↗</a><RouterLink to="/room/sources">查看来源档案 ↗</RouterLink></div><div class="lightbox-actions"><button type="button" class="lightbox-favorite" :aria-label="favoriteLabel(selectedImage)" :aria-pressed="favorites.has(selectedImage.id)" @click="toggleFavorite(selectedImage)">{{ favorites.has(selectedImage.id) ? '♥ 已收藏' : '♡ 收藏这张' }}</button><a v-if="selectedImage.originalSrc" class="lightbox-original" :href="asset(selectedImage.originalSrc)" target="_blank" rel="noopener noreferrer">查看原图 <span aria-hidden="true">↗</span></a><button type="button" class="lightbox-share" @click="copyShareLink">复制分享链接 ↗</button></div><div v-if="shareLink" class="lightbox-share-field"><label for="gallery-share-link">图片分享链接</label><input id="gallery-share-link" ref="shareInput" :value="shareLink" readonly @focus="$event.target.select()"><p role="status">{{ shareMessage }}</p></div></div>
         </template>
       </dialog>
     </Teleport>

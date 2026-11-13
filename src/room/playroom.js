@@ -1,3 +1,4 @@
+import {rasterData} from '../services/safeMedia.js';
 import { cast, stickers, roomProps, walkPlaces, searchObjects, concertOptions, concertEvents, ambientLayers } from '../data/playroom.js';
 
 export const clamp = (value, min, max) => Math.max(min, Math.min(max, Number(value) || 0));
@@ -8,7 +9,8 @@ export function validateObjects(value, mode) {
   return (Array.isArray(value) ? value : []).slice(0, 20).filter(o => o && catalog.some(c => c.id === o.id)).map((o, index) => {
     let key = typeof o.key === 'string' && /^[\w-]{1,60}$/.test(o.key) ? o.key : `item-${index}`;
     while (keys.has(key)) key += '-x'; keys.add(key);
-    return { key, id: o.id, x: clamp(o.x, 35, mode === 'photo' ? 685 : 925), y: clamp(o.y, 70, mode === 'photo' ? 755 : 570), size: clamp(o.size ?? (mode === 'photo' ? 230 : 1), mode === 'photo' ? 32 : .5, mode === 'photo' ? 420 : 1.8), rotation: clamp(o.rotation, -30, 30) };
+    if(o.artwork&&!rasterData(o.artwork))throw new Error('挂墙作品的画面无法读取。');
+    return {...(mode==='room'&&o.artwork?{artwork:o.artwork,artTitle:String(o.artTitle||'我的作品').slice(0,60)}:{}), key, id: o.id, x: clamp(o.x, 35, mode === 'photo' ? 685 : 925), y: clamp(o.y, 70, mode === 'photo' ? 755 : 570), size: clamp(o.size ?? (mode === 'photo' ? 230 : 1), mode === 'photo' ? 32 : .5, mode === 'photo' ? 420 : 1.8), rotation: clamp(o.rotation, -30, 30) };
   });
 }
 export const defaultPhoto = { version: 1, theme: 'pink', caption: '今天，也和大家站在一起。', objects: cast.map((c, i) => ({ key: c.id, id: c.id, x: 130 + i * 150, y: 470 + (i % 2) * 20, size: 250, rotation: 0 })) };

@@ -1,4 +1,4 @@
-import uploadedCollection from './gallery-upload.json';
+import uploadedCollection from './gallery-upload.json' with { type: 'json' };
 
 // 图片路径相对于 public/；站主上传的作品单独维护，保留既有收藏 ID。
 export const galleryImages = [

@@ -1,3 +1,4 @@
+import {countEvent} from '../services/analytics.js';
 // Embed same-origin artwork before rasterizing: exported SVG images cannot load external image URLs.
 export async function renderStage(svg, { scale = 1.5 } = {}) {
   if (!svg) throw new Error('画面还没有准备好，请稍后再试。');
@@ -32,6 +33,7 @@ export async function downloadStage(svg, filename, options) {
   if (!blob) throw new Error('图片未能生成，请重试。');
   const png = URL.createObjectURL(blob), link = document.createElement('a'); link.href = png; link.download = filename; link.click();
   setTimeout(() => URL.revokeObjectURL(png), 10000);
+  countEvent('export',typeof location!=='undefined'?location.hash.split('/')[2]?.split('?')[0]:'');
 }
 export async function captureWorkPreview(root) {
   const svg = root?.querySelector('svg[viewBox]');

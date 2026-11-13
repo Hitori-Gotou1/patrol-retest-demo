@@ -21,13 +21,16 @@ const extra = [
   { id: 'notes', title: '小屋手记', icon: '✎', description: '角色小记、听歌札记，还有认真挑选的心动。', color: '#d9b3ca' },
   { id: 'guestbook', title: '留言与点歌', icon: '✉', description: '留下一句话，或把喜欢的一首歌推荐给大家。', color: '#b8c4a5' }
 ];
+const lengths={photobooth:2,decorate:5,walk:5,search:2,concert:5,ambient:0,maze:5,effects:5,companion:2,echo:2,escape:10,duet:5,cards:10,jigsaw:5,shop:5,platform:5,lights:10,comic:10,mix:5,graffiti:10,relay:2,pinball:5,rhythm:2,stories:5,studio:10,practice:10,notes:5,guestbook:2};
+const challenging=new Set(['maze','escape','cards','platform','pinball','rhythm','echo','mix']);
+export function filterActivities(cards,{query='',group='all',duration='all',difficulty='all'}={}){const terms=query.normalize('NFKC').toLowerCase().trim().split(/\s+/).filter(Boolean);return cards.filter(c=>(group==='all'||c.group===group)&&(duration==='all'||(duration==='free'?c.minutes===0:duration==='10'?c.minutes>=10:c.minutes===Number(duration)))&&(difficulty==='all'||c.difficulty===difficulty)&&terms.every(t=>(c.title+' '+c.short+' '+c.description).normalize('NFKC').toLowerCase().includes(t)));}
 export const activityCatalog = [...playroomCards, ...adventureCards, ...playgroundCards, ...extra].map(card => ({
-  ...card, group: Object.keys(groupIds).find(group => groupIds[group].includes(card.id)) || 'play',
+  ...card, minutes:lengths[card.id]??5,difficulty:challenging.has(card.id)?'challenge':'easy', group: Object.keys(groupIds).find(group => groupIds[group].includes(card.id)) || 'play',
   path: `/room/${card.id}`, short: card.short || card.title, action: card.action || '进去看看'
 }));
 export const featuredActivities = [
   { id: 'photobooth', eyebrow: '留一张合影', duration: '约 2 分钟', image: 'assets/activities/photobooth.webp', position: '50% 44%', note: '四个人，一张属于你的照片。' },
-  { id: 'comic', eyebrow: '画一段日常', duration: '约 5 分钟', image: 'assets/activities/comic.webp', position: '50% 48%', note: '把没说完的话，写进四个画面。' },
+  { id: 'comic', eyebrow: '画一段日常', duration: '约 10 分钟', image: 'assets/activities/comic.webp', position: '50% 48%', note: '把没说完的话，写进四个画面。' },
   { id: 'ambient', eyebrow: '听一场夜雨', duration: '随时坐坐', image: 'assets/activities/ambient.webp', position: '50% 50%', note: '雨声、试音，以及不用赶路的夜晚。' }
 ].map(feature => ({ ...activityCatalog.find(card => card.id === feature.id), ...feature }));
 export const findActivity = path => activityCatalog.find(card => card.path === path);

@@ -2,6 +2,7 @@
 import { RouterLink, useRoute } from 'vue-router';
 import { useSceneNavigation } from '../composables/useSceneNavigation';
 import '../styles/navigation.css';
+import SiteTools from './tools/SiteTools.vue';
 import InteractionSoundControl from './InteractionSoundControl.vue';
 
 const route = useRoute();
@@ -21,6 +22,7 @@ const { scenes, isHome, activeScene, activeIndex, navigateToScene, navigateToAbo
       <RouterLink to="/about" custom v-slot="{ href, navigate }">
         <a :href="href" class="navigation-about" :aria-current="route.path === '/about' ? 'page' : undefined" @click="navigateToAbout($event, navigate)">关于<span aria-hidden="true"> ↗</span></a>
       </RouterLink>
+      <SiteTools />
     </div>
     <nav aria-label="主导航">
       <RouterLink v-for="scene in scenes" :key="scene.id" :to="{ path: '/', hash: `#${scene.id}` }" custom v-slot="{ href, navigate }">

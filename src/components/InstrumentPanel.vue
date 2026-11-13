@@ -1,4 +1,5 @@
 <script setup>
+import {motionPreference as createMotionQuery} from '../room/preferences.js';
 import { computed, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue';
 import { gsap } from 'gsap';
 import { instrumentProfiles } from '../data/instruments.js';
@@ -58,7 +59,7 @@ function onKey(event) {
 function hidden() { if (document.hidden) clear(); }
 watch(() => [props.member.id, props.disabled], reset, { flush: 'sync' });
 onMounted(() => {
-  media = matchMedia('(prefers-reduced-motion: reduce)');
+  media = createMotionQuery();
   media.addEventListener('change', clear);
   document.addEventListener('visibilitychange', hidden);
   observer = new IntersectionObserver(([entry]) => { if (!entry.isIntersecting) clear(); });

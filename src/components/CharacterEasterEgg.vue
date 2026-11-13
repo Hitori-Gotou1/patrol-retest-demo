@@ -1,4 +1,5 @@
 <script setup>
+import {motionPreference as createMotionQuery} from '../room/preferences.js';
 import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { gsap } from 'gsap';
 import { characterReactions, easterEggSettings as settings } from '../data/interactions.js';
@@ -88,7 +89,7 @@ async function release() {
 function hidden() { if (document.hidden) reset(); }
 watch(() => [props.member.id, props.blocked], reset, { flush: 'sync' });
 onMounted(() => {
-  media = matchMedia('(prefers-reduced-motion: reduce)');
+  media = createMotionQuery();
   media.addEventListener('change', reset);
   document.addEventListener('visibilitychange', hidden);
   observer = new IntersectionObserver(([entry]) => { if (!entry.isIntersecting) reset(); });

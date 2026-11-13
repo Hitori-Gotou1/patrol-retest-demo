@@ -48,6 +48,7 @@ jobs:
           python tests/browser-routing.py --dist /tmp/hitori-routes-configured --configuration login
       - run: npm run build
         env:
+          VITE_SITE_ANALYTICS: ${{ vars.VITE_SITE_ANALYTICS }}
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
       - name: Check the exact artifact intended for Pages

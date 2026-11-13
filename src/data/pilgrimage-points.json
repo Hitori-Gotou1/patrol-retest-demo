@@ -1,0 +1,32 @@
+[
+  {
+    "id": "4yd2vzb5s",
+    "name": "下北沢駅前",
+    "image": "https://image.anitabi.cn/points/328609/4yd2vzb5s.jpg?plan=h160",
+    "ep": 1,
+    "s": 626,
+    "origin": "林宏",
+    "originLink": "https://www.google.com/maps/d/viewer?mid=18yUGs7Ekm9vaZe4Ym2zK4oAxFEc56uU",
+    "mapUrl": "https://www.anitabi.cn/map?bangumiId=328609&pid=4yd2vzb5s"
+  },
+  {
+    "id": "uqesctl9j",
+    "name": "ヴィレッジヴァンガード下北沢店",
+    "image": "https://image.anitabi.cn/points/328609/uqesctl9j_1744846193527.jpg?plan=h160",
+    "ep": 1,
+    "s": 619,
+    "origin": "Anitabi@Lilin",
+    "originURL": "https://www.anitabi.cn/map?bangumiId=328609&pid=uqesctl9j",
+    "mapUrl": "https://www.anitabi.cn/map?bangumiId=328609&pid=uqesctl9j"
+  },
+  {
+    "id": "uqdj3kh28",
+    "name": "下北沢SHELTER",
+    "image": "https://image.anitabi.cn/points/328609/uqdj3kh28_1744843458012.jpg?plan=h160",
+    "ep": 1,
+    "s": 253,
+    "origin": "Anitabi@Lilin",
+    "originURL": "https://www.anitabi.cn/map?bangumiId=328609&pid=uqdj3kh28",
+    "mapUrl": "https://www.anitabi.cn/map?bangumiId=328609&pid=uqdj3kh28"
+  }
+]

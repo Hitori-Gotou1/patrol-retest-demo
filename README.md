@@ -4,6 +4,8 @@
 
 公开网站：https://hitori-gotou1.github.io/patrol-retest-demo/
 
+新增全站搜索、作品整理与版本对比、演出项目、作品挂画、阅读偏好、独立手记页、乐队日历、巡礼资料、来源档案与运营看板，入口在顶栏工具和活动室下方。功能、资料来源与全站统计启用方式见 [扩展说明](docs/site-expansion.md)。
+
 ## 安装、运行与构建
 
 需要 Node.js **22.12+**（推荐 Node 22 LTS，见 `.nvmrc`）。

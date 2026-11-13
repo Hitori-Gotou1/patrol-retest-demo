@@ -1,4 +1,5 @@
 <script setup>
+import {motionPreference as createMotionQuery} from '../room/preferences.js';
 import { ref, onMounted, onUnmounted } from 'vue';
 import gsap from 'gsap';
 import { site, assetUrl } from '../data/site.js';
@@ -18,7 +19,7 @@ function move(event) {
 function reset() { moveX?.(0); moveY?.(0); }
 function updateMotion() { reduce.value = motion.matches; if (reduce.value) { reset(); backgroundVideo.value?.pause(); } }
 onMounted(() => {
-  motion = matchMedia('(prefers-reduced-motion: reduce)');
+  motion = createMotionQuery();
   updateMotion(); motion.addEventListener('change', updateMotion);
   context = gsap.matchMedia();
   context.add('(prefers-reduced-motion: no-preference)', () => {

@@ -1,4 +1,5 @@
 <script setup>
+import {motionPreference as createMotionQuery} from '../../room/preferences.js';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { onBeforeRouteLeave } from 'vue-router';
 import { useInteractionAudio } from '../../composables/useInteractionAudio.js';
@@ -73,7 +74,7 @@ function keydown(event) {
 function hidden() { if (document.hidden) pause(); }
 function endRound() { pause(); phase.value = 'ready'; }
 function motion() { reduced.value = media.matches; }
-onMounted(() => { media = matchMedia('(prefers-reduced-motion: reduce)'); motion(); media.addEventListener('change', motion); document.addEventListener('visibilitychange', hidden); });
+onMounted(() => { media = createMotionQuery(); motion(); media.addEventListener('change', motion); document.addEventListener('visibilitychange', hidden); });
 onBeforeRouteLeave(() => pause(false));
 onBeforeUnmount(() => { alive = false; generation++; cancelAnimationFrame(frame); audio.stop(); media?.removeEventListener('change', motion); document.removeEventListener('visibilitychange', hidden); });
 </script>
