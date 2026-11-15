@@ -2,6 +2,7 @@
 import { computed, nextTick, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import '../styles/room.css';
+import { useActivityFavorites } from '../composables/useActivityFavorites.js';
 import '../styles/playroom.css';
 import '../styles/adventures.css';
 import '../styles/playground.css';
@@ -12,6 +13,7 @@ import {siteSections} from '../data/siteSections.js';
 import FirstWorkGuide from '../components/tools/FirstWorkGuide.vue';
 import {countEvent} from '../services/analytics.js';
 import SaveWorkButton from '../components/room/SaveWorkButton.vue';
+const { favorites, notice:favoriteNotice, toggle:toggleFavorite } = useActivityFavorites();
 const route = useRoute(), directoryOpen = ref(false);
 const active = computed(() => findActivity(route.path)||siteSections.find(s=>s.path===route.path));
 const suggestions = computed(() => (nextActivities[active.value?.id] || []).map(id => activityCatalog.find(card => card.id === id)));
@@ -40,6 +42,7 @@ watch(() => route.path, async path => {
     <div v-if="directoryOpen" id="room-directory" class="room-directory">
       <section v-for="group in activityGroups" :key="group.id"><h2>{{group.title}}</h2><div><RouterLink v-for="card in activityCatalog.filter(card=>card.group===group.id)" :key="card.id" :to="card.path">{{card.short}}</RouterLink></div></section>
     </div>
+    <button v-if="active&&activityCatalog.some(c=>c.id===active.id)" type="button" class="room-button activity-pin-current" :aria-pressed="favorites.includes(active.id)" @click="toggleFavorite(active.id)">{{favorites.includes(active.id)?'★ 已加入常用 · 点击取消':'☆ 将这个活动加入常用'}}</button><p v-if="favoriteNotice" class="room-hint" role="status">{{favoriteNotice}}</p>
     <FirstWorkGuide />
     <SaveWorkButton v-if="active" :key="route.path" :activity="active" />
     <RouterView />

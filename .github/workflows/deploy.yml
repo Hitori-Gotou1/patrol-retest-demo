@@ -10,7 +10,7 @@ permissions:
   pages: write
   id-token: write
 concurrency:
-  group: pages-${{ github.event_name == 'pull_request' && github.ref || 'production' }}
+  group: pages-${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && 'production' || github.ref }}
   cancel-in-progress: true
 jobs:
   build:
@@ -92,3 +92,86 @@ jobs:
             const { setupCommunity } = await import(pathToFileURL(process.env.GITHUB_WORKSPACE + '/scripts/moderate-guestbook.mjs').href);
             await setupCommunity(github, context.repo);
             core.info('Guestbook moderation labels are ready.');
+
+  # Reuse this existing manually dispatchable workflow on a dedicated test branch.
+  # It cannot run on main, pull requests or automatic pushes. Pages deployment
+  # above still requires refs/heads/main and is skipped for this branch.
+  live-backend-check:
+    if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/heads/codex/backend-acceptance')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Verify gallery storage and policies against the real backend
+        env:
+          HITORI_SYNC_TEST_URL: ${{ vars.VITE_SUPABASE_URL }}
+          HITORI_SYNC_TEST_PUBLIC_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          HITORI_SYNC_TEST_A_EMAIL: ${{ secrets.HITORI_SYNC_TEST_A_EMAIL }}
+          HITORI_SYNC_TEST_A_PASSWORD: ${{ secrets.HITORI_SYNC_TEST_A_PASSWORD }}
+          HITORI_SYNC_TEST_B_EMAIL: ${{ secrets.HITORI_SYNC_TEST_B_EMAIL }}
+          HITORI_SYNC_TEST_B_PASSWORD: ${{ secrets.HITORI_SYNC_TEST_B_PASSWORD }}
+          HITORI_SYNC_TEST_ALLOW_WRITES: yes-isolated-accounts
+          REPORT_DIR: /tmp/hitori-live-reports/gallery-policy
+        run: node tests/gallery-live-policy.mjs
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r tests/requirements-browser.txt -r tests/requirements-gallery.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Build the real-backend artifact using public configuration only
+        env:
+          VITE_SITE_ANALYTICS: ''
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: npm run build -- --outDir /tmp/hitori-live-dist
+      - name: Verify actual gallery UI uploads, editing and collections
+        env:
+          HITORI_SYNC_TEST_URL: ${{ vars.VITE_SUPABASE_URL }}
+          HITORI_SYNC_TEST_PUBLIC_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          HITORI_SYNC_TEST_A_EMAIL: ${{ secrets.HITORI_SYNC_TEST_A_EMAIL }}
+          HITORI_SYNC_TEST_A_PASSWORD: ${{ secrets.HITORI_SYNC_TEST_A_PASSWORD }}
+          HITORI_SYNC_TEST_B_EMAIL: ${{ secrets.HITORI_SYNC_TEST_B_EMAIL }}
+          HITORI_SYNC_TEST_B_PASSWORD: ${{ secrets.HITORI_SYNC_TEST_B_PASSWORD }}
+          HITORI_SYNC_TEST_ALLOW_WRITES: yes-isolated-accounts
+          REPORT_DIR: /tmp/hitori-live-reports/gallery-browser
+        run: python tests/browser-gallery-live.py --dist /tmp/hitori-live-dist
+      - name: Verify synchronization policies and all supported data scopes
+        env:
+          HITORI_SYNC_TEST_URL: ${{ vars.VITE_SUPABASE_URL }}
+          HITORI_SYNC_TEST_PUBLIC_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          HITORI_SYNC_TEST_A_EMAIL: ${{ secrets.HITORI_SYNC_TEST_A_EMAIL }}
+          HITORI_SYNC_TEST_A_PASSWORD: ${{ secrets.HITORI_SYNC_TEST_A_PASSWORD }}
+          HITORI_SYNC_TEST_B_EMAIL: ${{ secrets.HITORI_SYNC_TEST_B_EMAIL }}
+          HITORI_SYNC_TEST_B_PASSWORD: ${{ secrets.HITORI_SYNC_TEST_B_PASSWORD }}
+          HITORI_SYNC_TEST_ALLOW_WRITES: yes-isolated-accounts
+          HITORI_SYNC_TEST_EXPECT_A_UID: f72aa1d6-393d-4a6a-a0e0-709537ed170a
+          REPORT_DIR: /tmp/hitori-live-reports/sync-policy
+        run: node tests/sync-live-policy.mjs
+      - name: Verify real independent-device sync, offline edits and conflicts
+        env:
+          HITORI_SYNC_TEST_URL: ${{ vars.VITE_SUPABASE_URL }}
+          HITORI_SYNC_TEST_PUBLIC_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          HITORI_SYNC_TEST_A_EMAIL: ${{ secrets.HITORI_SYNC_TEST_A_EMAIL }}
+          HITORI_SYNC_TEST_A_PASSWORD: ${{ secrets.HITORI_SYNC_TEST_A_PASSWORD }}
+          HITORI_SYNC_TEST_B_EMAIL: ${{ secrets.HITORI_SYNC_TEST_B_EMAIL }}
+          HITORI_SYNC_TEST_B_PASSWORD: ${{ secrets.HITORI_SYNC_TEST_B_PASSWORD }}
+          HITORI_SYNC_TEST_ALLOW_WRITES: yes-isolated-accounts
+          HITORI_SYNC_TEST_EXPECTED_A_UID: f72aa1d6-393d-4a6a-a0e0-709537ed170a
+        run: python tests/browser-sync-live.py --dist /tmp/hitori-live-dist --output /tmp/hitori-live-reports/sync-browser
+      - name: Upload sanitized real-backend results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-backend-acceptance
+          path: /tmp/hitori-live-reports/
+          if-no-files-found: ignore
+          retention-days: 7

@@ -34,7 +34,7 @@ export function createInteractionAudioEngine({ createContext, onState = () => {}
     if (context?.state === 'running') context.suspend().catch(() => {});
   }
   function ensureContext() {
-    if (!context) {
+    if (!context || context.state === 'closed') {
       context = createContext();
       master = context.createGain();
       master.gain.value = volume;

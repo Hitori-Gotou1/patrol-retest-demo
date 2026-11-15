@@ -151,6 +151,7 @@ def test_studio(browser):
     cell.click()
     expect(cell).to_have_attribute('aria-pressed', 'true')
     page.get_by_role('button', name='播放并开启音效', exact=True).click()
+    expect(page.get_by_role('button', name='停止播放', exact=True)).to_be_visible(timeout=45000)
     page.clock.run_for(300)
     expect(page.locator('.studio-track button.is-current')).to_have_count(4)
     assert page.evaluate('window.__audioStarts') > 0

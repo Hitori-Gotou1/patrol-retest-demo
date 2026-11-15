@@ -23,7 +23,7 @@ async function wav(){if(exporting.value)return;exporting.value=true;message.valu
 function keyboard(event){if(event.repeat||event.ctrlKey||event.metaKey||/INPUT|SELECT|TEXTAREA/.test(event.target.tagName)||event.target.isContentEditable||event.target.closest?.('.room-companion'))return;const index=Number(event.key)-1;if(index>=0&&index<6){event.preventDefault();sound(index);}}
 function hidden(){if(document.hidden){stop();message.value='离开页面时已停止试音，返回后可重新拨弦。';}}
 onBeforeRouteLeave(stop);
-onMounted(()=>{window.addEventListener('keydown',keyboard);document.addEventListener('visibilitychange',hidden);});onBeforeUnmount(()=>{alive=false;stop();engine.dispose();window.removeEventListener('keydown',keyboard);document.removeEventListener('visibilitychange',hidden);});
+onMounted(()=>{window.addEventListener('keydown',keyboard);window.addEventListener('hitori:audio-device-change',stop);document.addEventListener('visibilitychange',hidden);});onBeforeUnmount(()=>{alive=false;stop();engine.dispose();window.removeEventListener('keydown',keyboard);window.removeEventListener('hitori:audio-device-change',stop);document.removeEventListener('visibilitychange',hidden);});
 </script>
 <template><section class="room-panel" aria-labelledby="effects-title"><div class="play-heading"><div><p class="play-eyebrow">FIND YOUR OWN TONE / 把声音拧成喜欢的样子</p><h2 id="effects-title">这一根弦，有自己的性格。</h2><p class="room-intro">拨弦、旋转旋钮、交换踏板。所有声音均为本站合成，主动拨弦才会响起。</p></div><span class="play-number" aria-hidden="true">08</span></div>
   <div class="play-toolbar"><button v-for="preset in tonePresets" :key="preset.name" type="button" @click="state=validateTone(preset)">{{preset.name}}</button></div>

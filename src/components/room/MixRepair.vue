@@ -1,4 +1,5 @@
 <script setup>
+import { useMediaFocus } from '../../composables/useMediaFocus.js';
 import {computed,ref,watch,onBeforeUnmount} from 'vue';
 import {onBeforeRouteLeave} from 'vue-router';
 import {mixTracks,mixChallenges} from '../../data/playground.js';
@@ -7,13 +8,14 @@ import {createMixEngine,renderMixWav} from '../../audio/mixEngine.js';
 import {useLocalDraft} from '../../composables/useLocalDraft.js';
 import {useInteractionAudio} from '../../composables/useInteractionAudio.js';
 import {recordActivity} from '../../room/activityLog.js';
+const claimMedia=useMediaFocus('mix',stop);
 const initial=()=>({version:1,task:0,channels:mixChallenges[0].initial.map(c=>({...c,mute:false,solo:false})),cleared:[]});
 const {state,saved}=useLocalDraft('hitori-room:mix:v1',initial(),validateMix),audio=useInteractionAudio('mix'),playing=ref(false),reference=ref(false),busy=ref(false),message=ref('先听自己的版本，再切到参考。每关只需修复一类问题，达到 85 分即可完成。');
 const task=computed(()=>mixChallenges[state.value.task]),score=ref(null);
 const engine=createMixEngine({createContext:()=>new (window.AudioContext||window.webkitAudioContext)(),isHidden:()=>document.hidden});let generation=0;
 const channels=computed(()=>reference.value?task.value?.target.map(c=>({...c,mute:false,solo:false}))||state.value.channels:state.value.channels);
 function stop(){generation++;engine.stop();playing.value=false;}
-async function play(){stop();const token=++generation;if(!audio.enabled.value&&!await audio.setEnabled(true)){message.value='当前浏览器无法开启声音。';return;}if(token!==generation||document.hidden)return;playing.value=await engine.play(channels.value,audio.volume.value);if(token!==generation)engine.stop();}
+async function play(){stop();const token=++generation;if(!audio.enabled.value&&!await audio.setEnabled(true)){message.value='当前浏览器无法开启声音。';return;}if(token!==generation||document.hidden)return;playing.value=await engine.play(channels.value,audio.volume.value);if(playing.value)claimMedia();if(token!==generation)engine.stop();}
 function select(i){stop();state.value.task=i;reference.value=false;score.value=null;state.value.channels=(mixChallenges[i]?.initial||mixChallenges[0].target).map(c=>({...c,mute:false,solo:false}));}
 function check(){score.value=mixScore(task.value,state.value.channels);if(state.value.channels.some(c=>c.mute||c.solo)){score.value=0;message.value='先取消静音和独奏，让四条轨道一起参加核对。';return;}if(score.value>=85){if(!state.value.cleared.includes(state.value.task))state.value.cleared.push(state.value.task);message.value='声音重新站到一起了。这一关已完成。';recordActivity('mix',`${task.value.name} · ${score.value} 分`,task.value.id);}else message.value='再和参考轮流听一下，也可以对照小提示继续调整。';}
 async function exportWav(){busy.value=true;try{const blob=await renderMixWav(state.value.channels,window.OfflineAudioContext||window.webkitOfflineAudioContext);const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='hitori-my-mix.wav';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);message.value='8 秒立体声 WAV 已导出。';recordActivity('mix','导出自己的合奏混音');}catch{message.value='这台浏览器暂时无法导出 WAV。';}finally{busy.value=false;}}

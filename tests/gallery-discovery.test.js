@@ -79,3 +79,9 @@ test('share locations contain only a valid picture ID and a gallery anchor', () 
     assert.throws(() => galleryImageLocation(value));
   }
 });
+
+test('new explicit tags and author fields participate in the same all-terms search', () => {
+  const fresh = { id: 'fresh', title: '小屋', category: 'collection', creator: '站主明确记录', tags: ['雨夜', '演出后台'], characters: ['kita'] };
+  assert.deepEqual(ids(filterGallery([fresh], { query: '雨夜 明确 喜多' })), ['fresh']);
+  assert.deepEqual(ids(filterGallery([fresh], { character: 'hitori' })), []);
+});

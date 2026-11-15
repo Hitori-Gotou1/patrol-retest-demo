@@ -119,3 +119,7 @@ export function compareWorks(left,right){if(left.kind!==right.kind)throw new Err
 const fieldLabels={caption:'相片文案',theme:'背景主题',objects:'元素',size:'大小',rotation:'角度',x:'横向位置',y:'纵向位置',panels:'画格',dialogue:'对白',scene:'场景',title:'标题',name:'名称',layout:'版式',bpm:'速度',masks:'轨道节拍',cues:'灯光时间轴',color:'颜色',intensity:'亮度',fade:'渐变',layers:'图层',strokes:'笔迹',points:'轨迹点',light:'灯光',current:'当前氛围',levels:'声音音量',pattern:'编曲',lights:'灯光',poster:'海报',backdrop:'舞台背景',cycles:'循环次数'};
 export const comparisonLabel=path=>path.replace(/[a-zA-Z]+/g,word=>fieldLabels[word]||word);
 export function comparisonValue(value){if(value==null)return '无';if(typeof value==='boolean')return value?'是':'否';if(typeof value==='string'&&value.startsWith('data:image/'))return '保存的画面';return String(value).slice(0,100);}
+
+// Shared validation for revision-based synchronization; does not deduplicate distinct saved IDs.
+export { validateEntry as validateWorkEntry };
+export const shelfByteLimit = maxShelfBytes;

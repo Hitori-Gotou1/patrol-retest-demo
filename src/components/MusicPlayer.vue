@@ -1,8 +1,11 @@
 <script setup>
+import { useMediaFocus } from '../composables/useMediaFocus.js';
 import {motionPreference as createMotionQuery} from '../room/preferences.js';
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useSoundPreferences } from '../composables/useSoundPreferences.js'
 import tracks from '../data/music.json'
 import '../styles/music-player.css'
+const claimMedia=useMediaFocus('music',pause);
 
 const emit = defineEmits(['play', 'pause'])
 const audioElement = ref(null)
@@ -12,7 +15,9 @@ const isPlaying = ref(false)
 const isLoading = ref(false)
 const duration = ref(0)
 const currentTime = ref(0)
-const volume = ref(0.35)
+const sounds = useSoundPreferences()
+const volume = computed(() => sounds.preferences.music)
+const effectiveVolume = sounds.effective('music')
 const message = ref('')
 const reducedMotion = ref(false)
 const track = computed(() => tracks[selectedIndex.value])
@@ -103,7 +108,7 @@ async function startPlayback(token = ++requestId) {
   try {
     await prepareAudio()
     if (token !== requestId || disposed || !wantsPlayback) return
-    audio.volume = volume.value
+    audio.volume = effectiveVolume.value
     await audio.play()
     // 快速暂停、切歌或路由卸载可能使早先的 play Promise 晚到，旧请求不能更新新状态。
     if (token !== requestId || disposed) return
@@ -171,6 +176,7 @@ function onPlay() {
     audioElement.value?.pause()
     return
   }
+  claimMedia()
   isPlaying.value = true
   emit('play')
   startVisualization()
@@ -215,9 +221,11 @@ function seek(event) {
 }
 
 function changeVolume(event) {
-  volume.value = Number(event.target.value)
-  if (audioElement.value) audioElement.value.volume = volume.value
+  sounds.update({ music: Number(event.target.value) })
+  if (audioElement.value) audioElement.value.volume = effectiveVolume.value
 }
+
+watch(effectiveVolume, value => { if(audioElement.value) audioElement.value.volume=value; })
 
 function updateMotionPreference() {
   reducedMotion.value = mediaQuery.matches
@@ -234,7 +242,7 @@ function onVisibilityChange() {
 }
 
 onMounted(() => {
-  audioElement.value.volume = volume.value
+  audioElement.value.volume = effectiveVolume.value
   mediaQuery = createMotionQuery()
   updateMotionPreference()
   mediaQuery.addEventListener('change', updateMotionPreference)

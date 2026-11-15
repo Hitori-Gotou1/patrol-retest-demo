@@ -9,6 +9,9 @@ export default createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', component: () => import('./views/HomeView.vue') },
+    { path: '/collections', component: () => import('./views/GalleryCollectionsView.vue') },
+    { path: '/collections/:id', component: () => import('./views/GalleryCollectionsView.vue') },
+    { path: '/settings/device', component: () => import('./views/DeviceSettingsView.vue') },
     { path: '/manage-gallery', component: () => import('./views/GalleryAdminView.vue') },
     { path: '/about', component: () => import('./views/AboutView.vue') },
     { path: '/room', component: () => import('./views/RoomLayout.vue'), children: [

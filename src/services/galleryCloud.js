@@ -1,5 +1,4 @@
 import { validateGalleryConfig } from './galleryCloudConfig.js';
-import { validateUploadFile, validateImageSignature, validateImageDimensions, validateGalleryText } from './galleryUploadRules.js';
 import { fetchAuthWithDeadline, withCloudDeadline } from './cloudConnection.js';
 
 const url = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
@@ -28,95 +27,87 @@ export async function isGalleryAdmin(signal) {
   if (result.error) throw Object.assign(new Error('无法验证上传权限，请检查服务配置或稍后重试。'), { status: result.status, code: result.error.code });
   return !!result.data;
 }
-const safePath = path => typeof path === 'string' && /^[a-f0-9-]+\/[a-f0-9-]+(?:-thumb)?\.(?:jpg|png|webp)$/.test(path);
+const safePath = path => typeof path === 'string' && /^[a-f0-9-]+\/[a-f0-9-]+(?:-thumb|-preview)?\.(?:jpg|png|webp)$/.test(path);
 function publicImage(path) { return `${url}/storage/v1/object/public/${bucket}/${path}`; }
+export const galleryMetadataCacheKey = `${url}:gallery:v2`;
 export function cloudImage(row) {
-  if (!row || !safePath(row.object_path) || (row.thumbnail_path && !safePath(row.thumbnail_path))) return null;
+  if (!row || !safePath(row.object_path) || (row.thumbnail_path && !safePath(row.thumbnail_path)) || (row.preview_path && !safePath(row.preview_path))) return null;
   return {
-    id: `cloud-${row.id}`, category: 'collection', title: row.title, alt: row.alt || row.title,
-    credit: row.credit || '站主上传', subtitle: '站主收藏 · 新收录', tag: '站主收藏',
-    width: row.width, height: row.height, src: publicImage(row.object_path),
-    originalSrc: publicImage(row.object_path), thumbnail: publicImage(row.thumbnail_path || row.object_path)
+    id: `cloud-${row.id}`, category: row.category || 'collection', title: row.title, alt: row.alt || row.title,
+    credit: row.credit || '站主上传', creator: row.creator || '', sourceUrl: row.source_url || '',
+    subtitle: '站主收藏 · 新收录', tag: row.category === 'illustration' ? '同人插画' : row.category === 'poster' ? '设计海报' : '站主收藏',
+    ...(Array.isArray(row.characters) ? { characters: row.characters } : {}), tags: Array.isArray(row.tags) ? row.tags : [],
+    width: row.width, height: row.height, src: publicImage(row.preview_path || row.object_path),
+    preview: row.preview_path ? publicImage(row.preview_path) : '',
+    originalSrc: publicImage(row.object_path), thumbnail: publicImage(row.thumbnail_path || row.preview_path || row.object_path),
+    sortOrder: Number.isFinite(row.sort_order) ? row.sort_order : 0, createdAt: row.created_at || '', cloudManaged: true
   };
 }
-export async function loadCloudGallery(signal) {
-  if (!cloudConfigured) return [];
+let legacySchema = false;
+const headers = () => ({ apikey: key, ...(!key.startsWith('sb_publishable_') ? { Authorization: `Bearer ${key}` } : {}) });
+async function publicRows(params, signal) {
   return withCloudDeadline(async requestSignal => {
-    // 访客仅发匿名读取请求，不加载登录 SDK，不修改站主会话。
-    const records = [];
-    const pageSize = 100;
-    for (let offset = 0; ; offset += pageSize) {
-      const response = await fetch(`${url}/rest/v1/gallery_uploads?select=id,object_path,thumbnail_path,title,alt,credit,width,height&order=created_at.desc,id.desc&limit=${pageSize}&offset=${offset}`, {
-        headers: { apikey: key, ...(!key.startsWith('sb_publishable_') ? { Authorization: `Bearer ${key}` } : {}) }, signal: requestSignal
-      });
-      if (!response.ok) {
-        const detail = await response.json().catch(() => ({}));
-        throw Object.assign(new Error('Cloud gallery unavailable'), { status: response.status, code: detail.code });
-      }
-      const rows = await response.json();
-      if (!Array.isArray(rows)) throw new Error('收藏数据格式不正确。');
-      records.push(...rows.map(cloudImage).filter(Boolean));
-      if (rows.length < pageSize) return records;
+    const response = await fetch(`${url}/rest/v1/gallery_uploads?${params}`, { headers: headers(), signal: requestSignal });
+    if (!response.ok) {
+      const detail = await response.json().catch(() => ({}));
+      throw Object.assign(new Error('Cloud gallery unavailable'), { status: response.status, code: detail.code, detail: detail.message });
     }
+    const rows = await response.json();
+    if (!Array.isArray(rows)) throw new Error('收藏数据格式不正确。');
+    return rows;
   }, { signal });
 }
-async function prepareImage(file) {
-  await validateImageSignature(file);
-  let bitmap;
-  try { bitmap = await createImageBitmap(file); } catch { throw new Error('这张图片无法解码，请重新保存后上传。'); }
-  try {
-    const { width, height } = bitmap;
-    validateImageDimensions(width, height);
-    const ratio = Math.min(1, 640 / Math.max(width, height));
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(width * ratio)); canvas.height = Math.max(1, Math.round(height * ratio));
-    canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    const thumbnail = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', .87));
-    if (!thumbnail) throw new Error('无法生成图片预览，请换一个浏览器重试。');
-    return { width, height, thumbnail, thumbnailExtension: thumbnail.type === 'image/webp' ? 'webp' : 'png' };
-  } finally { bitmap.close(); }
-}
-export async function publishGalleryImage({ file, title, alt, credit, onProgress = () => {} }) {
-  const extension = validateUploadFile(file);
-  const text = validateGalleryText({ title, alt, credit });
-  onProgress('正在准备图片…');
-  const prepared = await prepareImage(file);
-  const client = await getCloudClient();
-  if (!client || !await isGalleryAdmin()) throw new Error('只有站主可以上传，请重新登录。');
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) throw new Error('登录已过期，请重新登录。');
-  const id = crypto.randomUUID();
-  const original = `${user.id}/${id}.${extension}`;
-  const thumb = `${user.id}/${id}-thumb.${prepared.thumbnailExtension}`;
-  const storage = client.storage.from(bucket);
-  const uploaded = [];
-  let inserting = false;
-  const row = { id, owner_id: user.id, object_path: original, thumbnail_path: thumb, ...text, width: prepared.width, height: prepared.height };
-  try {
-    onProgress('正在上传原图…');
-    let result = await storage.upload(original, file, { contentType: file.type, upsert: false });
-    if (result.error) throw result.error;
-    uploaded.push(original);
-    onProgress('正在上传预览…');
-    result = await storage.upload(thumb, prepared.thumbnail, { contentType: prepared.thumbnail.type, upsert: false });
-    if (result.error) throw result.error;
-    uploaded.push(thumb);
-    onProgress('正在发布到收藏区…');
-    inserting = true;
-    result = await client.from('gallery_uploads').insert(row);
-    if (result.error) throw result.error;
-    return cloudImage(row);
-  } catch {
-    // 数据提交与存储不在同一事务：先查验提交结果，避免网络丢包后误删已发布原图。
-    if (inserting) {
-      const check = await client.from('gallery_uploads').select('id').eq('id', id).maybeSingle();
-      if (check.data) return cloudImage(row);
-      if (check.error) throw new Error('发布结果暂时无法确认，请稍后查看收藏区再决定是否重试。');
-    }
-    if (uploaded.length) {
-      const cleanup = await storage.remove(uploaded);
-      if (cleanup.error) throw new Error('未能发布，部分文件可能已上传。请在存储中检查后重试。');
-    }
-    throw new Error('上传未完成，请检查网络和上传权限后重试。');
+function schemaMissing(error) { return ['42703', 'PGRST204'].includes(error?.code); }
+export async function loadCloudGalleryPage({ cursor = null, limit = 36, signal } = {}) {
+  if (!cloudConfigured) return { items: [], cursor: null, hasMore: false };
+  // Another concurrent share lookup can discover an old schema first.
+  // Retry according to the fields THIS request used, not the current shared flag.
+  const usedLegacySchema = legacySchema;
+  const count = Math.max(1, Math.min(100, Math.trunc(limit)));
+  const params = new URLSearchParams({ select: '*', order: usedLegacySchema ? 'created_at.desc,id.desc' : 'sort_order.asc,created_at.desc,id.desc', limit: String(count + 1) });
+  if (!usedLegacySchema) params.set('published', 'eq.true');
+  // Keyset pagination avoids shifting offsets when a new image is published.
+  if (cursor) {
+    if (usedLegacySchema) params.set('or', `(created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id}))`);
+    else params.set('or', `(sort_order.gt.${cursor.sortOrder},and(sort_order.eq.${cursor.sortOrder},created_at.lt.${cursor.createdAt}),and(sort_order.eq.${cursor.sortOrder},created_at.eq.${cursor.createdAt},id.lt.${cursor.id}))`);
   }
+  let rows;
+  try { rows = await publicRows(params, signal); }
+  catch (error) {
+    if (!usedLegacySchema && schemaMissing(error)) { legacySchema = true; return loadCloudGalleryPage({ cursor, limit, signal }); }
+    throw error;
+  }
+  const hasMore = rows.length > count;
+  const visible = rows.slice(0, count);
+  const last = visible.at(-1);
+  return { items: visible.map(cloudImage).filter(Boolean), hasMore,
+    cursor: hasMore && last ? { id: last.id, createdAt: last.created_at, sortOrder: last.sort_order || 0 } : null,
+    legacySchema };
 }
+export async function findCloudGalleryImage(id, signal) {
+  if (!cloudConfigured || !/^cloud-[a-f0-9-]{36}$/.test(id)) return null;
+  const usedLegacySchema = legacySchema;
+  const params = new URLSearchParams({ select: '*', id: `eq.${id.slice(6)}`, limit: '1' });
+  if (!usedLegacySchema) params.set('published', 'eq.true');
+  let rows;
+  try { rows = await publicRows(params, signal); }
+  catch (error) {
+    if (!usedLegacySchema && schemaMissing(error)) { legacySchema = true; return findCloudGalleryImage(id, signal); }
+    throw error;
+  }
+  return cloudImage(rows[0]);
+}
+// Kept for the full-site search contract: callers explicitly need every page.
+export async function loadCloudGallery(signal, onBatch = () => {}) {
+  const records = new Map();
+  let cursor = null;
+  do {
+    const page = await loadCloudGalleryPage({ cursor, signal, limit: 100 });
+    for (const item of page.items) records.set(item.id, item);
+    onBatch([...records.values()], page.hasMore);
+    if (!page.hasMore) break;
+    cursor = page.cursor;
+  } while (cursor);
+  return [...records.values()];
+}
+export { publishGalleryImage } from './galleryManagement.js';

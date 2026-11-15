@@ -39,7 +39,7 @@ export function createAmbientAudioEngine({ createContext, isHidden = () => false
     if (disposed || isHidden()) return false;
     stop(); const token = ++generation;
     try {
-      if (!context) { context = createContext(); master = context.createGain(); master.connect(context.destination); }
+      if (!context || context.state === 'closed') { context = createContext(); master = context.createGain(); master.connect(context.destination); }
       await context.resume();
       if (disposed || token !== generation || isHidden() || context.state !== 'running') { if (!running && context.state === 'running') await context.suspend(); return false; }
       master.gain.value = volume;

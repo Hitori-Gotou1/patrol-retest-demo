@@ -1,12 +1,28 @@
 import { activityKinds,validateActivity } from './activityLog.js';
 import { clamp } from './playroom.js';
-export const defaultCompanion={version:1,member:'hitori',enabled:true,compact:false,energy:70,courage:25,gifts:{tea:2,pick:1,sticker:2},seen:[],memories:[],reply:'今、今天也可以在这里待一会儿吗？'};
+import { validateDiary, appendDiary, changeDiary } from './companionDiary.js';
+export const defaultCompanion={version:1,member:'hitori',enabled:true,compact:false,energy:70,courage:25,gifts:{tea:2,pick:1,sticker:2},seen:[],memories:[],diary:[],diaryDeleted:[],reply:'今、今天也可以在这里待一会儿吗？'};
 export const greetings={hitori:'今、今天也可以在这里待一会儿吗？',nijika:'大家都在。今天想先做哪件小事？',ryo:'听一听，今天的小屋是什么声音。',kita:'来啦！今天也一起留下一点好玩的回忆吧。'};
-export function validateCompanion(v){if(!v||v.version!==1)throw new Error('invalid companion');return {version:1,enabled:v.enabled!==false,member:['hitori','nijika','ryo','kita'].includes(v.member)?v.member:'hitori',compact:v.compact===true,energy:Math.round(clamp(v.energy,0,100)),courage:Math.round(clamp(v.courage,0,100)),gifts:Object.fromEntries(['tea','pick','sticker'].map(k=>[k,Math.floor(clamp(v.gifts?.[k],0,99))])),seen:(Array.isArray(v.seen)?v.seen:[]).filter(x=>typeof x==='string').slice(-80),memories:(Array.isArray(v.memories)?v.memories:[]).slice(0,8).flatMap(x=>{try{return [validateActivity(x)];}catch{return [];}}),reply:String(v.reply||greetings.hitori).slice(0,160)};}
+export function validateCompanion(v) {
+  if (!v || v.version !== 1) throw new Error('invalid companion');
+  const member = ['hitori', 'nijika', 'ryo', 'kita'].includes(v.member) ? v.member : 'hitori';
+  const memories = (Array.isArray(v.memories) ? v.memories : []).slice(0, 8).flatMap(event => { try { return [validateActivity(event)]; } catch { return []; } });
+  const diaryDeleted = (Array.isArray(v.diaryDeleted) ? v.diaryDeleted : []).filter(id => typeof id === 'string' && id.length <= 90).slice(-240);
+  const diary = validateDiary(Array.isArray(v.diary) ? v.diary : memories.map(event => ({ ...event, member, reply: companionReaction(member, event) }))).filter(event => !diaryDeleted.includes(event.id));
+  return { version: 1, enabled: v.enabled !== false, member, compact: v.compact === true,
+    energy: Math.round(clamp(v.energy, 0, 100)), courage: Math.round(clamp(v.courage, 0, 100)),
+    gifts: Object.fromEntries(['tea', 'pick', 'sticker'].map(key => [key, Math.floor(clamp(v.gifts?.[key], 0, 99))])),
+    seen: (Array.isArray(v.seen) ? v.seen : []).filter(id => typeof id === 'string').slice(-80), memories: memories.filter(event => !diaryDeleted.includes(event.id)),
+    diary, diaryDeleted, reply: String(v.reply || greetings.hitori).slice(0, 240) };
+}
 export function companionReaction(member,event){
   const opening={hitori:'我、我看到了。',nijika:'今天又完成了一件小事呢。',ryo:'这个，值得记下来。',kita:'好耶！这一刻我也记住啦。'}[member];
-  const response={photo:`「${event.detail}」那张合影里，大家都在。`,room:'房间里又多了一点属于你的样子。',walk:'去过的街角，就变成我们的共同回忆了。',search:'那些不起眼的小东西，也有人认真找回来。',concert:'从准备到散场，你把一整晚照顾好了。',ambient:'下次安静的时候，再一起听你留下的夜晚吧。',studio:'这次，我来听听你的声音。',practice:'认真练习过的时间，会在下一次合奏里响起来。',maze:'绕过灯光，也能抵达舞台。你做到了。',effects:'这个音色，有你自己的性格。',echo:'把听见的声音弹回来，也是一点点练出来的。',escape:'灯亮起来的时候，大家就知道可以开始了。',duet:'不同的答案，也能好好地在一起。',cards:'一张张接起来，舞台也就不再那么难了。',jigsaw:'散开的画面，被你认真地拼回来了。',shop:'每一位客人的声音，你都有好好照顾到。',platform:'这一次，真的跳得比昨天更远了一点。',lights:'站在你点亮的舞台上，好像也有了勇气。',comic:'四个小小的画面，也能装下很长的回忆。',mix:'现在，大家的声音都能被听见了。',graffiti:'墙上的这一点颜色，是今天留下的签名。',relay:'下一句会去哪里，我也很期待。',pinball:'弹起来的每一拍，都被你接住了。'}[event.kind];
-  return `${opening}${response}`;
+  const response={project:'从第一束灯光到最后一个音符，你把这晚完整地留了下来。',photo:`「${event.detail}」那张合影里，大家都在。`,room:'房间里又多了一点属于你的样子。',walk:'去过的街角，就变成我们的共同回忆了。',search:'那些不起眼的小东西，也有人认真找回来。',concert:'从准备到散场，你把一整晚照顾好了。',ambient:'下次安静的时候，再一起听你留下的夜晚吧。',studio:'这次，我来听听你的声音。',practice:'认真练习过的时间，会在下一次合奏里响起来。',maze:'绕过灯光，也能抵达舞台。你做到了。',effects:'这个音色，有你自己的性格。',echo:'把听见的声音弹回来，也是一点点练出来的。',escape:'灯亮起来的时候，大家就知道可以开始了。',duet:'不同的答案，也能好好地在一起。',cards:'一张张接起来，舞台也就不再那么难了。',jigsaw:'散开的画面，被你认真地拼回来了。',shop:'每一位客人的声音，你都有好好照顾到。',platform:'这一次，真的跳得比昨天更远了一点。',lights:'站在你点亮的舞台上，好像也有了勇气。',comic:'四个小小的画面，也能装下很长的回忆。',mix:'现在，大家的声音都能被听见了。',graffiti:'墙上的这一点颜色，是今天留下的签名。',relay:'下一句会去哪里，我也很期待。',pinball:'弹起来的每一拍，都被你接住了。'}[event.kind];
+  const afterword={hitori:'…下次，我也想试着迈出这么一小步。',nijika:'慢慢来，我会替你记着这份努力。',ryo:'嗯。下次再听，可能会有新的发现。',kita:'下次也一起吧，我已经开始期待啦！'}[member]||'';
+  return `${opening||greetings.hitori}${response||'今天又多了一页属于你的小屋回忆。'}${afterword}`;
 }
-export function rememberActivity(input,raw){const state=validateCompanion(input),event=validateActivity(raw);if(state.seen.includes(event.id))return state;state.seen=[...state.seen,event.id].slice(-80);state.memories=[event,...state.memories].slice(0,8);state.energy=Math.min(100,state.energy+4);state.courage=Math.min(100,state.courage+3);const gift=['tea','pick','sticker'][Object.keys(activityKinds).indexOf(event.kind)%3];state.gifts[gift]=Math.min(99,state.gifts[gift]+1);state.reply=companionReaction(state.member,event);return state;}
+export function rememberActivity(input,raw){const state=validateCompanion(input),event=validateActivity(raw);if(state.seen.includes(event.id)||state.diaryDeleted.includes(event.id)||state.diary.some(entry=>entry.id===event.id))return state;state.seen=[...state.seen,event.id].slice(-80);state.memories=[event,...state.memories].slice(0,8);state.energy=Math.min(100,state.energy+4);state.courage=Math.min(100,state.courage+3);const gift=['tea','pick','sticker'][Object.keys(activityKinds).indexOf(event.kind)%3];state.gifts[gift]=Math.min(99,state.gifts[gift]+1);state.reply=companionReaction(state.member,event);state.diary=appendDiary(state.diary,event,state.member,state.reply);return state;}
 export function giveCompanion(input,kind){const state=validateCompanion(input);if(!['tea','pick','sticker'].includes(kind)||state.gifts[kind]<1)return {state,message:'这件小礼物送完啦，参加小屋活动会留下新的纪念物。'};state.gifts[kind]--;state.energy=Math.min(100,state.energy+(kind==='tea'?18:5));state.courage=Math.min(100,state.courage+(kind==='pick'?8:3));state.reply={tea:'握在手里暖暖的。那就先坐下来，慢慢说吧。',pick:'下一次练习，就带着这枚拨片一起去。',sticker:'这张贴纸，要放在最容易看到的地方。'}[kind];return {state,message:state.reply};}
+
+export function updateCompanionMemory(input,id,patch){const state=validateCompanion(input);state.diary=changeDiary(state.diary,id,patch);return state;}
+export function deleteCompanionMemory(input,id){const state=validateCompanion(input);state.diary=state.diary.filter(entry=>entry.id!==id);state.memories=state.memories.filter(entry=>entry.id!==id);state.diaryDeleted=[...new Set([...state.diaryDeleted,id])].slice(-240);return state;}

@@ -1,6 +1,7 @@
 import {execFileSync} from 'node:child_process';
 import { defineConfig, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import {deviceBuildPlugin} from './scripts/device-build.mjs';
 import { validateGalleryConfig } from './src/services/galleryCloudConfig.js';
 const base = '/patrol-retest-demo/';
 const commit = process.env.GITHUB_SHA || 'local';
@@ -12,7 +13,10 @@ const buildInfo = {
   transformIndexHtml() {
     return [{ tag: 'meta', attrs: { name: 'hitori-build', content: commit }, injectTo: 'head' }];
   },
-  writeBundle(options) {execFileSync(process.execPath,['scripts/build-journal.mjs',options.dir||'dist'],{stdio:'inherit'});},
+  writeBundle(options) {
+    execFileSync(process.execPath,['scripts/build-journal.mjs',options.dir||'dist'],{stdio:'inherit'});
+    execFileSync(process.execPath,['scripts/build-share.mjs',options.dir||'dist'],{stdio:'inherit'});
+  },
   generateBundle(_options, bundle) {
     const entry = Object.values(bundle).find(file => file.type === 'chunk' && file.isEntry);
     this.emitFile({
@@ -25,5 +29,5 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_SUPABASE_');
   // 在 Vite 注入变量前检查，防止误填服务端密钥后生成公开产物。
   validateGalleryConfig(env.VITE_SUPABASE_URL || '', env.VITE_SUPABASE_PUBLISHABLE_KEY || '');
-  return { plugins: [vue(), buildInfo], base };
+  return { plugins: [vue(), buildInfo, deviceBuildPlugin({base})], base };
 });

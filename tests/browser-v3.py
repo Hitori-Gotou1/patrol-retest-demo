@@ -158,6 +158,7 @@ def test_audio_instruments(browser):
     page.locator('#strum-button').click()
     assert page.evaluate('__audioQA().contexts')==0
     # Music playback owns its own context; interaction mute must leave its state and volume alone.
+    page.locator('#video').scroll_into_view_if_needed()
     page.get_by_role('button',name='练习唱片',exact=True).click()
     page.locator('.music-play').click()
     page.wait_for_function("document.querySelector('.music-player audio').paused===false")
@@ -341,6 +342,7 @@ def test_keyboard_egg(browser):
 
 def test_existing_media_smoke(browser):
     page=page_for(browser,reduced=True)
+    page.locator('#video').scroll_into_view_if_needed()
     page.get_by_role('button',name='练习唱片',exact=True).click()
     page.locator('.music-play').click()
     page.wait_for_function("document.querySelector('.music-player audio').paused===false")

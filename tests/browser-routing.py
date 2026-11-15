@@ -61,7 +61,7 @@ def run(dist, configuration):
         expect(page.locator('.gallery-admin')).to_be_visible()
         page.wait_for_load_state('networkidle')
         expect(page).to_have_url(url + '#/manage-gallery')
-        expect(page).to_have_title('上传收藏 · HITORI ROOM')
+        expect(page).to_have_title('收藏工作台 · HITORI ROOM')
         expect(page.locator('#home')).to_have_count(0)
         if configuration == 'login':
             expect(page.get_by_role('heading', name='站主登录', exact=True)).to_be_visible()

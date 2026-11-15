@@ -8,3 +8,7 @@ __pycache__/
 .env
 .env.*
 !.env.example
+
+# Local verification and deployable release artifacts
+evidence/
+release/

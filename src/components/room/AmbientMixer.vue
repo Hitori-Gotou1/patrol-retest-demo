@@ -1,26 +1,29 @@
 <script setup>
+import { useMediaFocus } from '../../composables/useMediaFocus.js';
 import { recordActivity } from '../../room/activityLog.js';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { ambientLayers, ambientPresets } from '../../data/playroom.js';
 import { validateAmbient } from '../../room/playroom.js';
 import { useLocalDraft } from '../../composables/useLocalDraft.js';
-import { useInteractionAudio } from '../../composables/useInteractionAudio.js';
+import { useSoundPreferences } from '../../composables/useSoundPreferences.js';
 import { createAmbientAudioEngine } from '../../audio/ambientAudioEngine.js';
 import { downloadStage } from '../../room/exportImage.js';
+const claimMedia=useMediaFocus('ambient',stop);
 const validate=v=>{if(!v||v.version!==1)throw new Error('invalid ambience');return {version:1,current:validateAmbient(v.current),scenes:(Array.isArray(v.scenes)?v.scenes:[]).slice(0,6).map(validateAmbient)};};
 const {state,saved}=useLocalDraft('hitori-room:ambience:v1',{version:1,current:validateAmbient(ambientPresets[0]),scenes:[]},validate);
-const audio=useInteractionAudio('ambient-room');
+const sounds=useSoundPreferences(),ambientVolume=sounds.effective('ambience');
 const playing=ref(false),starting=ref(false),message=ref('按下播放，再让夜晚慢慢响起来。'),stage=ref(null),busy=ref(false),removed=ref(null);
 let alive=true,generation=0;
 const engine=createAmbientAudioEngine({createContext:()=>{const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)throw new Error('unavailable');return new Audio();},isHidden:()=>document.hidden});
 const palette=computed(()=>({violet:['#29283e','#b69bc9','#e7c686'],amber:['#3e313c','#d39d9b','#f4ce88'],blue:['#202f45','#8dbbc8','#c1d7cc']}[state.value.current.light]));
 watch(()=>state.value.current.levels,levels=>engine.setLevels(levels),{deep:true,immediate:true});
-watch(audio.volume,volume=>engine.setVolume(volume),{immediate:true});
-watch(audio.enabled,enabled=>{if(!enabled&&(playing.value||starting.value)){stop();message.value='互动音效已关闭，夜晚也安静下来了。';}});
+watch(ambientVolume,volume=>engine.setVolume(volume),{immediate:true});
+watch(()=>sounds.preferences.muted,muted=>{if(muted&&(playing.value||starting.value)){stop();message.value='总静音已开启，夜晚安静下来了。';}});
 async function play(){
   if(starting.value||playing.value)return;starting.value=true;const token=++generation;
-  const enabling=audio.setEnabled(true),beginning=engine.start();
-  try{const [enabled,started]=await Promise.all([enabling,beginning]);if(!alive||token!==generation){engine.stop();return;}playing.value=enabled&&started;if(!playing.value)engine.stop();message.value=playing.value?'今晚的声音，正在这里。':'声音暂时没有准备好，请再点一次播放。';}
+  if(sounds.preferences.muted){starting.value=false;message.value='请先关闭总静音，再播放环境声。';return;}
+  const enabling=Promise.resolve(true),beginning=engine.start();
+  try{const [enabled,started]=await Promise.all([enabling,beginning]);if(!alive||token!==generation){engine.stop();return;}playing.value=enabled&&started;if(playing.value)claimMedia();if(!playing.value)engine.stop();message.value=playing.value?'今晚的声音，正在这里。':'声音暂时没有准备好，请再点一次播放。';}
   finally{if(alive)starting.value=false;}
 }
 function stop(){generation++;engine.stop();playing.value=false;starting.value=false;}
@@ -60,12 +63,12 @@ onBeforeUnmount(()=>{alive=false;stop();engine.dispose();document.removeEventLis
       <h3 class="play-subheading">从一个夜晚开始</h3><div class="play-toolbar"><button v-for="item in ambientPresets" :key="item.id" type="button" @click="preset(item)">{{item.name}}</button></div>
       <label class="room-field" for="ambient-name">这一段氛围的名字<input id="ambient-name" v-model="state.current.name" maxlength="28"></label>
       <div class="ambient-layer" v-for="layer in ambientLayers" :key="layer.id"><label :for="`ambient-${layer.id}`"><strong>{{layer.label}}</strong><span>{{Math.round(state.current.levels[layer.id]*100)}}%</span></label><input :id="`ambient-${layer.id}`" v-model.number="state.current.levels[layer.id]" class="play-range" type="range" min="0" max="1" step="0.01"><p>{{layer.hint}}</p></div>
-      <label class="room-field" for="ambient-volume">音量 {{Math.round(audio.volume.value*200)}}%<input id="ambient-volume" class="play-range" type="range" min="0" max="0.5" step="0.01" :value="audio.volume.value" @input="audio.setVolume(Number($event.target.value))"></label>
+      <label class="room-field" for="ambient-volume">音量 {{Math.round(sounds.preferences.ambience*200)}}%<input id="ambient-volume" class="play-range" type="range" min="0" max="0.5" step="0.01" :value="sounds.preferences.ambience" @input="sounds.update({ambience:Number($event.target.value)})"></label>
       <h3 class="play-subheading">灯光，也换一种颜色</h3><div class="play-toolbar"><button v-for="[id,label] in [['violet','紫色深夜'],['amber','暖色门灯'],['blue','蓝色晚风']]" :key="id" type="button" :aria-pressed="state.current.light===id" @click="state.current.light=id">{{label}}</button></div>
       <button type="button" @click="saveScene">把当前氛围放进收藏 ＋</button><p class="room-status" role="status">{{message}}</p>
     </div></div>
     <div v-if="state.scenes.length" class="ambient-saved"><h3 class="play-subheading">你留下的声音 · {{state.scenes.length}} / 6</h3><div v-for="(scene,index) in state.scenes" :key="`${scene.name}-${index}`"><button type="button" @click="preset(scene)">{{scene.name}} →</button><button type="button" :aria-label="`移走${scene.name}`" @click="removeScene(index)">移走</button></div></div><button v-if="removed&&state.scenes.length<6" type="button" @click="state.scenes.push(removed);removed=null">撤销移走</button>
-    <p class="play-footer-note">{{saved?'配方与收藏自动保存在这台设备。':'浏览器无法保存，可以下载氛围卡记录配方。'}} 全站音效开关也能暂停氛围；离开页面或切到后台会停止播放，返回后不会自动响起。</p>
+    <p class="play-footer-note">{{saved?'配方与收藏自动保存在这台设备。':'浏览器无法保存，可以下载氛围卡记录配方。'}} 全站总静音也能暂停氛围；离开页面或切到后台会停止播放，返回后不会自动响起。</p>
   </section>
 </template>
 <style scoped>.ambient-preview{max-width:480px;width:100%;margin-inline:auto}.ambient-layer{margin:24px 0}.ambient-layer label{display:flex;justify-content:space-between;gap:20px}.ambient-layer p{font-size:11px;color:#94788a;margin:0}.ambient-layer input{margin:7px 0}.ambient-saved>div{display:flex;gap:8px;margin-bottom:8px}.ambient-saved>div>button:first-child{flex:1;justify-content:space-between}.ambient-rain{animation:rainfall 1.4s linear infinite;animation-play-state:paused}.ambient-preview[data-playing=true] .ambient-rain{animation-play-state:running}@keyframes rainfall{from{transform:translateY(-8px)}to{transform:translateY(8px)}}@media(prefers-reduced-motion:reduce){.ambient-rain{animation:none}}</style>
