@@ -36,3 +36,11 @@ html:not(.has-scene-pages) { scroll-snap-type: none; }
   .site-header.site-navigation-header nav { gap: 6px; font-size: 10px; }
   .navigation-brand-row { gap: 13px; }
 }
+
+/* Keep the first row usable at 320px without shrinking touch targets. */
+@media(max-width:370px){
+ .navigation-brand-row{gap:4px!important}
+ .navigation-about{min-width:44px;padding-inline:0;justify-content:center}
+ .navigation-sound .sound-toggle{min-width:44px}
+ .navigation-sound .sound-toggle>span{display:none}
+}

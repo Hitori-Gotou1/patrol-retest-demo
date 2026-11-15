@@ -2,7 +2,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router';
 import { galleryRouteImage } from '../services/galleryDiscovery.js';
 
-export function useGalleryPreview({ allImages, images, section, lightbox, loading }) {
+export function useGalleryPreview({ allImages, images, section, lightbox, loading, findImage }) {
   const route = useRoute();
   const router = useRouter();
   const selectedId = ref('');
@@ -23,6 +23,8 @@ export function useGalleryPreview({ allImages, images, section, lightbox, loadin
   let originalOverflow = '';
   let closing = false;
   let previousRouteId;
+  let lookupId = null;
+  const lookedUp = new Set();
 
   function releaseDialog() {
     if (lightbox.value?.open) return;
@@ -47,9 +49,21 @@ export function useGalleryPreview({ allImages, images, section, lightbox, loadin
     if (raw !== previousRouteId) { closing = false; previousRouteId = raw; }
     if (closing) return;
     linkNotice.value = '';
+    if (id && !allImages.value.some(item => item.id === id) && findImage && id.startsWith('cloud-') && !lookedUp.has(id) && lookupId !== id) {
+      lookupId = id;
+      linkNotice.value = '正在查找分享的图片…';
+      try { await findImage(id); }
+      catch { /* Keep the regular gallery usable; the loader exposes recovery. */ }
+      finally {
+        lookedUp.add(id);
+        if (lookupId === id) lookupId = null;
+        if (mounted && galleryRouteImage(route.query.image) === id) nextTick(syncRoute);
+      }
+      if (!mounted || request !== revision) return;
+    }
     if (!id || !allImages.value.some(item => item.id === id)) {
       hideDialog();
-      if (raw != null) linkNotice.value = id && loading.value ? '正在查找分享的图片…' : '这张分享的图片暂时无法找到，仍可浏览其他收藏。';
+      if (raw != null) linkNotice.value = id && (loading.value || lookupId === id) ? '正在查找分享的图片…' : '这张分享的图片暂时无法找到，仍可浏览其他收藏。';
       return;
     }
     if (!pool.value.includes(id)) pool.value = allImages.value.map(item => item.id);
@@ -65,6 +79,8 @@ export function useGalleryPreview({ allImages, images, section, lightbox, loadin
     dialogOpen.value = true;
     document.body.style.overflow = 'hidden';
   }
+
+  function retryLink() { const id = galleryRouteImage(route.query.image); if (id) lookedUp.delete(id); return syncRoute(); }
 
   function navigate(location, replace = false) {
     return router[replace ? 'replace' : 'push'](location).catch(() => { linkNotice.value = '暂时无法打开这张图片，请重试。'; });
@@ -107,5 +123,5 @@ export function useGalleryPreview({ allImages, images, section, lightbox, loadin
   watch([() => route.query.image, allImages, loading], syncRoute, { flush: 'post' });
   onMounted(async () => { mounted = true; await nextTick(); syncRoute(); });
   onBeforeUnmount(() => { mounted = false; revision++; hideDialog(); });
-  return { selectedImage, imageCounter, dialogOpen, previewImages, linkNotice, openImage, closeImage, stepImage, onDialogClose, clearLink };
+  return { selectedImage, imageCounter, dialogOpen, previewImages, linkNotice, openImage, closeImage, stepImage, onDialogClose, clearLink, retryLink };
 }

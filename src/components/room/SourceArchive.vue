@@ -2,7 +2,7 @@
 import {computed,ref} from 'vue';
 import {galleryImages} from '../../data/gallery.js';
 import {withAttribution} from '../../data/galleryAttributions.js';
-import registry from '../../data/gallery-attributions.json';
+import registry from '../../data/gallery-attributions.json' with { type:'json' };
 import {downloadJson,loadLocal,saveLocal} from '../../room/storage.js';
 import {httpsLink} from '../../services/safeMedia.js';
 import {assetUrl} from '../../data/site.js';

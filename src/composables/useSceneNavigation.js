@@ -246,6 +246,7 @@ export function useSceneNavigation() {
     desktopPaging = matchMedia('(min-width: 1100px) and (min-height: 700px) and (hover: hover) and (pointer: fine)');
     listen(window, 'scroll', scheduleActiveUpdate, { passive: true });
     listen(window, 'resize', scheduleActiveUpdate, { passive: true });
+    listen(window, 'hitori:scene-ready', bindScenes);
     listen(window, 'wheel', onWheel, { passive: false });
     listen(window, 'pointerdown', cancelFocus, { passive: true });
     listen(window, 'touchstart', cancelFocus, { passive: true });

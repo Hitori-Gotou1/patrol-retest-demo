@@ -1,10 +1,20 @@
 # 一里小屋 · HITORI ROOM
 
-《孤独摇滚！》主题同人展示站。保留舞台开场、整幕四色角色页、淡紫纸箱剧场、奶油色收藏墙与暗色音乐放映室五幕风格，使用 **Vue 3 Composition API + Vite + Vue Router + GSAP**。无需后台、数据库或登录。
+《孤独摇滚！》主题同人展示站。保留舞台开场、整幕四色角色页、淡紫纸箱剧场、奶油色收藏墙与暗色音乐放映室五幕风格，使用 **Vue 3 Composition API + Vite + Vue Router + GSAP**。本机创作无需登录；云端图库管理和可选跨设备同步使用 Supabase。
 
 公开网站：https://hitori-gotou1.github.io/patrol-retest-demo/
 
 新增全站搜索、作品整理与版本对比、演出项目、作品挂画、阅读偏好、独立手记页、乐队日历、巡礼资料、来源档案与运营看板，入口在顶栏工具和活动室下方。功能、资料来源与全站统计启用方式见 [扩展说明](docs/site-expansion.md)。
+
+## 本次完整升级
+
+开发基线已与线上 `219c550` 对齐。25项升级的状态、验证、截图、真实导出、迁移及发布步骤见 [升级交付说明](docs/upgrade/delivery.md)。原第5、6、8项明确排除：不新增统一备份、不扩大作品架、不批量补写旧收藏来源。生产迁移与发布尚未执行，不能把本机及隔离测试当作生产服务已验收。
+
+- 手机创作工作区、常用活动与模板：[入口与手机](docs/upgrade/mobile.md)。
+- 图库工作台、批量队列、角色/分类/标签、适屏图与策展：[站主操作](docs/upgrade/gallery-admin.md)。
+- 多小节、统一声音与真实 WAV / 视频：[编曲和导出](docs/upgrade/audio.md)。
+- 校准、练琴日志与长期手帐：[练习与伙伴](docs/upgrade/practice.md)。
+- 安装、选择性离线与可选账号同步：[设备与同步](docs/upgrade/offline-sync.md)。
 
 ## 安装、运行与构建
 
@@ -181,8 +191,8 @@ Vue Router 使用 Hash 路由，关于页 `/#/about` 可直接刷新，无需服
 
 收藏区的「站主管理收藏」通向 `/#/manage-gallery`。配置 Supabase 后，站主用邮箱密码登录，选择 JPG/PNG/WebP、填写标题后即可发布，所有访客可见。原有 54 张素材继续保留；上传不修改 GitHub 文件，无需每张都重新部署。
 
-首次接入请按 [站主上传配置说明](docs/gallery-upload-setup.md) 操作：执行 [权限 SQL](supabase/gallery.sql)、创建站主账号和 UID 白名单、设置两项公开环境变量后构建。未配置时现有网站照常运行，管理页显示尚未启用。不提供公开注册、访客投稿、删除或编辑功能。
+首次接入请按 [站主上传配置说明](docs/gallery-upload-setup.md) 操作：执行 [权限 SQL](supabase/gallery.sql)、创建站主账号和 UID 白名单、设置两项公开环境变量后构建。未配置时现有网站照常运行，管理页显示尚未启用。站主工作台现支持元数据编辑、顺序、下架恢复和合集；批量队列支持多选、逐图重试与取消。站主权限由数据库策略执行，访客不能上传。
 
-上传最大 10 MiB / 4000 万像素，原图保留并生成 640px 缩略图。SDK 仅在登录管理页按需加载；访客通过匿名只读接口加载新收藏。新增依赖 `@supabase/supabase-js` 用于认证、令牌续期和对象存储，避免自行实现认证协议。
+上传最大 10 MiB / 4000 万像素，原图保留并生成最长边640px缩略图、1920px适屏图（不放大小图）。SDK 仅在登录管理页按需加载；访客通过匿名只读接口加载新收藏。新增依赖 `@supabase/supabase-js` 用于认证、令牌续期和对象存储，避免自行实现认证协议。
 
-验证：`npm test` 包含上传规则与公开配置检查；`tests/browser-upload.py` 是模拟 Supabase 的浏览器契约测试，不替代配置后对真实 RLS 的验收。
+升级需要在原 gallery.sql 之后执行 gallery-upgrade.sql；同步另有独立迁移和回滚。`npm test` 包含关键逻辑检查，`tests/browser-upload.py --dist <隔离构建目录>` 是批量队列的浏览器验收入口；这些隔离测试不替代配置后对真实 Supabase RLS 的验收。

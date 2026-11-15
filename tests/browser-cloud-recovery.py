@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 from playwright.sync_api import Error, expect, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -36,13 +36,14 @@ def session(expired=False):
 
 class Fixture:
     def __init__(self, browser, saved=None, fault='', width=390):
-        self.context = browser.new_context(viewport={'width': width, 'height': 844}, reduced_motion='reduce')
+        self.context = browser.new_context(viewport={'width': width, 'height': 844}, reduced_motion='reduce', service_workers='block')
         if saved is not None:
             self.context.add_init_script('localStorage.setItem("hitori-room:owner-session:v1",' + json.dumps(json.dumps(saved)) + ');')
         self.fault = fault
         self.held = []
         self.requests = []
         self.rows = []
+        self.schema_fallbacks = 0
         self.context.route('**/*', self.route)
         self.page = self.context.new_page()
         self.page.on('pageerror', lambda error: REPORT['pageErrors'].append(str(error)))
@@ -87,7 +88,11 @@ class Fixture:
             else:
                 self.reply(route, [{'user_id': UID}])
         elif '/rest/v1/gallery_uploads' in parsed.path:
-            if self.fault == 'gallery':
+            parameters = parse_qs(parsed.query)
+            if self.fault == 'legacy-schema' and ('published' in parameters or 'sort_order' in parameters.get('order', [''])[0]):
+                self.schema_fallbacks += 1
+                self.reply(route, {'code': '42703', 'message': 'column gallery_uploads.published does not exist'}, 400)
+            elif self.fault == 'gallery':
                 self.held.append((route, self.rows))
             elif self.fault.startswith('http-'):
                 self.reply(route, {'code': 'PGRST205' if self.fault == 'http-404' else 'fixture'}, int(self.fault[5:]))
@@ -216,6 +221,22 @@ def test_public_gallery(browser):
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
         fixture.close()
 
+def test_legacy_schema(browser):
+    fixture = Fixture(browser, fault='legacy-schema')
+    row_id = '22222222-2222-4222-8222-222222222222'
+    fixture.rows = [{'id': row_id, 'object_path': UID+'/'+row_id+'.jpg',
+        'title': '旧结构中的收藏', 'width': 300, 'height': 300}]
+    fixture.goto('#/?image=cloud-'+row_id+'#gallery')
+    expect(fixture.page.locator('#lightbox-image')).to_be_visible()
+    expect(fixture.page.locator('#lightbox-image')).to_have_attribute('src',
+        'https://gallery-test.supabase.co/storage/v1/object/public/gallery-uploads/'+UID+'/'+row_id+'.jpg')
+    expect(fixture.page.locator('.gallery-cloud-notice')).to_have_count(0)
+    assert fixture.schema_fallbacks >= 1, fixture.requests
+    fixture.page.locator('#lightbox-close').click()
+    expect(fixture.page.locator('.gallery-card h3').first).to_have_text('旧结构中的收藏')
+    assert fixture.page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+    fixture.close()
+
 def test_http_errors(browser):
     for status, message in ((401,'验证未通过'),(403,'访问权限'),(404,'数据表'),(503,'运行中')):
         fixture = Fixture(browser, fault='http-'+str(status))
@@ -233,7 +254,7 @@ class Handler(SimpleHTTPRequestHandler):
     def log_message(self, *_args): pass
 
 CASES = [('sdk',test_sdk),('expired-session',test_expired_session),('permission',test_permission),
-         ('user-unavailable',test_user_unavailable),('login',test_login),('public-gallery',test_public_gallery),('http-errors',test_http_errors)]
+         ('user-unavailable',test_user_unavailable),('login',test_login),('public-gallery',test_public_gallery),('legacy-schema',test_legacy_schema),('http-errors',test_http_errors)]
 parser = argparse.ArgumentParser()
 parser.add_argument('--dist', type=Path, required=True)
 parser.add_argument('--case', choices=[name for name,_ in CASES])

@@ -1,4 +1,6 @@
 <script setup>
+import { useActivityFavorites } from '../../composables/useActivityFavorites.js';
+import { siteSections } from '../../data/siteSections.js';
 import { computed, ref } from 'vue';
 import { activityCatalog, activityGroups, featuredActivities, filterActivities } from '../../data/activityCatalog.js';
 import { recentActivities } from '../../room/recentVisits.js';
@@ -6,6 +8,8 @@ import { readWorks } from '../../room/workshelf.js';
 import { journalNotes } from '../../data/journal.js';
 import {startTour} from '../../room/tour.js';
 import {readTour} from '../../room/tour.js';
+const {favorites,notice,toggle,move}=useActivityFavorites();
+const favoriteCards=computed(()=>favorites.value.map(id=>activityCatalog.find(c=>c.id===id)).filter(Boolean));
 const tourDone=readTour().done;
 import { assetUrl } from '../../data/site.js';
 const category = ref('all'), query = ref(''),duration=ref('all'),difficulty=ref('all');
@@ -17,6 +21,8 @@ const editorial = journalNotes.filter(note=>note.category!=='小屋更新').slic
 <template>
   <section aria-labelledby="playroom-title" class="discovery-home">
     <h2 id="playroom-title" class="visually-hidden">放学以后，小屋还亮着灯。</h2>
+    <section class="room-topics" aria-labelledby="room-topics-title"><div class="discovery-section-heading"><div><p class="room-kicker">把灵感接成一段旅程</p><h2 id="room-topics-title">小屋的几个大专题</h2></div></div><div class="room-topic-grid"><RouterLink v-for="item in siteSections.filter(s=>['project','calendar','pilgrimage'].includes(s.id))" :key="item.id" :to="item.path"><small>{{({project:'创作 · 排一场演出',calendar:'阅读 · 记住特别的一天',pilgrimage:'探索 · 从小屋走出去'})[item.id]}}</small><h3>{{item.title}} ↗</h3><p>{{item.description}}</p></RouterLink></div></section>
+    <section class="favorite-activities" aria-labelledby="favorite-title"><div class="discovery-section-heading"><div><p class="room-kicker">自己的快捷入口</p><h2 id="favorite-title">我的常用活动</h2></div></div><p v-if="!favoriteCards.length" class="room-hint">在下面的活动卡片点「加入常用」，喜欢的角落就会留在这里。不需要登录。</p><div v-else class="favorite-activity-list"><article v-for="(card,index) in favoriteCards" :key="card.id"><RouterLink :to="card.path">{{card.icon}} {{card.title}} ↗</RouterLink><div><button type="button" :disabled="index===0" :aria-label="`将${card.title}前移`" @click="move(card.id,-1)">↑</button><button type="button" :disabled="index===favoriteCards.length-1" :aria-label="`将${card.title}后移`" @click="move(card.id,1)">↓</button><button type="button" :aria-label="`取消常用${card.title}`" @click="toggle(card.id)">取消常用</button></div></article></div><p class="room-hint" role="status">{{notice}}</p></section>
     <div v-if="recent.length" class="room-resume"><span>接着上次的小灵感</span><RouterLink v-for="card in recent" :key="card.id" :to="card.path">{{card.title}} →</RouterLink><RouterLink to="/room/works">{{works.length?`${works.length} 件作品在等你`:'打开作品架'}} ↗</RouterLink></div>
     <div class="discovery-intro"><p>拍张合影，写个小故事，或者只是听一会儿雨。</p><span>从这三个角落开始</span></div>
     <div class="featured-activities">
@@ -31,7 +37,7 @@ const editorial = journalNotes.filter(note=>note.category!=='小屋更新').slic
       <div class="discovery-section-heading"><div><p class="room-kicker">再逛一会儿</p><h2 id="activity-browser-title">找到今天想做的事</h2></div><label class="activity-search"><span class="visually-hidden">搜索活动</span><input v-model="query" type="search" placeholder="找玩法、作品或声音" maxlength="60"></label></div>
       <div class="activity-filters" aria-label="活动分类"><button type="button" :aria-pressed="category==='all'" @click="category='all'">全部活动 · {{activityCatalog.length}}</button><button v-for="group in activityGroups" :key="group.id" type="button" :aria-pressed="category===group.id" @click="category=group.id">{{group.title}}</button></div>
       <div class="room-fields activity-refine"><label class="room-field">想玩多久<select v-model="duration"><option value="all">不限时间</option><option value="2">约2分钟</option><option value="5">约5分钟</option><option value="10">10分钟以上</option><option value="free">随时坐坐</option></select></label><label class="room-field">今天的心情<select v-model="difficulty"><option value="all">全部难度</option><option value="easy">轻松体验</option><option value="challenge">来点挑战</option></select></label></div><p class="activity-results" role="status">{{cards.length}} 个角落，按自己的步调来。</p>
-      <div class="activity-cards"><RouterLink v-for="card in cards" :key="card.id" :to="card.path" class="activity-card"><span class="activity-icon" :style="{background:card.color}" aria-hidden="true">{{card.icon}}</span><div><h3>{{card.title}}</h3><p>{{card.description}}</p><small>{{card.minutes?`约${card.minutes}分钟`:"随时坐坐"}} · {{card.difficulty==='challenge'?'来点挑战':'轻松体验'}}</small></div><span aria-hidden="true">↗</span></RouterLink></div>
+      <div class="activity-cards"><article v-for="card in cards" :key="card.id" class="activity-card-wrap"><RouterLink :to="card.path" class="activity-card"><span class="activity-icon" :style="{background:card.color}" aria-hidden="true">{{card.icon}}</span><div><h3>{{card.title}}</h3><p>{{card.description}}</p><small>{{card.minutes?`约${card.minutes}分钟`:"随时坐坐"}} · {{card.difficulty==='challenge'?'来点挑战':'轻松体验'}}</small></div><span aria-hidden="true">↗</span></RouterLink><button type="button" class="activity-favorite-toggle" :aria-pressed="favorites.includes(card.id)" :aria-label="`${favorites.includes(card.id)?'取消常用':'加入常用'}${card.title}`" @click="toggle(card.id)">{{favorites.includes(card.id)?'★ 已加入常用':'☆ 加入常用'}}</button></article></div>
       <p v-if="!cards.length" class="room-hint">没有找到这个角落，换个关键词或分类试试。</p>
     </section>
   </section>

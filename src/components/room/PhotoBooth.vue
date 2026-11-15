@@ -1,4 +1,6 @@
 <script setup>
+import EditorWorkspace from '../tools/EditorWorkspace.vue';
+import TemplateLibrary from '../tools/TemplateLibrary.vue';
 import { recordActivity } from '../../room/activityLog.js';
 import { computed, ref } from 'vue';
 import { cast, stickers, photoThemes } from '../../data/playroom.js';
@@ -38,7 +40,7 @@ async function exportPhoto() {
 <template>
   <section class="room-panel" aria-labelledby="photo-title">
     <div class="play-heading"><div><p class="play-eyebrow">PHOTO BOOTH / 把今天装进相框</p><h2 id="photo-title">这次，和大家一起入镜。</h2><p class="room-intro">选好背景和成员，拖动人物与贴纸。也可以用方向键移动选中的元素。</p></div><span class="play-number" aria-hidden="true">01</span></div>
-    <div class="play-split">
+    <TemplateLibrary tool="photobooth" :current="state" @apply="state=$event;editor.selectedKey.value=''"/><EditorWorkspace title="拍贴编辑" save-label="保存合影" @save="exportPhoto"><template #canvas>
       <div class="play-preview photo-preview">
         <svg ref="stage" class="play-editor-svg" viewBox="0 0 720 900" role="group" aria-label="合影编辑画布" @pointermove="editor.move" @pointerup="editor.up" @pointercancel="editor.up">
           <defs><clipPath id="photo-window"><rect x="32" y="108" width="656" height="650" rx="120"/></clipPath><pattern id="photo-grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0v40" fill="none" :stroke="theme.paper" opacity=".3"/></pattern></defs>
@@ -58,7 +60,7 @@ async function exportPhoto() {
           <g :fill="theme.accent"><circle v-for="i in 4" :key="i" :cx="326+i*14" cy="82" r="3"/></g>
         </svg>
         <div class="room-actions play-sticky-actions"><button id="photo-export" type="button" class="primary" :disabled="busy" @click="exportPhoto">{{ busy ? '冲洗中…' : '保存合影 PNG ↓' }}</button><span class="play-footer-note">1080 × 1350 · 适合分享</span></div>
-      </div>
+      </div></template><template #tools>
       <div class="play-settings">
         <h3 class="play-subheading">01 / 选择今天的颜色</h3><div class="play-toolbar"><button v-for="item in photoThemes" :key="item.id" type="button" :aria-pressed="state.theme === item.id" @click="state.theme=item.id">{{ item.label }}</button></div>
         <h3 class="play-subheading">02 / 谁来入镜？</h3><div class="play-palette"><button v-for="person in cast" :key="person.id" type="button" :aria-pressed="objects.some(o=>o.id===person.id)" @click="toggleCast(person)"><img :src="asset(person.thumbnail || person.image)" alt="" width="52" height="52">{{ person.name }}</button></div>
@@ -69,7 +71,7 @@ async function exportPhoto() {
         <p v-else class="play-empty-selection">轻点画布里的成员或贴纸，就能调整大小、角度和前后顺序。</p>
         <div class="play-toolbar"><button type="button" @click="reset">重新布置</button><button v-if="undo" type="button" @click="restore">撤销重置</button></div>
         <p class="room-status" role="status">{{ message }}</p><p class="play-footer-note">{{ saved ? '编辑自动保存在这台设备。' : '浏览器无法保存草稿，请保存 PNG 留下合影。' }} 人物素材沿用站主提供的 Q 版图。</p>
-      </div>
-    </div>
+      </div></template>
+    </EditorWorkspace>
   </section>
 </template>

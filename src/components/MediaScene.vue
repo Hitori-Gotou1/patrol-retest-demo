@@ -1,8 +1,9 @@
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue';
-import MusicPlayer from './MusicPlayer.vue';
+import { defineAsyncComponent, ref, onMounted, onUnmounted, watch } from 'vue';
+const MusicPlayer = defineAsyncComponent(() => import('./MusicPlayer.vue'));
 import MusicGuide from './MusicGuide.vue';
 import { site, assetUrl } from '../data/site.js';
+const musicOpened=ref(false);
 const mode = ref('guide'), music = ref(null), video = ref(null), fileInput = ref(null);
 const videoSource = ref(site.video.src ? assetUrl(site.video.src) : '');
 const videoTitle = ref(site.video.title), videoDescription = ref(site.video.description), videoStatus = ref('');
@@ -19,7 +20,7 @@ function selectFile(event) {
 }
 function pauseVideo() { video.value?.pause(); }
 function hidden() { if (document.hidden) pauseVideo(); }
-watch(mode, (value) => { if (value !== 'video') pauseVideo(); if (value !== 'music') music.value?.pause(); });
+watch(mode, (value) => { if(value==='music')musicOpened.value=true; if (value !== 'video') pauseVideo(); if (value !== 'music') music.value?.pause(); });
 onMounted(() => { document.addEventListener('visibilitychange', hidden); window.addEventListener('pagehide', pauseVideo); });
 onUnmounted(() => { pauseVideo(); if (objectUrl) URL.revokeObjectURL(objectUrl); document.removeEventListener('visibilitychange', hidden); window.removeEventListener('pagehide', pauseVideo); });
 </script>
@@ -29,7 +30,7 @@ onUnmounted(() => { pauseVideo(); if (objectUrl) URL.revokeObjectURL(objectUrl);
       <div class="section-label"><span>05 / 给今天，配一段旋律</span><span>FROM THE ROOM TO THE STAGE</span></div>
       <div class="section-heading media-heading"><div><h2 id="video-title">把灯调暗，再听一遍<span class="pink-period">.</span></h2><p>从一首喜欢的歌，到自己的第一段合奏。今晚，慢慢来。</p></div><div class="media-tabs" role="group" aria-label="选择音乐或视频"><button type="button" :aria-pressed="mode === 'guide'" @click="mode = 'guide'">原曲导听</button><button type="button" :aria-pressed="mode === 'music'" @click="mode = 'music'">练习唱片</button><button type="button" :aria-pressed="mode === 'video'" @click="mode = 'video'">私人放映</button></div></div>
       <MusicGuide v-if="mode === 'guide'" />
-      <MusicPlayer v-show="mode === 'music'" ref="music" @play="pauseVideo" />
+      <MusicPlayer v-if="musicOpened" v-show="mode === 'music'" ref="music" @play="pauseVideo" />
       <div v-show="mode === 'video'" class="video-layout">
         <div id="video-stage" class="video-stage">
           <div v-if="!videoSource" id="video-empty" class="video-empty"><span class="screen-corner top-left" aria-hidden="true"></span><span class="screen-corner bottom-right" aria-hidden="true"></span><p class="screen-label">想再看一遍的瞬间</p><button id="choose-video" class="play-button" type="button" aria-label="选择本地视频预览" @click="fileInput?.click()"><span aria-hidden="true">▶</span></button><span class="screen-caption">把喜欢的片段，留在这里。</span></div>

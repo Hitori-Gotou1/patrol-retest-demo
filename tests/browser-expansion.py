@@ -25,7 +25,7 @@ class Handler(SimpleHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError): pass
     def log_message(self, *args): pass
 
-server = ThreadingHTTPServer(('127.0.0.1', 0), partial(Handler, directory=str(ROOT / 'dist')))
+server = ThreadingHTTPServer(('127.0.0.1', 0), partial(Handler, directory=os.environ.get('HITORI_QA_DIST',str(ROOT/'dist'))))
 threading.Thread(target=server.serve_forever, daemon=True).start()
 BASE = f'http://127.0.0.1:{server.server_port}' + PREFIX
 
@@ -173,7 +173,7 @@ try:
         page.locator('#site-search-kind').select_option('all')
         page.locator('#site-search').fill('周末的四个人')
         expect(dialog.locator('.site-search-results')).to_contain_text('我的作品')
-        page.get_by_role('button',name='阅读与动效',exact=True).click()
+        page.get_by_role('button',name='阅读、声音与设置',exact=True).click()
         dialog.get_by_label('阅读字号').select_option('1.3')
         dialog.get_by_label('阅读行距').select_option('2.4')
         dialog.get_by_label('动态效果').select_option('reduce')
@@ -181,7 +181,7 @@ try:
         dialog.get_by_role('button',name='应用并记住设置',exact=True).click()
         expect(page.locator('html')).to_have_attribute('data-motion','reduce')
         expect(page.locator('html')).to_have_attribute('data-contrast','high')
-        page.get_by_role('button',name='关闭小屋工具',exact=True).click()
+        page.get_by_role('button',name='关闭搜索与设置',exact=True).click()
         go(page,'notes/four-songs-one-evening')
         assert page.locator('.room-prose').evaluate('e=>parseFloat(getComputedStyle(e).fontSize)')>=19
         page.reload(wait_until='networkidle');assert stored(page,'preferences')['font']==1.3
@@ -230,10 +230,10 @@ try:
         expect(page.locator('.room-status')).to_contain_text('尚未启用')
         page.get_by_role('button',name='本机统计',exact=True).click()
         page.get_by_role('button',name='打开全站搜索与设置',exact=True).click()
-        page.get_by_role('button',name='阅读与动效',exact=True).click()
+        page.get_by_role('button',name='阅读、声音与设置',exact=True).click()
         page.get_by_label('记录匿名体验次数',exact=True).uncheck()
         page.get_by_role('button',name='应用并记住设置',exact=True).click()
-        page.get_by_role('button',name='关闭小屋工具',exact=True).click()
+        page.get_by_role('button',name='关闭搜索与设置',exact=True).click()
         before=stored(page,'counts');go(page,'calendar');assert stored(page,'counts')==before
         REPORT['passed'].append('verified pilgrimage links/credits/bookmarks/export, real scoped counts, opt out')
         context.close()
@@ -246,7 +246,8 @@ try:
         assert page.locator('meta[property="og:image"]').get_attribute('content').startswith('https://')
         assert page.locator('script[type="application/ld+json"]').count()==1
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
-        assert page.request.get(BASE+'sitemap.xml').text().count('<loc>')==14
+        sitemap=page.request.get(BASE+'sitemap.xml').text()
+        assert sitemap.count('<loc>')>=14 and sitemap.count('/notes/')==13
         page.screenshot(path=str(OUT/'standalone-article-320.png'),full_page=True)
         context.close();browser.close()
         REPORT['passed'].append('13 standalone full articles, OG metadata, no-JS reader and sitemap')

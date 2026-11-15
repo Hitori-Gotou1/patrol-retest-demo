@@ -24,7 +24,7 @@ export function filterGallery(items, { category = 'all', query = '', character =
     if (favoritesOnly && !favorites.has(item.id)) return false;
     const characters = imageCharacters(item);
     if (character === 'unmarked' ? characters.length > 0 : character !== 'all' && !characters.some(member => member.id === character)) return false;
-    const text = normalized([item.title, item.subtitle, item.alt, item.credit, item.tag, item.creator, item.sourceUrl,
+    const text = normalized([item.title, item.subtitle, item.alt, item.credit, item.tag, ...(Array.isArray(item.tags) ? item.tags : []), item.creator, item.sourceUrl,
       ...characters.flatMap(member => [member.label, ...member.names, ...member.latin])].join(' '));
     return terms.every(term => text.includes(term));
   });

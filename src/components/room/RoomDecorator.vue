@@ -1,4 +1,5 @@
 <script setup>
+import EditorWorkspace from '../tools/EditorWorkspace.vue';
 import {readWorks} from '../../room/workshelf.js';
 import { recordActivity } from '../../room/activityLog.js';
 import { computed, ref } from 'vue';
@@ -41,7 +42,7 @@ async function exportRoom(){if(busy.value)return;busy.value=true;persist();try{a
 <template>
   <section class="room-panel" aria-labelledby="decorate-title">
     <div class="play-heading"><div><p class="play-eyebrow">MY LITTLE ROOM / 给喜欢的东西留位置</p><h2 id="decorate-title">今天，想住在怎样的房间？</h2><p class="room-intro">点选物品后拖动，或用方向键挪动。纸箱、音箱、台灯和合照都有一点小回应。</p></div><span class="play-number" aria-hidden="true">02</span></div>
-    <div class="play-preview">
+    <EditorWorkspace title="房间布置" save-label="保存房间照片" @save="exportRoom"><template #canvas><div class="play-preview">
       <svg ref="stage" class="play-editor-svg" viewBox="0 0 960 620" role="group" aria-label="一里的房间布置画布" @pointermove="editor.move" @pointerup="editor.up" @pointercancel="editor.up">
         <rect width="960" height="620" :fill="colors[0]"/><path d="M0 0h100v382L0 470Z" fill="#745466" opacity=".12"/><path d="M100 382h860v238H0V470Z" :fill="colors[1]"/><path d="M100 0v382H960" fill="none" stroke="#7b5b62" stroke-width="3"/>
         <g opacity=".25" stroke="#785a64"><path d="M0 470h960M0 540h960M210 382 60 620M470 382 470 620M720 382 860 620"/></g>
@@ -59,13 +60,13 @@ async function exportRoom(){if(busy.value)return;busy.value=true;persist();try{a
         </g>
         <rect x="18" y="18" width="924" height="584" fill="none" stroke="#7c5e70" stroke-width="1.5"/><text x="32" y="588" font-family="monospace" font-size="12" letter-spacing="3" fill="#664c61">HITORI ROOM / MAKE YOURSELF AT HOME.</text>
       </svg>
-    </div>
+    </div></template><template #tools>
     <div class="room-actions play-sticky-actions"><button type="button" class="primary" :disabled="busy" @click="exportRoom">{{busy?'保存中…':'保存房间照片 ↓'}}</button><button v-for="[id,label] in [['warm','暖色午后'],['pink','粉色灯光'],['night','深夜小屋']]" :key="id" type="button" :aria-pressed="state.light===id" @click="state.light=id">{{label}}</button></div>
     <p id="decoration-reaction" class="room-status" role="status">{{message}}</p>
     <h3 class="play-subheading">把自己的作品挂上墙</h3><div class="room-fields"><label class="room-field">从作品架选择<select v-model="chosenWork"><option value="">选择带预览的作品</option><option v-for="work in hangingWorks" :key="work.id" :value="work.id">{{work.title}}</option></select></label></div><div class="room-actions"><button id="hang-work" type="button" @click="hangWork">挂到房间里 ＋</button><RouterLink to="/room/works">去作品架整理 ↗</RouterLink></div><p class="play-footer-note">保存的是作品画面副本；原作品后来被移出作品架，这张挂画仍会保留。</p><h3 class="play-subheading">从这里，添一件喜欢的东西</h3><div class="play-palette room-prop-palette"><button v-for="item in roomProps" :key="item.id" type="button" :aria-label="`添加${item.name}`" @click="add(item)"><svg viewBox="-80 -85 160 170" width="58" height="62" aria-hidden="true"><RoomProp :kind="item.id"/></svg>{{item.name}}</button></div>
     <label class="room-field" for="decoration-object">选择已经摆放的物品<select id="decoration-object" v-model="editor.selectedKey.value"><option value="">选择一件物品</option><option v-for="(item,index) in objects" :key="item.key" :value="item.key">{{index+1}} / {{prop(item).name}}</option></select></label>
     <div v-if="selected" class="play-editor-controls"><strong>正在摆放：{{prop(selected).name}}</strong><div class="room-fields"><label>物品大小<input v-model.number="selected.size" class="play-range" type="range" min="0.5" max="1.8" step="0.05"></label><label>物品角度<input v-model.number="selected.rotation" class="play-range" type="range" min="-30" max="30"></label></div><div class="play-toolbar"><button v-for="[label,key] in [['←','ArrowLeft'],['↑','ArrowUp'],['↓','ArrowDown'],['→','ArrowRight']]" :key="key" type="button" :aria-label="`挪动${label}`" @click="editor.key({key,preventDefault(){}},selected)">{{label}}</button><button type="button" @click="interact(selected)">轻点互动</button><button type="button" @click="editor.remove">收起这件</button></div></div>
-    <div class="play-toolbar"><button type="button" @click="reset">恢复初始房间</button><button v-if="undo" type="button" @click="restore">撤销重置</button></div><p class="play-footer-note">{{saved?'房间布置自动保存在这台设备。':'浏览器无法保存草稿，可以保存房间照片。'}} 场景与物品为本站原创图形，人物沿用站主提供的素材。</p>
+    <div class="play-toolbar"><button type="button" @click="reset">恢复初始房间</button><button v-if="undo" type="button" @click="restore">撤销重置</button></div><p class="play-footer-note">{{saved?'房间布置自动保存在这台设备。':'浏览器无法保存草稿，可以保存房间照片。'}} 场景与物品为本站原创图形，人物沿用站主提供的素材。</p></template></EditorWorkspace>
   </section>
 </template>
 <style scoped>.room-prop-palette{grid-template-columns:repeat(8,minmax(0,1fr))}@media(max-width:760px){.room-prop-palette{grid-template-columns:repeat(4,minmax(0,1fr))}}</style>

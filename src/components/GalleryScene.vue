@@ -4,36 +4,65 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router';
 import {withAttribution} from '../data/galleryAttributions.js';
 import { galleryImages } from '../data/gallery.js';
-import { cloudConfigured, loadCloudGallery } from '../services/galleryCloud.js';
+import { cloudConfigured, loadCloudGalleryPage, findCloudGalleryImage, galleryMetadataCacheKey } from '../services/galleryCloud.js';
+import { createGalleryPager, clearGalleryMetadataCache } from '../services/galleryPager.js';
+import { useGalleryZoom } from '../composables/useGalleryZoom.js';
 import { cloudServiceMessage } from '../services/cloudConnection.js';
 import { createProgressiveImage } from '../services/progressiveImage.js';
 import { useGalleryPreview } from '../composables/useGalleryPreview.js';
 import { filterGallery, galleryCharacters, galleryImageLocation, favoritesStorageKey, maxBackupBytes, readSavedFavorites, createFavoritesBackup, parseFavoritesBackup, mergeFavorites } from '../services/galleryDiscovery.js';
-const remoteImages = ref([]);
+const pagedImages = ref([]);
+const locatedImages = ref([]);
+const remoteImages = computed(() => [...new Map([...locatedImages.value, ...pagedImages.value].map(item => [item.id, item])).values()]);
 const cloudError = ref('');
 const cloudLoading = ref(false);
+const cloudHasMore = ref(cloudConfigured);
+const cloudComplete = ref(!cloudConfigured);
+const cloudUpdatedAt = ref(0);
 const allImages = computed(() => [...remoteImages.value, ...galleryImages].map(withAttribution));
 const creator=ref('all');
 const creators=computed(()=>[...new Set(allImages.value.map(i=>i.creator).filter(Boolean))]);
-let cloudRequest;
+const cloudPager = createGalleryPager({ fetchPage: loadCloudGalleryPage, cacheKey: galleryMetadataCacheKey, onChange: state => {
+  if (!mounted) return;
+  pagedImages.value = state.items;
+  cloudLoading.value = state.loading;
+  cloudHasMore.value = state.hasMore;
+  cloudComplete.value = state.complete;
+  cloudUpdatedAt.value = state.updatedAt;
+  cloudError.value = state.error ? `云端收藏暂时无法继续读取，已加载的内容仍可浏览。${cloudServiceMessage(state.error)}` : '';
+} });
+const locating = new Map();
+async function locateCloudImage(id) {
+  if (!cloudConfigured) return null;
+  if (locating.has(id)) return locating.get(id).promise;
+  const controller = new AbortController();
+  const promise = findCloudGalleryImage(id, controller.signal).then(item => { if (mounted && item) locatedImages.value = [...locatedImages.value.filter(entry => entry.id !== item.id), item]; return item; }).catch(error => {
+    if (mounted && error.name !== 'AbortError') cloudError.value = `分享图片暂时无法定位。${cloudServiceMessage(error)}`;
+    throw error;
+  }).finally(() => locating.delete(id));
+  locating.set(id, { controller, promise });
+  return promise;
+}
 async function refreshCloud() {
   if (!cloudConfigured || cloudLoading.value) return;
-  cloudLoading.value = true;
-  cloudError.value = '';
-  cloudRequest = new AbortController();
-  try {
-    const items = await loadCloudGallery(cloudRequest.signal);
-    if (mounted) remoteImages.value = items;
-  } catch (cause) {
-    if (mounted) cloudError.value = `新上传的收藏暂时无法加载，原有收藏仍可浏览。${cloudServiceMessage(cause)}`;
-  } finally { if (mounted) cloudLoading.value = false; }
+  await cloudPager.refresh();
+  if (hasFilters.value) await cloudPager.ensureComplete();
+  retryLink();
 }
-function reconnectCloud() { if (cloudError.value) refreshCloud(); }
+async function retryCloud() {
+  if (!cloudConfigured || cloudLoading.value) return;
+  await cloudPager.loadMore();
+  if (hasFilters.value) await cloudPager.ensureComplete();
+  retryLink();
+}
+function reconnectCloud() { if (cloudError.value) retryCloud(); }
+function invalidateCloud() { clearGalleryMetadataCache(galleryMetadataCacheKey); refreshCloud(); }
 import '../styles/gallery-enhancements.css';
 import '../styles/gallery-discovery.css';
 
 const section = ref(null);
 const lightbox = ref(null);
+const zoomSurface = ref(null);
 const activeFilter = ref('all');
 const query = ref('');
 const character = ref('all');
@@ -53,7 +82,8 @@ const images = computed(() => filterGallery(allImages.value, { category: activeF
 const hasFilters = computed(() => activeFilter.value !== 'all' || query.value.trim() || character.value !== 'all' || creator.value!=='all' || favoritesOnly.value);
 const knownFavoriteCount = computed(() => allImages.value.filter(item => favorites.value.has(item.id)).length);
 const visibleImages = computed(() => images.value.slice(0, wallLimit.value));
-const { selectedImage, imageCounter, dialogOpen, previewImages, linkNotice, openImage, closeImage, stepImage, onDialogClose, clearLink } = useGalleryPreview({ allImages, images, section, lightbox, loading: cloudLoading });
+const { selectedImage, imageCounter, dialogOpen, previewImages, linkNotice, openImage, closeImage, stepImage, onDialogClose, clearLink, retryLink } = useGalleryPreview({ allImages, images, section, lightbox, loading: cloudLoading, findImage: locateCloudImage });
+const zoom = useGalleryZoom({ selectedImage, dialogOpen, surface: zoomSurface, stepImage });
 const router = useRouter();
 const backupInput = ref(null);
 const importing = ref(false);
@@ -76,7 +106,7 @@ const rows = computed(() => [0, 1, 2].map(offset => {
 const asset = path => path.startsWith('https://') ? path : `${import.meta.env.BASE_URL}${path}`;
 const progressiveImage = createProgressiveImage({ onChange: state => { imageState.value = state; } });
 watch(selectedImage, item => {
-  if (item) progressiveImage.load(asset(item.src), item.thumbnail ? asset(item.thumbnail) : undefined);
+  if (item) progressiveImage.load(asset(item.preview || item.src), item.thumbnail ? asset(item.thumbnail) : undefined);
   else progressiveImage.clear();
 }, { flush: 'sync' });
 const isSmallImage = item => Number.isFinite(item.width) && Number.isFinite(item.height) && Math.max(item.width, item.height) <= 300;
@@ -84,12 +114,14 @@ const imageStyle = item => isSmallImage(item) ? { '--gallery-image-width': `${it
 const flowDuration = (length, index) => `${([47, 57, 39][index] * length / 3).toFixed(1)}s`;
 let observer;
 let motionQuery;
-let touchOrigin;
+let filterTimer;
 let mounted = false;
 
 watch([activeFilter, query, character, creator, favoritesOnly], () => {
   wallLimit.value = wallPageSize;
-  status.value = `找到 ${images.value.length} 张`;
+  status.value = cloudComplete.value ? `找到 ${images.value.length} 张` : '筛选会检索全部云端收藏，读取完成前结果可能继续增加。';
+  clearTimeout(filterTimer);
+  if (cloudConfigured && hasFilters.value && !cloudComplete.value) filterTimer = setTimeout(() => cloudPager.ensureComplete(), 180);
 });
 watch(selectedImage, () => { shareRevision++; shareLink.value = ''; shareMessage.value = ''; });
 
@@ -101,6 +133,7 @@ function resetFilters() {
 }
 async function loadMore() {
   const firstNewIndex = visibleImages.value.length;
+  if (visibleImages.value.length + wallPageSize > images.value.length && cloudHasMore.value) await cloudPager.loadMore();
   wallLimit.value += wallPageSize;
   status.value = `已展示 ${visibleImages.value.length} / ${images.value.length} 张`;
   await nextTick();
@@ -185,7 +218,12 @@ async function copyShareLink() {
   }
 }
 function dialogKeydown(event) {
-  if (event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+  if (event.target.closest('input, textarea, select, [contenteditable="true"]') || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (zoom.panKeyboard(event)) return;
+  if (event.key === '+' || event.key === '=') { event.preventDefault(); zoom.setZoom(zoom.scale.value * 1.4); return; }
+  if (event.key === '-') { event.preventDefault(); zoom.setZoom(zoom.scale.value / 1.4); return; }
+  if (event.key === '0') { event.preventDefault(); zoom.fit(); return; }
+  if (event.key === '1') { event.preventDefault(); zoom.oneToOne(); return; }
   if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
     event.preventDefault();
     stepImage(event.key === 'ArrowLeft' ? -1 : 1);
@@ -196,29 +234,18 @@ function dialogBackdrop(event) {
   const bounds = lightbox.value.getBoundingClientRect();
   if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closeImage();
 }
-function startTouch(event) {
-  if (event.touches.length === 1) touchOrigin = { x: event.touches[0].clientX, y: event.touches[0].clientY };
-  else touchOrigin = null;
-}
-function endTouch(event) {
-  if (!touchOrigin || !event.changedTouches.length) return;
-  const dx = event.changedTouches[0].clientX - touchOrigin.x;
-  const dy = event.changedTouches[0].clientY - touchOrigin.y;
-  touchOrigin = null;
-  // 只识别清楚的横向手势，不阻止纵向滚动和双指缩放。
-  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.4) stepImage(dx < 0 ? 1 : -1);
-}
 function syncMotion() { reducedMotion.value = motionQuery.matches; }
 function syncVisibility() { pageVisible.value = document.visibilityState === 'visible'; }
 
 onMounted(() => {
   mounted = true;
-  refreshCloud();
+  if (cloudConfigured) cloudPager.start();
   try {
     favorites.value = readSavedFavorites(localStorage.getItem(favoritesStorageKey));
   } catch { /* 隐私模式下仍可在当前页面收藏。 */ }
   window.addEventListener('storage', syncFavorites);
   window.addEventListener('online', reconnectCloud);
+  window.addEventListener('hitori:gallery-changed', invalidateCloud);
   motionQuery = createMotionQuery();
   syncMotion();
   syncVisibility();
@@ -231,12 +258,15 @@ onBeforeUnmount(() => {
   mounted = false;
   importRevision++; shareRevision++;
   progressiveImage.cancel();
-  cloudRequest?.abort();
+  cloudPager.dispose();
+  clearTimeout(filterTimer);
+  for (const request of locating.values()) request.controller.abort();
   observer?.disconnect();
   motionQuery?.removeEventListener('change', syncMotion);
   document.removeEventListener('visibilitychange', syncVisibility);
   window.removeEventListener('storage', syncFavorites);
   window.removeEventListener('online', reconnectCloud);
+  window.removeEventListener('hitori:gallery-changed', invalidateCloud);
 });
 </script>
 
@@ -256,9 +286,9 @@ onBeforeUnmount(() => {
         <label class="gallery-character-field" for="gallery-creator"><span>画师 / 来源</span><select id="gallery-creator" v-model="creator"><option value="all">全部画师与来源</option><option v-for="name in creators" :key="name" :value="name">{{name}}</option><option value="pending">原作者待确认</option></select></label>
         <button type="button" class="gallery-favorites-only" :aria-pressed="favoritesOnly" @click="favoritesOnly = !favoritesOnly">♥ 我的收藏 <span>{{ knownFavoriteCount }}</span></button>
       </div>
-      <p id="gallery-character-hint" class="gallery-character-hint">角色依据标题和画面描述筛选。</p>
+      <p id="gallery-character-hint" class="gallery-character-hint">优先使用站主标注的角色；旧图片沿用标题和画面描述识别。</p>
       <div class="gallery-discovery-tools">
-        <span class="gallery-result-count">找到 {{ images.length }} / {{ allImages.length }} 张</span>
+        <span class="gallery-result-count" aria-live="polite">{{ cloudComplete ? `找到 ${images.length} / ${allImages.length} 张` : `已读取 ${allImages.length} 张，当前符合 ${images.length} 张` }}</span><span v-if="hasFilters && !cloudComplete" class="gallery-search-coverage" role="status">{{ cloudError ? '全部收藏尚未检索完，请重试读取。' : '正在检索全部云端收藏，结果会继续补充…' }}</span>
         <button v-if="hasFilters" type="button" class="gallery-reset-filters" @click="resetFilters">清除筛选</button>
         <details class="gallery-backup">
           <summary>收藏备份</summary>
@@ -278,8 +308,9 @@ onBeforeUnmount(() => {
         <button v-if="mode === 'flow'" type="button" class="gallery-motion-toggle" :disabled="reducedMotion" :aria-pressed="paused || reducedMotion" @click="paused = !paused">{{ reducedMotion ? '已减少动态效果' : paused ? '继续流动 ▶' : '暂停流动 Ⅱ' }}</button>
         <RouterLink to="/manage-gallery" class="gallery-upload-link">站主上传图片 ↗</RouterLink>
       </div>
-      <p v-if="cloudLoading" class="gallery-cloud-loading" role="status">正在读取云端收藏，原有收藏可继续浏览…</p>
-      <p v-if="cloudError" class="gallery-cloud-notice" role="status">{{ cloudError }} <button type="button" :disabled="cloudLoading" @click="refreshCloud">重试</button></p>
+      <p v-if="cloudLoading" class="gallery-cloud-loading" role="status">{{ remoteImages.length ? `正在读取更多云端收藏（已有 ${remoteImages.length} 张）…` : '正在读取首批云端收藏，原有收藏可继续浏览…' }}</p>
+      <p v-if="cloudError" class="gallery-cloud-notice" role="status">{{ cloudError }} <button type="button" :disabled="cloudLoading" @click="retryCloud">重试读取</button></p>
+      <div v-if="cloudConfigured" class="gallery-cloud-controls"><span>{{ cloudComplete ? '云端收藏已全部读取' : `云端已读取 ${remoteImages.length} 张 · 可继续翻阅` }}</span><button type="button" :disabled="cloudLoading" @click="refreshCloud">刷新云端收藏</button><span v-if="cloudUpdatedAt">本次数据缓存在页面间保留 5 分钟</span></div>
       <p v-if="linkNotice" class="gallery-link-notice" role="status">{{ linkNotice }} <button type="button" @click="clearLink">清除图片定位</button></p>
       <div v-if="mode === 'wall'" id="gallery-grid" class="gallery-grid">
         <article v-for="item in visibleImages" :key="item.id" class="gallery-card" :data-category="item.category">
@@ -309,9 +340,10 @@ onBeforeUnmount(() => {
       </div>
       <div v-if="mode === 'wall' && images.length" class="gallery-pagination">
         <span>已展示 {{ visibleImages.length }} / {{ images.length }} 张</span>
-        <button v-if="visibleImages.length < images.length" type="button" class="gallery-load-more" @click="loadMore">再翻 {{ Math.min(wallPageSize, images.length - visibleImages.length) }} 张 <span aria-hidden="true">↓</span></button>
+        <button v-if="visibleImages.length < images.length || cloudHasMore" type="button" class="gallery-load-more" :disabled="cloudLoading" @click="loadMore">{{ cloudLoading ? '正在读取…' : visibleImages.length < images.length ? `再翻 ${Math.min(wallPageSize, images.length - visibleImages.length)} 张` : '读取更多云端收藏' }} <span aria-hidden="true">↓</span></button><span v-else>已经翻到最后一张</span>
       </div>
-      <p v-if="!images.length" class="gallery-empty">{{ hasFilters ? '没有符合当前条件的图片，试试调整搜索或筛选。' : '这一页还在等待新的心动。' }}</p>
+      <div v-if="mode === 'flow' && cloudHasMore" class="gallery-pagination"><button type="button" class="gallery-load-more" :disabled="cloudLoading" @click="cloudPager.loadMore()">{{ cloudLoading ? '正在读取…' : '继续读取云端收藏' }}</button></div>
+      <p v-if="!images.length && !cloudLoading && cloudComplete" class="gallery-empty">{{ hasFilters ? '没有符合当前条件的图片，试试调整搜索或筛选。' : '这一页还在等待新的心动。' }}</p>
       <RouterLink to="/manage-gallery" class="gallery-manage-link">站主管理收藏 ↗</RouterLink>
       <p class="gallery-note"><span aria-hidden="true">↗</span> 点击图片放大 · 左右滑动预览 · 收藏留在这台设备 <span id="gallery-status" role="status" aria-live="polite">{{ status }}</span></p>
       <div v-if="mode === 'wall'" class="gallery-stamp" aria-hidden="true">KEEP<br>THE FEELING.</div>
@@ -319,13 +351,17 @@ onBeforeUnmount(() => {
     <Teleport to="body">
       <dialog id="lightbox" ref="lightbox" class="lightbox gallery-lightbox" aria-labelledby="lightbox-title" @close="onDialogClose" @cancel.prevent="closeImage" @keydown="dialogKeydown" @click="dialogBackdrop">
         <template v-if="selectedImage">
-          <div class="lightbox-toolbar"><span id="lightbox-count" aria-live="polite">{{ imageCounter }}</span><span class="lightbox-hint">左右滑动 / 方向键切换</span><button id="lightbox-close" type="button" class="icon-button" aria-label="关闭图片" @click="closeImage">×</button></div>
-          <div class="lightbox-image-wrap" @touchstart.passive="startTouch" @touchend.passive="endTouch" @touchcancel="touchOrigin = null">
+          <div class="lightbox-toolbar"><span id="lightbox-count" aria-live="polite">{{ imageCounter }}</span><span class="lightbox-hint">适配时滑动切图 · 放大后拖动查看</span><button id="lightbox-close" type="button" class="icon-button" aria-label="关闭图片" @click="closeImage">×</button></div>
+          <div class="lightbox-zoom-controls" role="group" aria-label="图片缩放"><button type="button" aria-label="缩小图片" :disabled="zoom.scale.value <= 1" @click="zoom.setZoom(zoom.scale.value / 1.4)">−</button><output aria-live="polite">{{ zoom.zoomLabel.value }}</output><button type="button" aria-label="放大图片" :disabled="zoom.scale.value >= zoom.maxScale.value" @click="zoom.setZoom(zoom.scale.value * 1.4)">＋</button><button type="button" @click="zoom.fit">适配屏幕</button><button type="button" @click="zoom.oneToOne">1:1 查看</button></div>
+          <div class="lightbox-image-wrap">
             <button v-if="previewImages.length > 1" id="lightbox-prev" type="button" class="icon-button lightbox-prev" aria-label="上一张" @click="stepImage(-1)">←</button>
-            <img v-show="!imageState.unavailable" id="lightbox-image" :key="selectedImage.id" :src="imageState.source" :data-state="imageState.status" :alt="selectedImage.alt" :class="{ 'is-small-image': isSmallImage(selectedImage) }" :style="imageStyle(selectedImage)" decoding="async" @error="progressiveImage.displayError($event.currentTarget.getAttribute('src'))">
-            <p v-if="imageState.status === 'error'" class="lightbox-image-error" role="status">这张图片暂时没有加载成功，可以切换到下一张。</p>
+            <div ref="zoomSurface" class="lightbox-zoom-surface" :class="{ 'is-zoomed': zoom.zoomed.value, 'is-dragging': zoom.dragging.value }" :style="{ touchAction: zoom.zoomed.value ? 'none' : 'pan-y pinch-zoom' }" @dblclick="zoom.doubleClick" @pointerdown="zoom.pointerDown" @pointermove="zoom.pointerMove" @pointerup="zoom.pointerUp" @pointercancel="zoom.pointerCancel" @lostpointercapture="zoom.pointerCancel">
+              <img v-show="!imageState.unavailable" id="lightbox-image" :key="selectedImage.id" :src="imageState.source" :data-state="imageState.status" :alt="selectedImage.alt" :style="zoom.imageTransform.value" decoding="async" draggable="false" @load="zoom.imageLoaded" @error="progressiveImage.displayError($event.currentTarget.getAttribute('src'))">
+              <p v-if="imageState.status === 'error'" class="lightbox-image-error" role="status">这张图片暂时没有加载成功，可以切换到下一张。</p>
+            </div>
             <button v-if="previewImages.length > 1" id="lightbox-next" type="button" class="icon-button lightbox-next" aria-label="下一张" @click="stepImage(1)">→</button>
           </div>
+          <p class="lightbox-gesture-hint">双击放大或还原 · 放大后可拖动、双指调整 · + / − 缩放，0 适配，Shift + 方向键移动</p>
           <div class="lightbox-bottom"><h3 id="lightbox-title">{{ selectedImage.title }}</h3><p id="lightbox-credit">{{ selectedImage.credit }}</p><p v-if="imageState.status === 'loading'" class="visually-hidden" role="status">正在加载高清图片…</p><p v-if="imageState.status === 'fallback'" class="lightbox-preview-notice" role="status">高清图片暂时无法加载，正在显示预览图。</p><p class="source-label">{{selectedImage.creator||'原作者待确认'}} · {{selectedImage.method}}</p><div class="source-links"><a v-if="selectedImage.sourceUrl" :href="selectedImage.sourceUrl" target="_blank" rel="noopener noreferrer">原作发布页 ↗</a><a v-if="selectedImage.creatorUrl" :href="selectedImage.creatorUrl" target="_blank" rel="noopener noreferrer">画师主页 ↗</a><RouterLink to="/room/sources">查看来源档案 ↗</RouterLink></div><div class="lightbox-actions"><button type="button" class="lightbox-favorite" :aria-label="favoriteLabel(selectedImage)" :aria-pressed="favorites.has(selectedImage.id)" @click="toggleFavorite(selectedImage)">{{ favorites.has(selectedImage.id) ? '♥ 已收藏' : '♡ 收藏这张' }}</button><a v-if="selectedImage.originalSrc" class="lightbox-original" :href="asset(selectedImage.originalSrc)" target="_blank" rel="noopener noreferrer">查看原图 <span aria-hidden="true">↗</span></a><button type="button" class="lightbox-share" @click="copyShareLink">复制分享链接 ↗</button></div><div v-if="shareLink" class="lightbox-share-field"><label for="gallery-share-link">图片分享链接</label><input id="gallery-share-link" ref="shareInput" :value="shareLink" readonly @focus="$event.target.select()"><p role="status">{{ shareMessage }}</p></div></div>
         </template>
       </dialog>

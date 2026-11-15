@@ -5,8 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#17121d">
   <meta name="description" content="一里小屋：收藏后藤一里的勇气，走近结束乐队的四种颜色。角色、音乐、相册与纸箱里的小剧场。">
+  <link rel="canonical" href="https://hitori-gotou1.github.io/patrol-retest-demo/">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:site_name" content="一里小屋 · HITORI ROOM">
+  <meta property="og:title" content="一里小屋 · HITORI ROOM">
+  <meta property="og:description" content="放学后，在粉色、奶油色与淡紫色的小屋里，做一张合影、编一段旋律，收藏属于自己的舞台时刻。">
+  <meta property="og:url" content="https://hitori-gotou1.github.io/patrol-retest-demo/">
+  <meta property="og:image" content="https://hitori-gotou1.github.io/patrol-retest-demo/assets/share-room.png">
+  <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="一里小屋原创票根图形 · 放学之后，舞台之前">
+  <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="一里小屋 · HITORI ROOM"><meta name="twitter:description" content="放学后，来小屋做一件自己的小作品。"><meta name="twitter:image" content="https://hitori-gotou1.github.io/patrol-retest-demo/assets/share-room.png">
+  <style>#boot-status{max-width:680px;margin:20vh auto;padding:32px;font-family:system-ui,sans-serif;color:#fff4e5;line-height:1.9}html{background:#17121d}#boot-status small{color:#efbad0}#boot-retry{min-height:44px;padding:10px 20px;background:#edb4cd;border:0;color:#312033;font:inherit}#boot-status[data-state=error]{border:1px solid #a47593}#boot-status p{font-size:15px}@media(max-width:700px){#boot-status{margin:20vh 18px}}</style>
   <title>一里小屋 · HITORI ROOM</title>
   <link rel="icon" type="image/svg+xml" href="%BASE_URL%assets/favicon.svg">
 </head>
-<body><div id="app"></div><script type="module" src="/src/main.js"></script><noscript>一里小屋需要 JavaScript 才能开启角色切换、音乐与相册互动。</noscript></body>
+<body><div id="app"><main id="boot-status" role="status"><small>一里小屋 · HITORI ROOM</small><h1>正在推开小屋的门…</h1><p id="boot-message">正在载入这一页，稍等一下。</p><button id="boot-retry" type="button" hidden>重新载入网站</button></main></div>
+<script>
+(function(){
+ function failed(){var panel=document.getElementById('boot-status');if(!panel)return;panel.dataset.state='error';document.getElementById('boot-message').textContent='这一页暂时没有载入。请检查网络后重试；网站更新后，也可以重新载入。作品、草稿和收藏会保留。';document.getElementById('boot-retry').hidden=false;}
+ document.getElementById('boot-retry').addEventListener('click',function(){location.reload()});
+ window.addEventListener('error',function(e){if(e.target&&e.target.tagName==='SCRIPT'||e.error)failed();},true);
+ window.addEventListener('unhandledrejection',failed);
+ window.addEventListener('vite:preloadError',function(e){if(document.getElementById('boot-status')){e.preventDefault();failed();}});
+ setTimeout(function(){var label=document.getElementById('boot-message');if(label){label.textContent='载入比平时久一点。请检查网络，也可以重新载入；你的作品和草稿会保留。';document.getElementById('boot-retry').hidden=false;}},15000);
+})();
+</script><script type="module" src="/src/main.js"></script><noscript>一里小屋需要 JavaScript 才能开启角色切换、音乐与相册互动。</noscript></body>
 </html>

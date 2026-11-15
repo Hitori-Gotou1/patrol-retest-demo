@@ -32,3 +32,28 @@
   .gallery-character-field { flex: 1 1 120px; }
   .gallery-discovery-tools { gap: 4px 12px; }
 }
+
+.gallery-cloud-controls { display:flex; flex-wrap:wrap; align-items:center; gap:4px 16px; margin:8px 0 16px; color:#715869; font-size:12px; }
+.gallery-cloud-controls button { min-height:44px; padding:8px 12px; border:1px solid #bda692; background:#fff9ed; color:#695061; }
+.gallery-search-coverage { color:#715869; line-height:1.7; }
+.gallery-section .favorite,.gallery-section .filter,.gallery-view-switch button,.gallery-flow-access button,.gallery-motion-toggle { min-height:44px; min-width:44px; }
+.gallery-lightbox .icon-button { min-width:44px; min-height:44px; }
+.lightbox-zoom-controls { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; padding-top:12px; }
+.lightbox-zoom-controls button { min-width:44px; min-height:44px; padding:8px 12px; border:1px solid #8a657f; background:#241c27; color:#f4dce8; font-size:13px; }
+.lightbox-zoom-controls button:disabled { opacity:.45; cursor:default; }
+.lightbox-zoom-controls output { min-width:48px; text-align:center; color:#f4dce8; font-size:13px; }
+.gallery-lightbox .lightbox-image-wrap { min-height:180px; overflow:hidden; }
+.lightbox-zoom-surface { position:absolute; inset:0 60px; overflow:hidden; display:flex; align-items:center; justify-content:center; user-select:none; }
+.lightbox-zoom-surface.is-zoomed { cursor:grab; }
+.lightbox-zoom-surface.is-dragging { cursor:grabbing; }
+.gallery-lightbox .lightbox-zoom-surface > img { max-width:none; max-height:none; object-fit:contain; flex:none; pointer-events:none; transform-origin:center; will-change:transform; animation:none; }
+.gallery-lightbox .lightbox-gesture-hint { flex:none; margin:10px 0 0; text-align:center; color:#c9b5c9; font-size:11px; line-height:1.7; }
+@media(max-width:760px) {
+  .gallery-lightbox .lightbox-image-wrap { min-height:230px; }
+  .lightbox-zoom-surface { inset:0 0 48px; }
+  .gallery-lightbox .lightbox-prev,.gallery-lightbox .lightbox-next { bottom:0; }
+  .lightbox-zoom-controls { gap:5px; }
+  .lightbox-zoom-controls button { padding-inline:10px; font-size:12px; }
+  .gallery-lightbox .lightbox-gesture-hint { font-size:11px; }
+  .gallery-lightbox .lightbox-bottom { padding-top:10px; }
+}

@@ -17,7 +17,7 @@ class Handler(SimpleHTTPRequestHandler):
         self.path='/'+self.path[len(BASE):];super().do_GET()
     def log_message(self,*args):pass
 
-server=ThreadingHTTPServer(('127.0.0.1',0),partial(Handler,directory=str(ROOT/'dist')))
+server=ThreadingHTTPServer(('127.0.0.1',0),partial(Handler,directory=os.environ.get('HITORI_QA_DIST',str(ROOT/'dist'))))
 threading.Thread(target=server.serve_forever,daemon=True).start()
 origin=f'http://127.0.0.1:{server.server_port}'
 report={'errors':[],'missingAssets':[],'layouts':[]}
@@ -43,18 +43,18 @@ try:
             context,page=fixture(browser,width)
             go(page,'room/play')
             expect(page.locator('.featured-activity')).to_have_count(3)
-            first=page.locator('.featured-activity').first.bounding_box()
+            first=page.locator('.room-topic-grid a').first.bounding_box()
             assert first['y']+80<page.viewport_size['height'],(width,first)
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),width
             assert page.locator('.featured-art img').first.evaluate('e=>e.complete&&e.naturalWidth>0')
             assert page.locator('.room-nav a').count()==1
             page.screenshot(path=str(OUT/f'room-{width}.png'))
-            report['layouts'].append({'width':width,'firstActivityTop':round(first['y'])})
+            report['layouts'].append({'width':width,'firstTopicTop':round(first['y'])})
             page.get_by_role('button',name='全部玩法 ＋',exact=True).click()
-            expect(page.locator('#room-directory a')).to_have_count(28)
+            expect(page.locator('#room-directory a')).to_have_count(33)
             page.get_by_role('button',name='收起目录 −',exact=True).click()
-            page.get_by_role('button',name='做一件作品',exact=True).click();expect(page.locator('.activity-card')).to_have_count(6)
-            page.get_by_role('button',name='全部活动 · 28',exact=True).click()
+            page.get_by_role('button',name='做一件作品',exact=True).click();expect(page.locator('.activity-card')).to_have_count(7)
+            page.get_by_role('button',name='全部活动 · 33',exact=True).click()
             page.get_by_placeholder('找玩法、作品或声音',exact=True).fill('纸箱迷宫');expect(page.locator('.activity-card')).to_have_count(1)
             page.get_by_placeholder('找玩法、作品或声音',exact=True).fill('完全不存在的玩法');expect(page.locator('.activity-card')).to_have_count(0)
             go(page,'room/works');expect(page.locator('.works-empty')).to_be_visible();assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')

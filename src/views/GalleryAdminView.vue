@@ -1,9 +1,14 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { onBeforeRouteLeave } from 'vue-router';
-import { cloudConfigured, getCloudClient, isGalleryAdmin, publishGalleryImage } from '../services/galleryCloud.js';
+import { cloudConfigured, getCloudClient, isGalleryAdmin } from '../services/galleryCloud.js';
 import { cloudServiceMessage, withCloudDeadline } from '../services/cloudConnection.js';
+import GalleryUploadQueue from '../components/gallery/GalleryUploadQueue.vue';
+import GalleryWorkbench from '../components/gallery/GalleryWorkbench.vue';
+import GalleryCollectionManager from '../components/gallery/GalleryCollectionManager.vue';
 
+const activeAdminTab = ref('upload');
+const queueRef = ref(null);
 const session = ref(null);
 const checking = ref(cloudConfigured);
 const connectionFailed = ref(false);
@@ -12,38 +17,17 @@ const authBusy = ref(false);
 const uploading = ref(false);
 const email = ref('');
 const password = ref('');
-const title = ref('');
-const alt = ref('');
-const credit = ref('');
-const selectedFile = ref(null);
-const preview = ref('');
-const input = ref(null);
 const message = ref('');
 const error = ref('');
-const published = ref(false);
-const fileSize = computed(() => selectedFile.value ? `${(selectedFile.value.size / 1024 / 1024).toFixed(2)} MB` : '');
 let client;
 let subscription;
 let alive = true;
 let authTimer;
 let sessionRevision = 0;
 
-function clearFile() {
-  if (preview.value) URL.revokeObjectURL(preview.value);
-  preview.value = '';
-  selectedFile.value = null;
-  if (input.value) input.value.value = '';
-}
-function clearDraft() {
-  clearFile();
-  title.value = '';
-  alt.value = '';
-  credit.value = '';
-}
 function setSession(nextSession) {
   if (session.value?.user?.id !== nextSession?.user?.id) {
-    clearDraft();
-    published.value = false;
+    activeAdminTab.value = 'upload';
   }
   session.value = nextSession;
 }
@@ -128,6 +112,7 @@ async function login() {
 }
 async function logout() {
   if (authBusy.value || uploading.value || !client) return;
+  if (queueRef.value?.hasUnfinished() && !window.confirm('队列里还有未完成图片。退出会丢失本次队列，确定退出吗？')) return;
   authBusy.value = true;
   error.value = '';
   try {
@@ -143,67 +128,14 @@ async function logout() {
     if (alive) authBusy.value = false;
   }
 }
-function chooseFile(event) {
-  if (uploading.value) return;
-  const file = event.target.files?.[0];
-  if (!file) return;
-  clearFile();
-  error.value = '';
-  message.value = '';
-  published.value = false;
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-    error.value = '请选择 JPG、PNG 或 WebP 图片。';
-    return;
-  }
-  if (file.size > 10 * 1024 * 1024 || file.size === 0) {
-    error.value = '图片大小需大于 0 且不超过 10 MB。';
-    return;
-  }
-  selectedFile.value = file;
-  preview.value = URL.createObjectURL(file);
-  if (!title.value) title.value = file.name.replace(/\.[^.]+$/, '').slice(0, 120);
-}
-function previewFailed() {
-  clearFile();
-  error.value = '无法读取这张图片，请换一张有效的图片文件。';
-}
-async function publish() {
-  if (uploading.value || !admin.value) return;
-  error.value = '';
-  published.value = false;
-  if (!selectedFile.value || !title.value.trim()) {
-    error.value = '请先选择图片，并填写标题。';
-    return;
-  }
-  uploading.value = true;
-  message.value = '正在准备图片…';
-  try {
-    await publishGalleryImage({
-      file: selectedFile.value, title: title.value.trim(), alt: alt.value.trim(), credit: credit.value.trim(),
-      onProgress: progress => { if (alive) message.value = progress; }
-    });
-    if (alive) {
-      clearDraft();
-      published.value = true;
-      message.value = '已发布到收藏区，所有访客都可以看到。';
-    }
-  } catch (cause) {
-    if (alive) {
-      message.value = '';
-      error.value = cause?.message || '上传失败，请稍后重试。';
-    }
-  } finally {
-    if (alive) uploading.value = false;
-  }
-}
 function beforeUnload(event) {
   if (!uploading.value) return;
   event.preventDefault();
   event.returnValue = '';
 }
-onBeforeRouteLeave(() => !uploading.value || window.confirm('图片仍在发布中，离开可能中断上传。确定离开吗？'));
+onBeforeRouteLeave(() => (!uploading.value && !queueRef.value?.hasUnfinished()) || window.confirm('仍有等待或正在处理的图片任务。离开会丢失未完成队列，确定离开吗？'));
 onMounted(() => {
-  document.title = '上传收藏 · HITORI ROOM';
+  document.title = '收藏工作台 · HITORI ROOM';
   window.addEventListener('beforeunload', beforeUnload);
   if (!cloudConfigured) return;
   checkSession();
@@ -214,7 +146,6 @@ onBeforeUnmount(() => {
   clearTimeout(authTimer);
   subscription?.unsubscribe();
   window.removeEventListener('beforeunload', beforeUnload);
-  clearFile();
 });
 </script>
 
@@ -260,34 +191,15 @@ onBeforeUnmount(() => {
           <p>请使用已配置的站主账号登录。</p>
           <button type="button" class="admin-primary" :disabled="authBusy" @click="logout">退出并更换账号</button>
         </section>
-        <form v-else class="admin-upload" @submit.prevent="publish" :aria-busy="uploading">
+        <section v-else class="admin-upload" :key="session.user.id">
           <div class="admin-session"><span>站主已登录 <small>{{ session.user.email }}</small></span><button type="button" :disabled="authBusy || uploading" @click="logout">退出登录</button></div>
-          <div class="admin-upload-grid">
-            <div class="admin-image-area">
-              <span class="admin-step">01 / CHOOSE A MOMENT</span>
-              <label class="admin-file-label" for="gallery-upload-file">{{ selectedFile ? '重新选择图片' : '选择一张图片' }}</label>
-              <input id="gallery-upload-file" ref="input" class="admin-file-input" type="file" accept="image/jpeg,image/png,image/webp" :disabled="uploading" @change="chooseFile">
-              <div class="admin-preview" :class="{ 'has-image': preview }">
-                <img v-if="preview" :src="preview" alt="即将上传的图片预览" @error="previewFailed">
-                <div v-else class="admin-preview-empty"><span aria-hidden="true">＋</span><p>下一份心动<br>从这里开始</p></div>
-              </div>
-              <p class="admin-file-meta">{{ selectedFile ? `${selectedFile.name} · ${fileSize}` : 'JPG / PNG / WebP · 每张不超过 10 MB' }}</p>
-            </div>
-            <fieldset :disabled="uploading" class="admin-details">
-              <legend class="admin-step">02 / LEAVE A NOTE</legend>
-              <label for="gallery-upload-title">给它取个名字 <span>必填</span></label>
-              <input id="gallery-upload-title" v-model="title" required maxlength="120" placeholder="例如：一起，走向晴天">
-              <label for="gallery-upload-alt">画面描述 <span>选填</span></label>
-              <textarea id="gallery-upload-alt" v-model="alt" maxlength="300" rows="3" placeholder="简单描述画面，方便使用读屏的访客了解图片。"></textarea>
-              <label for="gallery-upload-credit">作者 / 来源 <span>选填</span></label>
-              <input id="gallery-upload-credit" v-model="credit" maxlength="200" placeholder="填写作者名或图片来源">
-              <p class="admin-help">发布后会出现在「站主收藏」中，所有访客可见。</p>
-              <button class="admin-primary" type="submit" :disabled="uploading || !selectedFile || !title.trim()">{{ uploading ? '正在发布…' : '发布到收藏墙 ↗' }}</button>
-            </fieldset>
-          </div>
-        </form>
+          <nav class="admin-tabs" aria-label="收藏工作台分区"><button v-for="tab in [{id:'upload',label:'批量上传'},{id:'published',label:'已发布图片'},{id:'collections',label:'主题合集'}]" :key="tab.id" type="button" :aria-pressed="activeAdminTab===tab.id" @click="activeAdminTab=tab.id">{{tab.label}}</button></nav>
+          <GalleryUploadQueue v-show="activeAdminTab==='upload'" ref="queueRef" @busy="uploading=$event" />
+          <GalleryWorkbench v-if="activeAdminTab==='published'" />
+          <GalleryCollectionManager v-if="activeAdminTab==='collections'" />
+        </section>
         <p v-if="error" class="admin-feedback is-error" role="alert">{{ error }}</p>
-        <div v-if="message" class="admin-feedback" role="status"><p>{{ message }}</p><RouterLink v-if="published" :to="{path:'/',hash:'#gallery'}">查看新收藏 ↗</RouterLink></div>
+        <div v-if="message" class="admin-feedback" role="status"><p>{{ message }}</p></div>
       </template>
       <footer class="admin-footer"><span>MY LITTLE COLLECTION</span><span aria-hidden="true">✦</span><span>好きなものを、少しずつ。</span></footer>
     </div>
@@ -320,6 +232,7 @@ button:disabled,fieldset:disabled,input:disabled { opacity: .65; cursor: default
 .admin-session > span { font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
 .admin-session small { display: block; margin-top: 5px; font-weight: 400; color: #796579; }
 .admin-session button { flex-shrink: 0; min-height: 44px; padding: 6px 0; background: transparent; border: 0; border-bottom: 1px solid #9c778d; color: #715869; font-size: 12px; }
+.admin-tabs { display:flex;gap:10px;flex-wrap:wrap;margin:20px 0 30px; }.admin-tabs button { min-height:44px;padding:10px 18px;background:#fff8ef;border:1px solid #aa8b9d;color:#663e55;font:inherit;font-size:14px;cursor:pointer; }.admin-tabs button[aria-pressed="true"] { background:#663e55;color:#fff8ee; }
 .admin-upload-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 48px; }
 .admin-file-label { display: block; margin: 22px 0 9px; font-weight: 700; font-size: 14px; }
 .admin-file-input { display: block; width: 100%; font-size: 12px; color: #796579; }
