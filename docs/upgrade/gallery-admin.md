@@ -59,3 +59,19 @@ HITORI_CHROMIUM_EXECUTABLE=/usr/bin/chromium HITORI_CLOUD_OUTPUT=evidence/galler
 隔离PostgreSQL验收扩至10组：除原权限/事务/回滚外，对已填有图片、标签、下架状态、合集成员、白名单和存储对象的数据库连续重跑两次，逐行内容不变且RLS仍有效；另复现仅有preview列及同名约束的部分安装状态，升级成功，路径穿越仍被约束拒绝。
 
 随后真实匿名GET只读复核：新增图库字段、gallery_collections和gallery_collection_items均200，说明这些结构已经建立；hitori_sync_records仍404/PGRST205。证据 `evidence/backend-migration-progress.json`。这是结构可读取的确认，真实管理写入及账号隔离验收仍待专用账号，不等同于生产权限已完整验证。
+
+### 可选真实后端验收入口
+
+`node tests/gallery-live-policy.mjs` 仅在 CI 显式提供专用账号时运行，使用 `HITORI_SYNC_TEST_URL`、`HITORI_SYNC_TEST_PUBLIC_KEY`、`HITORI_SYNC_TEST_A_EMAIL`、`HITORI_SYNC_TEST_A_PASSWORD`、`HITORI_SYNC_TEST_B_EMAIL`、`HITORI_SYNC_TEST_B_PASSWORD`，并要求 `HITORI_SYNC_TEST_ALLOW_WRITES=yes-isolated-accounts`。A 必须是已确认的隔离站主测试账号 `f72aa1d6-393d-4a6a-a0e0-709537ed170a`，B 必须没有站主白名单；可额外设置 `HITORI_SYNC_TEST_A_UID` / `HITORI_SYNC_TEST_B_UID` 校验 CI 配置。A 图库或合集已有任何记录时拒绝写入。
+
+脚本对本次新 UUID 依次验证真实 Storage 上传/逐字节下载、私有图片与显式字段编辑、排序和 ID 保留、B/匿名读写隔离、合集多对多/排序及事务失败回滚，并短暂发布本次测试图片和合集验证公开读取与写入隔离，随后立即下架。`finally` 对本次 UUID 和 A 的所属字段逐个精确清理合集、图片及对象，验证不存在；不会批量删除或修改现有用户记录。源文件使用本站 192px 图标，添加不改变像素的随机 PNG 文本标记以避免内容指纹冲突。
+
+设置 `REPORT_DIR`（或 `HITORI_SYNC_TEST_REPORT_DIR`）保存 `gallery-live-policy.json`。报告只有检查名、状态、布尔值与安全错误码，不包含连接地址、凭据、邮箱、会话或非测试数据。退出码：通过为 0、真实验收失败为 1、缺少配置/未运行是 2。本地仅完成语法检查及 `node tests/gallery-live-guards.test.js` 四项无网络 guard 测试；真实后端是否通过必须以 CI 实际结果为准。
+
+### 真实浏览器工作流验收入口
+
+`python tests/browser-gallery-live.py --dist <使用真实公开后端配置构建的目录>` 使用同一组显式账号环境变量与写入授权。它独立验证 A 固定 UID、站主白名单、B 普通权限及 A 图库/合集为空，随后真实操作浏览器登录、多选两张不同的大幅透明 PNG、填写角色/分类/标签、逐张发布、工作台搜索与编辑排序、恢复/下架、私有合集及 B 非站主提示；下载真实云端预览核对最长边 1920px 与 640px 缩略图。新图首次发布成功后立即下架，避免在后续操作期间持续展示。
+
+所有浏览器请求只允许本机 Pages 前缀服务器及指定 Supabase 项目。写请求还须符合本次随机标记、生成 UUID、内容指纹及已登记对象路径；上传前检查该精确路径不存在，防止碰到既有对象。`finally` 使用独立 A 会话逐个精确清理本次图片/合集 UUID 和对象路径并确认不存在，不导出浏览器存储、会话、HAR 或追踪文件。
+
+`REPORT_DIR` 下仅输出 `browser-gallery-live.json` 和四张已遮罩账号栏、邮箱与密码输入框的截图；异常报告只保存固定阶段名和安全错误类型。`--guard-only` 只检查配置与构建，不启动网络和浏览器，仍明确报告 `NOT_RUN`。本地 `py_compile` 与 `python -m unittest discover -s tests -p test_gallery_live_guards.py` 四项无网络 guard 检查通过，真实浏览器验收结果须以 CI 实际运行报告为准。
