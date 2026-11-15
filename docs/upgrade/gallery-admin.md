@@ -36,7 +36,7 @@
 - `tests/gallery-policy-check.mjs`：在隔离 PostgreSQL/PGlite 真实执行原迁移、升级、回滚；覆盖匿名、普通账号、两个站主的读写隔离和资源身份保护，以及合集事务原子性。这是本地数据库权限测试，**不代表生产 Supabase 策略已部署或通过验收**。复核命令见脚本开头，测试运行时安装在 `/tmp`，未新增站点依赖。
 - `tests/browser-gallery-admin-upgrade.py --dist /tmp/hitori-galleryadmin-dist`：配置为 `https://gallery-test.supabase.co` 的隔离构建，所有云端请求由 HTTP 夹具拦截。真实 Chromium 操作上传、管理、队列与合集，并检查实际 canvas 生成文件。截图与真实衍生文件保存在 `evidence/gallery-admin/`。
 
-已用线上公开连接只读确认：生产当前仍为旧结构，`preview_path` 缺失（42703），`gallery_collections` 未创建（PGRST205），因此新管理与合集后端尚未部署。真实服务尚缺：执行升级迁移的项目管理权限、两个隔离测试账号（站主白名单账号/普通账号）与授权的测试图片空间。未向生产写入任何图片或合集，未将合同夹具或本地 PostgreSQL 测试描述成生产验证。
+最初只读检查确认旧结构缺少 `preview_path`（42703）与合集表（PGRST205）；站主随后完成升级迁移。2026-11-15 已用两个专用账号对真实 Supabase 完成 SDK策略10项、网页管理8项验收，包含真实上传/下载/编辑/合集/权限。仅写本次临时测试资源，并精确删除、核对不存在；原图库未改动。[真实结果](live-backend-results.md)。本地PostgreSQL与夹具结果仍独立标识，不冒充实连验收。
 
 ### 旧验收入口与恢复回归
 
@@ -58,7 +58,7 @@ HITORI_CHROMIUM_EXECUTABLE=/usr/bin/chromium HITORI_CLOUD_OUTPUT=evidence/galler
 
 隔离PostgreSQL验收扩至10组：除原权限/事务/回滚外，对已填有图片、标签、下架状态、合集成员、白名单和存储对象的数据库连续重跑两次，逐行内容不变且RLS仍有效；另复现仅有preview列及同名约束的部分安装状态，升级成功，路径穿越仍被约束拒绝。
 
-随后真实匿名GET只读复核：新增图库字段、gallery_collections和gallery_collection_items均200，说明这些结构已经建立；hitori_sync_records仍404/PGRST205。证据 `evidence/backend-migration-progress.json`。这是结构可读取的确认，真实管理写入及账号隔离验收仍待专用账号，不等同于生产权限已完整验证。
+迁移过程中的真实匿名GET只读复核：新增图库字段与两张合集表均200，当时同步表仍404/PGRST205。历史证据 `evidence/backend-migration-progress.json` 保留；此后同步迁移与全部真实账号验收均已完成，以[最终报告](live-backend-results.md)为准。
 
 ### 可选真实后端验收入口
 
@@ -66,7 +66,7 @@ HITORI_CHROMIUM_EXECUTABLE=/usr/bin/chromium HITORI_CLOUD_OUTPUT=evidence/galler
 
 脚本对本次新 UUID 依次验证真实 Storage 上传/逐字节下载、私有图片与显式字段编辑、排序和 ID 保留、B/匿名读写隔离、合集多对多/排序及事务失败回滚，并短暂发布本次测试图片和合集验证公开读取与写入隔离，随后立即下架。`finally` 对本次 UUID 和 A 的所属字段逐个精确清理合集、图片及对象，验证不存在；不会批量删除或修改现有用户记录。源文件使用本站 192px 图标，添加不改变像素的随机 PNG 文本标记以避免内容指纹冲突。
 
-设置 `REPORT_DIR`（或 `HITORI_SYNC_TEST_REPORT_DIR`）保存 `gallery-live-policy.json`。报告只有检查名、状态、布尔值与安全错误码，不包含连接地址、凭据、邮箱、会话或非测试数据。退出码：通过为 0、真实验收失败为 1、缺少配置/未运行是 2。本地仅完成语法检查及 `node tests/gallery-live-guards.test.js` 四项无网络 guard 测试；真实后端是否通过必须以 CI 实际结果为准。
+设置 `REPORT_DIR`（或 `HITORI_SYNC_TEST_REPORT_DIR`）保存 `gallery-live-policy.json`。报告只有检查名、状态、布尔值与安全错误码，不包含连接地址、凭据、邮箱、会话或非测试数据。退出码：通过为0、真实验收失败为1、缺少配置/未运行是2。本地四项无网络guard通过；真实CI的10项检查和资源清理均已通过，报告见上。
 
 ### 真实浏览器工作流验收入口
 
@@ -74,4 +74,4 @@ HITORI_CHROMIUM_EXECUTABLE=/usr/bin/chromium HITORI_CLOUD_OUTPUT=evidence/galler
 
 所有浏览器请求只允许本机 Pages 前缀服务器及指定 Supabase 项目。写请求还须符合本次随机标记、生成 UUID、内容指纹及已登记对象路径；上传前检查该精确路径不存在，防止碰到既有对象。`finally` 使用独立 A 会话逐个精确清理本次图片/合集 UUID 和对象路径并确认不存在，不导出浏览器存储、会话、HAR 或追踪文件。
 
-`REPORT_DIR` 下仅输出 `browser-gallery-live.json` 和四张已遮罩账号栏、邮箱与密码输入框的截图；异常报告只保存固定阶段名和安全错误类型。`--guard-only` 只检查配置与构建，不启动网络和浏览器，仍明确报告 `NOT_RUN`。本地 `py_compile` 与 `python -m unittest discover -s tests -p test_gallery_live_guards.py` 四项无网络 guard 检查通过，真实浏览器验收结果须以 CI 实际运行报告为准。
+`REPORT_DIR` 下仅输出 `browser-gallery-live.json` 和四张已遮罩账号栏、邮箱与密码输入框的截图；异常报告只保存固定阶段名和安全错误类型。`--guard-only` 只检查配置与构建，不启动网络和浏览器，报告 `NOT_RUN`。本地语法及四项guard通过；真实CI的8项检查、无浏览器异常及数据库/存储资源清理均已通过。

@@ -17,4 +17,4 @@ URL/公开key沿用现有Actions Variables，无需再次发送。测试账号�
 
 工作区已准备验收job：现有deploy.yml仅在codex/backend-acceptance前缀的测试分支被手动触发时读取这四项Secrets，最小contents:read权限。生产部署仍要求main，因此该分支不会部署网站；测试分支的并发组也与生产分开。没有改动生产发布授权范围。
 
-当前仅准备流程，尚未推送或执行真实账号测试。配置好Secrets后，再将审查过的代码准备到测试分支，手动触发并核对真实结果；不能把配置完成当成验收通过。首次测试会写入专用测试记录及删除标记，不读取或修改原用户数据。
+四项 Secrets 已由站主保存，独立分支已执行真实账号检查。首次 Auth/RLS/修订/幂等检查已通过：[Actions 43663337654](https://github.com/Hitori-Gotou1/patrol-retest-demo/actions/runs/43663337654)。后续完整真实上传与多设备流程见[交付说明](delivery.md)。测试只写入本次生成的图库资源和专用同步记录；图库资源精确清理，同步保留删除标记以验证旧请求不会复活内容，不读取或修改原用户数据。

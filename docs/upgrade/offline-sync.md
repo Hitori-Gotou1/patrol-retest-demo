@@ -17,15 +17,15 @@
 - 合并前复用原作品架校验，仍限制 24 个版本 / 3 MiB。单作品和草稿限制保留。合并超限或数据无效时停止，不自动丢弃作品，也不扩容。
 - 退出和关闭同步保留本机内容及其账号关联。切换到另一个账号前，要求原账号已成功同步、没有 outbox/冲突且本机摘要未变化；随后加载另一个账号的范围。未同步时会阻止切换，不将原账号作品传给新账号。每个写请求冻结其认证令牌，切号不会让旧数据套用新账号令牌。
 
-## 真实后端配置与当前阻塞
+## 真实后端配置
 
 已经从线上确认并复用了实际 Supabase 项目公开 URL / anon key；这些不是服务端管理凭据。根验收记录 `evidence/backend-public-read.json` 显示：原图库可读，但 `hitori_sync_records` 返回 `PGRST205`（表尚不存在）。
 
-仍需具备数据库迁移权限的站主在 Supabase SQL 编辑器执行：
+数据库迁移已由站主执行。部署到同一项目时配置如下：
 
 1. `supabase/migrations/20261114_device_sync.sql`。
 2. Supabase Auth 启用邮箱密码认证；如允许访客自行创建同步账号，开启邮箱验证和注册，将真实站点地址加入 Site URL / Redirect URLs。若关闭注册，则由站主创建独立访客账号。无需把密码或管理密钥放入前端。
-3. 提供两个专用、空的隔离测试账号，用下面的实测脚本验证 RLS / RPC。环境没有这些账号或数据库权限，因此**尚未执行生产迁移，尚未通过真实跨设备同步与权限验收**。前端单元或离线测试不替代该项。
+3. 实连回归使用两个专用隔离测试账号，用下面的脚本验证 RLS / RPC。2026-11-15 已通过真实 Auth/RLS、六类数据及三独立浏览器会话验收；账号密码由 GitHub Secrets 提供，没有写入前端或归档。结果见[真实后端报告](live-backend-results.md)。
 
 迁移只新增同步表和一个 RPC，不改变图库或作品架结构。表启用并强制 RLS；认证用户只能 SELECT 自己的 `owner_id`。匿名读取/写入和前端直接写入全部撤销；唯一写入口从 `auth.uid()` 决定所有者，不接受用户指定 owner，使用修订检查和每用户事务锁执行原容量限制。不得给匿名或认证用户补授直接 UPDATE / INSERT 权限。
 
@@ -45,7 +45,7 @@ python tests/browser-device-offline.py --dist /tmp/hitori-device-dist --update-d
 
 Node 逻辑测试覆盖空设备合并、远端新修改、删除与编辑冲突、草稿冲突、收藏删除、最高分合并、坏数据拒绝、账号切换阻止、原容量、当前计时器保留。离线浏览器测试使用真实生产构建和 Chromium 的断网模式，未模拟 Supabase。
 
-真实后端验收脚本 `tests/sync-live-policy.mjs` 只可用两个空测试账号运行。它先拒绝已有同步记录的账号，然后验证 A/B/匿名隔离、拒绝直接修改、CAS 冲突、幂等操作和删除标记。脚本仅在明确设置 `HITORI_SYNC_TEST_ALLOW_WRITES=yes-isolated-accounts` 后写入测试记录；不自动申请邮箱、不使用站主会话。所需环境变量：
+真实后端验收脚本 `tests/sync-live-policy.mjs` 只可用专用测试账号运行，并固定核对已授权A身份。首次要求为空；重跑只允许已知测试ID的删除标记，任何活动或未知记录均拒绝写入。验证 A/B/匿名隔离、拒绝直接修改、CAS 冲突、幂等、墓碑、作品版本和六类数据。仅在明确设置 `HITORI_SYNC_TEST_ALLOW_WRITES=yes-isolated-accounts` 后写入；不自动申请邮箱、不使用正式站主会话。所需环境变量：
 
 - `HITORI_SYNC_TEST_URL`、`HITORI_SYNC_TEST_PUBLIC_KEY`
 - `HITORI_SYNC_TEST_A_EMAIL`、`HITORI_SYNC_TEST_A_PASSWORD`
@@ -69,7 +69,7 @@ Node 逻辑测试覆盖空设备合并、远端新修改、删除与编辑冲突
 - 新生产构建的 Worker 先缓存已选玩法，等待明确更新操作后接管并刷新；更新后重新断网打开拍贴，先前草稿仍保留。清理离线资源后草稿保留；强制发起新的离线导航得到基础离线页面。
 - 浏览器 `pageerror` 记录为空。报告：`evidence/device/offline-report.json`；截图：`device-mobile.png`、`device-desktop.png`、`photobooth-offline-mobile.png`、`draft-conflict-fullscreen-mobile.png`。
 
-以上没有访问真实用户云端数据，也没有模拟生产 RLS 成功。真实同步权限和两设备账号流程仍等待迁移权限与两个隔离测试账号。
+以上为本机逻辑与离线验证，没有模拟生产 RLS 成功。后续已另完成真实同步权限及多设备账号流程，记录在[真实验收报告](live-backend-results.md)，与这些本地结果分开。
 
 独立复核还固化了 `tests/sync-account-race.test.js`（隔离 VM 运行真实 `cloudSync.js`，无后端）：旧 generation、获取 client、获取 session、收到 fetch 响应、计算内容描述五个异步边界切换账号后，A 的持久状态、B 的持久状态和 B 内存状态均未被旧请求污染。与本模块其余三份测试合计 **28 项通过**。受当前检查环境的子进程限制，该测试需在允许 Node 子进程的执行环境运行；限制本身不是网站故障。
 

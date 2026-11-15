@@ -67,6 +67,6 @@ python tests/browser-sync-live.py --dist /tmp/hitori-live-sync-dist --output /tm
 
 ## 当前验证状态
 
-本地没有 GitHub Secrets，因此没有执行真实后端浏览器流程。`python -m py_compile tests/browser-sync-live.py` 已通过；4 项本地安全护栏检查通过：活动数据拒绝、删除标记白名单、公开配置约束及嵌套报告脱敏。缺少凭据或未开启写入护栏时，脚本返回退出码 2，报告明确写 `NOT_RUN`，不发出后端请求。
+2026-11-15 在专用分支 [Actions 43664537700](https://github.com/Hitori-Gotou1/patrol-retest-demo/actions/runs/43664537700) 实际执行，**8项检查全部通过，三个独立浏览器会话启动成功、页面异常为空、精确清理通过**。真实断网、重连与冲突双方保留均执行成功。[报告及截图](live-backend-results.md)。
 
-这些本地检查只证明脚本语法和保护逻辑。真实浏览器结果仍等待专用分支 GitHub Actions 执行，不能作为生产服务已验收的证明。
+本地另通过 `py_compile` 和4项安全护栏检查：活动数据拒绝、删除标记白名单、公开配置约束及嵌套报告脱敏。缺少凭据或未开启写入护栏时返回退出码2并报告 `NOT_RUN`；这些本地检查与真实后端结果分别保留。
