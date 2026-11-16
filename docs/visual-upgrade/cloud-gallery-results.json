@@ -1,0 +1,28 @@
+{
+  "results": [
+    {
+      "name": "search",
+      "result": "PASS"
+    },
+    {
+      "name": "backup",
+      "result": "PASS"
+    },
+    {
+      "name": "history-and-clipboard",
+      "result": "PASS"
+    },
+    {
+      "name": "cloud-links",
+      "result": "PASS"
+    },
+    {
+      "name": "storage-and-mobile",
+      "result": "PASS"
+    }
+  ],
+  "pageErrors": [],
+  "unexpectedRequests": [],
+  "missingAssets": [],
+  "result": "PASS"
+}

@@ -1,0 +1,32 @@
+{
+  "results": [
+    {
+      "name": "preview-and-decode",
+      "result": "PASS",
+      "details": "Thumbnail remains visible through network delay and native decode; only selected original fetched."
+    },
+    {
+      "name": "rapid-navigation",
+      "result": "PASS",
+      "details": "Out-of-order previous decodes cannot replace the current selection after next/next/previous."
+    },
+    {
+      "name": "failure-fallbacks",
+      "result": "PASS",
+      "details": "Network/decode failure retains the mobile preview; broken previews recover or show a navigable error."
+    },
+    {
+      "name": "close-and-unmount",
+      "result": "PASS",
+      "details": "Closing and route unmount invalidate late decode completion and restore scrolling/focus."
+    },
+    {
+      "name": "cached-and-no-thumbnail",
+      "result": "PASS",
+      "details": "Already decoded originals and native entries without a thumbnail display correctly, including wraparound."
+    }
+  ],
+  "pageErrors": [],
+  "unexpectedRequests": [],
+  "result": "PASS"
+}

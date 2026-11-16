@@ -43,13 +43,14 @@ try:
             context,page=fixture(browser,width)
             go(page,'room/play')
             expect(page.locator('.featured-activity')).to_have_count(3)
-            first=page.locator('.room-topic-grid a').first.bounding_box()
+            first=page.locator('.featured-art').first.bounding_box()
+            expect(page.locator('.room-topic-grid a')).to_have_count(3)
             assert first['y']+80<page.viewport_size['height'],(width,first)
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),width
             assert page.locator('.featured-art img').first.evaluate('e=>e.complete&&e.naturalWidth>0')
             assert page.locator('.room-nav a').count()==1
             page.screenshot(path=str(OUT/f'room-{width}.png'))
-            report['layouts'].append({'width':width,'firstTopicTop':round(first['y'])})
+            report['layouts'].append({'width':width,'firstFeatureTop':round(first['y'])})
             page.get_by_role('button',name='全部玩法 ＋',exact=True).click()
             expect(page.locator('#room-directory a')).to_have_count(33)
             page.get_by_role('button',name='收起目录 −',exact=True).click()

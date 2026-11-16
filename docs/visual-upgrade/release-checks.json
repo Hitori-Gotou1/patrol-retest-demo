@@ -1,0 +1,45 @@
+{
+  "date": "2026-11-16",
+  "baseCommit": "277af172aac1cb988f042bff6885c660a4a2a4cb",
+  "nodeTests": 196,
+  "galleryAssets": 51,
+  "routingConfigurations": [
+    "unconfigured",
+    "login"
+  ],
+  "checks": {
+    "room": {
+      "result": "PASS",
+      "groups": 8
+    },
+    "playroom": {
+      "result": "PASS",
+      "groups": 7
+    },
+    "adventures": {
+      "result": "PASS",
+      "groups": 7
+    },
+    "playground": {
+      "result": "PASS",
+      "groups": 5
+    },
+    "cloud": {
+      "result": "PASS",
+      "groups": 8
+    },
+    "experience": {
+      "result": "PASS",
+      "groups": 3
+    },
+    "expansion": {
+      "result": "PASS",
+      "groups": 8
+    },
+    "transition": {
+      "result": "PASS",
+      "groups": 3
+    }
+  },
+  "deploymentWorkflow": ".github/workflows/deploy.yml"
+}

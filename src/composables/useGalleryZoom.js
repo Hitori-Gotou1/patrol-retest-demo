@@ -1,7 +1,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { clampImagePan, fittedImageSize } from '../services/galleryZoom.js';
 
-export function useGalleryZoom({ selectedImage, dialogOpen, surface, stepImage }) {
+export function useGalleryZoom({ selectedImage, dialogOpen, surface, stepImage, section }) {
   const scale = ref(1);
   const x = ref(0);
   const y = ref(0);
@@ -102,7 +102,14 @@ export function useGalleryZoom({ selectedImage, dialogOpen, surface, stepImage }
     if (event.key === 'ArrowDown') y.value -= 45;
     clamp(); return true;
   }
-  watch(() => selectedImage.value?.id, () => { reset(); natural.value = { width: selectedImage.value?.width || 1, height: selectedImage.value?.height || 1 }; nextTick(measure); }, { flush: 'sync' });
+  watch(() => selectedImage.value?.id, () => {
+    reset();
+    const item = selectedImage.value;
+    const thumbnail = item && section?.value?.querySelector(`[data-photo-id="${CSS.escape(item.id)}"] img`);
+    // Unknown metadata must still produce a useful first frame while decoding.
+    natural.value = { width: item?.width || thumbnail?.naturalWidth || 1200, height: item?.height || thumbnail?.naturalHeight || 800 };
+    nextTick(measure);
+  }, { flush: 'sync' });
   watch([dialogOpen, surface], async () => {
     observer?.disconnect();
     if (!dialogOpen.value) { reset(); return; }

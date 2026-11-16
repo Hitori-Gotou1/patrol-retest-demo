@@ -1,0 +1,43 @@
+{
+  "results": [
+    {
+      "name": "original transitions",
+      "result": "PASS"
+    },
+    {
+      "name": "character eggs",
+      "result": "PASS"
+    },
+    {
+      "name": "audio and instruments",
+      "result": "PASS"
+    },
+    {
+      "name": "stage lifecycle",
+      "result": "PASS"
+    },
+    {
+      "name": "visibility cleanup (simulated event)",
+      "result": "PASS"
+    },
+    {
+      "name": "mobile and reduced motion",
+      "result": "PASS"
+    },
+    {
+      "name": "mobile touch eggs",
+      "result": "PASS"
+    },
+    {
+      "name": "keyboard egg focus",
+      "result": "PASS"
+    },
+    {
+      "name": "existing gallery and music",
+      "result": "PASS"
+    }
+  ],
+  "errors": [],
+  "httpErrors": [],
+  "result": "PASS"
+}

@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue';
 import members from '../data/characters.json' with { type: 'json' };
+import { useSceneMotion } from '../composables/useSceneMotion.js';
 import { useCharacterTransition } from '../composables/useCharacterTransition.js';
 import { liveModeActive } from '../composables/useInteractionSession.js';
 import { interactionFeatures } from '../data/interactions.js';
@@ -9,6 +10,7 @@ import InstrumentPanel from './InstrumentPanel.vue';
 import '../styles/character-enhancements.css';
 
 const scene = ref(null);
+useSceneMotion(scene);
 const baseLayer = ref(null);
 const revealLayer = ref(null);
 const content = ref(null);
@@ -88,8 +90,8 @@ watch(selectedIndex, () => { reaction.value = ''; reactionIndex = 0; });
     <div ref="revealLayer" class="cast-background cast-background-reveal" aria-hidden="true"></div>
     <div class="cast-paper-texture" aria-hidden="true"></div>
     <div id="character-showcase" class="cast-stage" :data-member="member.id">
-      <header class="cast-topline"><span><i aria-hidden="true"></i> 02 / KESSOKU BAND</span><h2 id="about-title">四种颜色，同一支乐队。</h2><span class="cast-file-label">MEMBER FILE — {{ String(selectedIndex + 1).padStart(2, '0') }}</span></header>
-      <div id="character-panel" ref="content" class="cast-content" role="tabpanel" :aria-labelledby="`tab-${member.id}`" :aria-busy="busy" tabindex="0">
+      <header class="cast-topline" data-arrive="0"><span><i aria-hidden="true"></i> 02 / KESSOKU BAND</span><h2 id="about-title">四种颜色，同一支乐队。</h2><span class="cast-file-label">MEMBER FILE — {{ String(selectedIndex + 1).padStart(2, '0') }}</span></header>
+      <div id="character-panel" ref="content" class="cast-content" data-arrive="1" role="tabpanel" :aria-labelledby="`tab-${member.id}`" :aria-busy="busy" tabindex="0">
         <article class="character-view cast-view" :data-character="member.id">
           <div class="cast-details">
             <p class="cast-english-name cast-reveal-item" :aria-label="member.romanizedName"><span v-for="line in member.nameLines" :key="line">{{ line }}</span></p>
@@ -122,7 +124,7 @@ watch(selectedIndex, () => { reaction.value = ''; reactionIndex = 0; });
           </div>
         </article>
       </div>
-      <footer class="cast-selector">
+      <footer class="cast-selector" data-arrive="2">
         <div class="cast-selector-label"><span>CHOOSE YOUR COLOR</span><small>选一种颜色，听一种心跳。</small></div>
         <div id="character-tabs" class="cast-tabs" role="tablist" aria-label="结束乐队成员">
           <button v-for="(person, index) in members" :id="`tab-${person.id}`" :key="person.id" type="button" role="tab" :data-member="person.id" :data-pending="busy && index === requestedIndex" :style="{ '--tab-color': person.theme.primary, '--tab-ink': person.theme.ink }" aria-controls="character-panel" :aria-selected="index === selectedIndex" :tabindex="index === requestedIndex ? 0 : -1" @click="choose(index)" @keydown="onTabKey">

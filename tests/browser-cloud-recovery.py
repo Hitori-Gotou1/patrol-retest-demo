@@ -206,7 +206,8 @@ def test_public_gallery(browser):
         page = fixture.page
         fixture.goto('#/#gallery'); fixture.wait_held()
         expect(page.locator('.gallery-card')).to_have_count(9)
-        expect(page.get_by_role('link', name='站主上传图片 ↗', exact=True)).to_be_visible()
+        page.locator('.gallery-tools-toggle').click()
+        expect(page.get_by_role('link', name='站主上传与管理 ↗', exact=True)).to_be_visible()
         page.clock.fast_forward(13000)
         expect(page.locator('.gallery-cloud-notice')).to_contain_text('超时')
         expect(page.locator('.gallery-card')).to_have_count(9)

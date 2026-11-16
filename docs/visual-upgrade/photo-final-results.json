@@ -1,0 +1,14 @@
+{
+  "results": [
+    {
+      "name": "photo-continuity",
+      "result": "PASS",
+      "detail": "Real photo flight, zoom, rapid steps, query identity, back/forward, filters, flow, share reload and missing-origin fallback."
+    }
+  ],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "unexpectedWrites": [],
+  "screenshots": [],
+  "result": "PASS"
+}

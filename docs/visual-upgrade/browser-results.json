@@ -1,0 +1,95 @@
+{
+  "results": [
+    {
+      "name": "responsive-layouts",
+      "result": "PASS",
+      "detail": [
+        {
+          "width": 1440,
+          "height": 900,
+          "featuredTop": 416,
+          "galleryImageVisible": 372
+        },
+        {
+          "width": 768,
+          "height": 1024,
+          "featuredTop": 400,
+          "galleryImageVisible": 210
+        },
+        {
+          "width": 390,
+          "height": 844,
+          "featuredTop": 352,
+          "galleryImageVisible": 250
+        },
+        {
+          "width": 360,
+          "height": 800,
+          "featuredTop": 348,
+          "galleryImageVisible": 234
+        }
+      ]
+    },
+    {
+      "name": "routes-and-save-feedback",
+      "result": "PASS",
+      "detail": "Path transitions, history, real successful save stamp, failed save without stamp, folds and repeated cleanup."
+    },
+    {
+      "name": "photo-continuity",
+      "result": "PASS",
+      "detail": "Real photo flight, zoom, rapid steps, query identity, back/forward, filters, flow, share reload and missing-origin fallback."
+    },
+    {
+      "name": "photo-touch",
+      "result": "PASS",
+      "detail": "Mobile double-tap zoom, drag, two-pointer pinch, fit, swipe navigation and close remain independent of the flight."
+    },
+    {
+      "name": "character-input",
+      "result": "PASS",
+      "detail": "Last selection wins within one compact reveal; keyboard focus, colors and mobile swipe stay coordinated."
+    },
+    {
+      "name": "cinema-lifecycle",
+      "result": "PASS",
+      "detail": "All three moods, persistence, rapid cross-fades, three tabs, one real analyser, actual play/pause/media claims, hidden/offscreen pause and disposal."
+    },
+    {
+      "name": "motion-and-storage",
+      "result": "PASS",
+      "detail": "OS and site reduced-motion take precedence; static moods remain distinct; unavailable storage keeps current controls usable."
+    }
+  ],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "unexpectedWrites": [],
+  "screenshots": [
+    "room-desktop.png",
+    "gallery-desktop.png",
+    "home-desktop.png",
+    "about-desktop.png",
+    "theater-desktop.png",
+    "video-desktop.png",
+    "music-guide-desktop.png",
+    "room-tablet.png",
+    "gallery-tablet.png",
+    "room-mobile.png",
+    "gallery-mobile.png",
+    "home-mobile.png",
+    "about-mobile.png",
+    "theater-mobile.png",
+    "video-mobile.png",
+    "music-guide-mobile.png",
+    "room-narrow.png",
+    "gallery-narrow.png",
+    "mood-warm-desktop.png",
+    "mood-rain-desktop.png",
+    "mood-stage-desktop.png",
+    "mood-warm-mobile.png",
+    "mood-rain-mobile.png",
+    "mood-stage-mobile.png"
+  ],
+  "recording": "visual-tour.webm",
+  "result": "PASS"
+}

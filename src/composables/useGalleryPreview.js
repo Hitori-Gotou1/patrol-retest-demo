@@ -2,7 +2,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router';
 import { galleryRouteImage } from '../services/galleryDiscovery.js';
 
-export function useGalleryPreview({ allImages, images, section, lightbox, loading, findImage }) {
+export function useGalleryPreview({ allImages, images, section, lightbox, loading, findImage, motion }) {
   const route = useRoute();
   const router = useRouter();
   const selectedId = ref('');
@@ -24,19 +24,30 @@ export function useGalleryPreview({ allImages, images, section, lightbox, loadin
   let closing = false;
   let previousRouteId;
   let lookupId = null;
+  let hiding = false;
   const lookedUp = new Set();
 
   function releaseDialog() {
     if (lightbox.value?.open) return;
     revision++;
+    motion?.reset();
     selectedId.value = '';
     if (!dialogOpen.value) return;
     dialogOpen.value = false;
     document.body.style.overflow = originalOverflow;
-    if (mounted) (returnFocus?.isConnected ? returnFocus : section.value?.querySelector('h2'))?.focus({ preventScroll: true });
+    const originId = returnFocus?.dataset.photoId || returnFocus?.dataset.previewId;
+    const stillInResults = !originId || images.value.some(item => item.id === originId);
+    const validFocus = returnFocus?.isConnected && stillInResults && !returnFocus.closest('.photo-card-leave-active');
+    if (mounted) (validFocus ? returnFocus : section.value?.querySelector('h2'))?.focus({ preventScroll: true });
   }
 
-  function hideDialog() {
+  async function hideDialog() {
+    if (hiding) return;
+    hiding = true;
+    const request = revision;
+    if (mounted && lightbox.value?.open) await motion?.close(selectedId.value);
+    hiding = false;
+    if (mounted && request !== revision && route.query.image != null) return;
     lightbox.value?.close();
     releaseDialog();
   }
@@ -67,7 +78,9 @@ export function useGalleryPreview({ allImages, images, section, lightbox, loadin
       return;
     }
     if (!pool.value.includes(id)) pool.value = allImages.value.map(item => item.id);
+    const changing = dialogOpen.value && selectedId.value !== id;
     selectedId.value = id;
+    if (changing) motion?.changed();
     await nextTick();
     if (!mounted || request !== revision || !lightbox.value || !selectedImage.value || dialogOpen.value) return;
     const fromButton = trigger?.id === id;
@@ -78,6 +91,7 @@ export function useGalleryPreview({ allImages, images, section, lightbox, loadin
     lightbox.value.showModal();
     dialogOpen.value = true;
     document.body.style.overflow = 'hidden';
+    motion?.open(selectedImage.value);
   }
 
   function retryLink() { const id = galleryRouteImage(route.query.image); if (id) lookedUp.delete(id); return syncRoute(); }
@@ -88,6 +102,7 @@ export function useGalleryPreview({ allImages, images, section, lightbox, loadin
 
   function openImage(item, event) {
     const element = event?.currentTarget || document.activeElement;
+    motion?.capture(item.id, element);
     trigger = { id: item.id, element: element?.closest('[aria-hidden="true"]')
       ? section.value?.querySelector(`[data-preview-id="${item.id}"]`) : element };
     pool.value = images.value.map(image => image.id);
@@ -116,6 +131,7 @@ export function useGalleryPreview({ allImages, images, section, lightbox, loadin
 
   function stepImage(step) {
     if (previewImages.value.length < 2 || closing) return;
+    motion?.beforeStep(step);
     const index = (selectedIndex.value + step + previewImages.value.length) % previewImages.value.length;
     return navigate({ path: '/', query: { ...route.query, image: previewImages.value[index].id }, hash: route.hash }, true);
   }

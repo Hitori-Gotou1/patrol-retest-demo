@@ -1,0 +1,424 @@
+{
+  "results": [
+    {
+      "name": "layouts",
+      "result": "PASS",
+      "details": [
+        {
+          "viewport": [
+            1440,
+            900
+          ],
+          "pagination": true,
+          "focusReturn": true,
+          "allCollectionEntriesReachable": true,
+          "smallImage": {
+            "width": 795,
+            "height": 530,
+            "nw": 1068,
+            "nh": 712
+          },
+          "noOverflow": true
+        },
+        {
+          "viewport": [
+            390,
+            844
+          ],
+          "pagination": true,
+          "focusReturn": true,
+          "allCollectionEntriesReachable": true,
+          "smallImage": {
+            "width": 366,
+            "height": 244,
+            "nw": 1068,
+            "nh": 712
+          },
+          "noOverflow": true
+        },
+        {
+          "viewport": [
+            320,
+            740
+          ],
+          "pagination": true,
+          "focusReturn": true,
+          "allCollectionEntriesReachable": true,
+          "smallImage": {
+            "width": 296,
+            "height": 197.328125,
+            "nw": 1068,
+            "nh": 712
+          },
+          "noOverflow": true
+        }
+      ]
+    },
+    {
+      "name": "assets",
+      "result": "PASS",
+      "details": [
+        {
+          "id": "collection-20261029-19",
+          "size": [
+            1500,
+            870
+          ]
+        },
+        {
+          "id": "collection-20261029-20",
+          "size": [
+            1500,
+            844
+          ]
+        },
+        {
+          "id": "collection-20261029-21",
+          "size": [
+            1200,
+            1327
+          ]
+        },
+        {
+          "id": "collection-20261029-22",
+          "size": [
+            1500,
+            872
+          ]
+        },
+        {
+          "id": "collection-20261029-23",
+          "size": [
+            1200,
+            1200
+          ]
+        },
+        {
+          "id": "collection-20261029-24",
+          "size": [
+            1200,
+            1200
+          ]
+        },
+        {
+          "id": "collection-20261029-25",
+          "size": [
+            1200,
+            1200
+          ]
+        },
+        {
+          "id": "collection-20261029-26",
+          "size": [
+            1200,
+            1200
+          ]
+        },
+        {
+          "id": "collection-20261029-27",
+          "size": [
+            1106,
+            1500
+          ]
+        },
+        {
+          "id": "collection-20261029-28",
+          "size": [
+            1500,
+            943
+          ]
+        },
+        {
+          "id": "collection-20261029-29",
+          "size": [
+            800,
+            1131
+          ]
+        },
+        {
+          "id": "collection-20261029-30",
+          "size": [
+            1500,
+            1107
+          ]
+        },
+        {
+          "id": "collection-20261029-31",
+          "size": [
+            1132,
+            595
+          ]
+        },
+        {
+          "id": "collection-20261029-32",
+          "size": [
+            1500,
+            837
+          ]
+        },
+        {
+          "id": "collection-20261029-33",
+          "size": [
+            2000,
+            1000
+          ]
+        },
+        {
+          "id": "collection-20261029-34",
+          "size": [
+            924,
+            2000
+          ]
+        },
+        {
+          "id": "collection-20261029-35",
+          "size": [
+            1080,
+            763
+          ]
+        },
+        {
+          "id": "collection-20261029-36",
+          "size": [
+            1080,
+            810
+          ]
+        },
+        {
+          "id": "collection-20261029-37",
+          "size": [
+            1080,
+            764
+          ]
+        },
+        {
+          "id": "collection-20261029-38",
+          "size": [
+            1080,
+            764
+          ]
+        },
+        {
+          "id": "collection-20261029-39",
+          "size": [
+            1068,
+            712
+          ]
+        },
+        {
+          "id": "collection-20261029-01",
+          "size": [
+            1082,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-02",
+          "size": [
+            1536,
+            1085
+          ]
+        },
+        {
+          "id": "collection-20261029-03",
+          "size": [
+            1536,
+            1239
+          ]
+        },
+        {
+          "id": "collection-20261029-04",
+          "size": [
+            1536,
+            864
+          ]
+        },
+        {
+          "id": "collection-20261029-05",
+          "size": [
+            1331,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-06",
+          "size": [
+            1536,
+            833
+          ]
+        },
+        {
+          "id": "collection-20261029-07",
+          "size": [
+            1024,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-08",
+          "size": [
+            1024,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-09",
+          "size": [
+            1133,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-10",
+          "size": [
+            1536,
+            1014
+          ]
+        },
+        {
+          "id": "collection-20261029-11",
+          "size": [
+            1086,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-12",
+          "size": [
+            1536,
+            1085
+          ]
+        },
+        {
+          "id": "collection-20261029-13",
+          "size": [
+            1144,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-14",
+          "size": [
+            1172,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-15",
+          "size": [
+            1152,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-16",
+          "size": [
+            1152,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-17",
+          "size": [
+            1152,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-18",
+          "size": [
+            1152,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-40",
+          "size": [
+            1024,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-41",
+          "size": [
+            1536,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-42",
+          "size": [
+            1111,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-43",
+          "size": [
+            1075,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-44",
+          "size": [
+            1536,
+            713
+          ]
+        },
+        {
+          "id": "collection-20261029-45",
+          "size": [
+            1105,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-46",
+          "size": [
+            1536,
+            1085
+          ]
+        },
+        {
+          "id": "collection-20261029-47",
+          "size": [
+            1085,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-48",
+          "size": [
+            1085,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-49",
+          "size": [
+            1085,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-50",
+          "size": [
+            1086,
+            1536
+          ]
+        },
+        {
+          "id": "collection-20261029-51",
+          "size": [
+            1536,
+            1024
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "httpErrors": [],
+  "result": "PASS"
+}

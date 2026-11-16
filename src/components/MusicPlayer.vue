@@ -7,7 +7,8 @@ import tracks from '../data/music.json'
 import '../styles/music-player.css'
 const claimMedia=useMediaFocus('music',pause);
 
-const emit = defineEmits(['play', 'pause'])
+const props = defineProps({ visualActive: { type: Boolean, default: true } })
+const emit = defineEmits(['play', 'pause', 'energy'])
 const audioElement = ref(null)
 const spectrumCanvas = ref(null)
 const selectedIndex = ref(0)
@@ -43,6 +44,7 @@ function formatTime(seconds) {
 function stopVisualization() {
   if (animationFrame) cancelAnimationFrame(animationFrame)
   animationFrame = 0
+  emit('energy', 0)
 }
 
 function drawSpectrum(live = false) {
@@ -64,17 +66,21 @@ function drawSpectrum(live = false) {
     paint.fillRect(index * (barWidth + gap), height - barHeight, barWidth, barHeight)
   }
   paint.globalAlpha = 1
+  if (live && frequencyData) {
+    const bass = frequencyData.subarray(0, 14);
+    emit('energy', bass.reduce((total, sample) => total + sample, 0) / bass.length / 255)
+  }
 }
 
 function startVisualization() {
   stopVisualization()
-  if (!analyser || reducedMotion.value || !isPlaying.value || document.hidden) {
+  if (!analyser || reducedMotion.value || !isPlaying.value || document.hidden || !props.visualActive) {
     drawSpectrum(false)
     return
   }
   const frame = () => {
     animationFrame = 0
-    if (disposed || !isPlaying.value || reducedMotion.value || document.hidden) return
+    if (disposed || !isPlaying.value || reducedMotion.value || document.hidden || !props.visualActive) return
     drawSpectrum(true)
     animationFrame = requestAnimationFrame(frame)
   }
@@ -225,6 +231,7 @@ function changeVolume(event) {
   if (audioElement.value) audioElement.value.volume = effectiveVolume.value
 }
 
+watch(() => props.visualActive, startVisualization)
 watch(effectiveVolume, value => { if(audioElement.value) audioElement.value.volume=value; })
 
 function updateMotionPreference() {
@@ -277,7 +284,7 @@ onBeforeUnmount(() => {
     <div class="music-deck">
       <div class="music-art" aria-hidden="true">
         <img class="music-sleeve" :src="assetUrl(track.cover)" alt="" width="240" height="240" loading="lazy" decoding="async">
-        <div class="music-vinyl" :class="{ 'is-spinning': isPlaying && !reducedMotion }"><span class="music-vinyl-label">HITORI ROOM<strong>DEMO</strong><small>{{ String(selectedIndex + 1).padStart(2, '0') }} / 03</small></span></div>
+        <div class="music-vinyl" :class="{ 'is-spinning': isPlaying && !reducedMotion && visualActive }"><span class="music-vinyl-label">HITORI ROOM<strong>DEMO</strong><small>{{ String(selectedIndex + 1).padStart(2, '0') }} / 03</small></span></div>
       </div>
       <div class="music-console">
         <p class="music-now-label"><span :class="{ 'is-on': isPlaying }" aria-hidden="true"></span>{{ isPlaying ? 'NOW PLAYING' : 'READY WHEN YOU ARE' }}</p>

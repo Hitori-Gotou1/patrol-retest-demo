@@ -6,6 +6,11 @@ import {withAttribution} from '../data/galleryAttributions.js';
 import { galleryImages } from '../data/gallery.js';
 import { cloudConfigured, loadCloudGalleryPage, findCloudGalleryImage, galleryMetadataCacheKey } from '../services/galleryCloud.js';
 import { createGalleryPager, clearGalleryMetadataCache } from '../services/galleryPager.js';
+import { usePhotoMotion } from '../composables/usePhotoMotion.js';
+import { useSceneMotion } from '../composables/useSceneMotion.js';
+import SceneAtmosphere from './motion/SceneAtmosphere.vue';
+import SmoothFold from './motion/SmoothFold.vue';
+import FluidPanel from './motion/FluidPanel.vue';
 import { useGalleryZoom } from '../composables/useGalleryZoom.js';
 import { cloudServiceMessage } from '../services/cloudConnection.js';
 import { createProgressiveImage } from '../services/progressiveImage.js';
@@ -61,6 +66,8 @@ import '../styles/gallery-enhancements.css';
 import '../styles/gallery-discovery.css';
 
 const section = ref(null);
+useSceneMotion(section);
+const filtersOpen = ref(false), toolsOpen = ref(false);
 const lightbox = ref(null);
 const zoomSurface = ref(null);
 const activeFilter = ref('all');
@@ -80,10 +87,18 @@ const wallLimit = ref(wallPageSize);
 const filters = [{ id: 'all', label: '全部' }, { id: 'collection', label: '站主收藏' }, { id: 'illustration', label: '同人插画' }, { id: 'poster', label: '设计海报' }];
 const images = computed(() => filterGallery(allImages.value, { category: activeFilter.value, query: query.value, character: character.value, creator:creator.value, favoritesOnly: favoritesOnly.value }, favorites.value));
 const hasFilters = computed(() => activeFilter.value !== 'all' || query.value.trim() || character.value !== 'all' || creator.value!=='all' || favoritesOnly.value);
+const filterChips = computed(() => [
+  activeFilter.value !== 'all' && filters.find(f=>f.id===activeFilter.value)?.label,
+  query.value.trim() && `“${query.value.trim()}”`,
+  character.value !== 'all' && (galleryCharacters.find(c=>c.id===character.value)?.label || '未标注角色'),
+  creator.value !== 'all' && (creator.value==='pending'?'原作者待确认':creator.value),
+  favoritesOnly.value && '我的收藏'
+].filter(Boolean));
 const knownFavoriteCount = computed(() => allImages.value.filter(item => favorites.value.has(item.id)).length);
 const visibleImages = computed(() => images.value.slice(0, wallLimit.value));
-const { selectedImage, imageCounter, dialogOpen, previewImages, linkNotice, openImage, closeImage, stepImage, onDialogClose, clearLink, retryLink } = useGalleryPreview({ allImages, images, section, lightbox, loading: cloudLoading, findImage: locateCloudImage });
-const zoom = useGalleryZoom({ selectedImage, dialogOpen, surface: zoomSurface, stepImage });
+const photoMotion = usePhotoMotion({ lightbox, section });
+const { selectedImage, imageCounter, dialogOpen, previewImages, linkNotice, openImage, closeImage, stepImage, onDialogClose, clearLink, retryLink } = useGalleryPreview({ allImages, images, section, lightbox, loading: cloudLoading, findImage: locateCloudImage, motion: photoMotion });
+const zoom = useGalleryZoom({ selectedImage, dialogOpen, surface: zoomSurface, stepImage, section });
 const router = useRouter();
 const backupInput = ref(null);
 const importing = ref(false);
@@ -140,10 +155,10 @@ async function loadMore() {
   // 加载按钮被新增照片向下推移时，将键盘焦点交给第一张新照片。
   if (mounted) section.value?.querySelectorAll('#gallery-grid .gallery-image-button')[firstNewIndex]?.focus({ preventScroll: true });
 }
-function toggleFavorite(item) {
+function toggleFavorite(item, event) {
   const next = new Set(favorites.value);
   next.has(item.id) ? next.delete(item.id) : next.add(item.id);
-  try { saveFavorites(mergeFavorites(new Set(), next)); }
+  try { if (saveFavorites(mergeFavorites(new Set(), next)) && !reducedMotion.value) event?.currentTarget?.animate([{transform:'scale(1)'},{transform:'scale(1.22)'},{transform:'scale(1)'}], {duration:280,easing:'ease-out'}); }
   catch (error) { status.value = error.message; }
 }
 function saveFavorites(next) {
@@ -272,9 +287,10 @@ onBeforeUnmount(() => {
 
 <template>
   <section id="gallery" ref="section" class="gallery-section scene" data-scene-name="心动收藏" aria-labelledby="gallery-title">
+    <SceneAtmosphere kind="gallery" />
     <div class="scene-inner">
       <div class="section-label"><span>04 / 把喜欢贴在墙上</span><span>把喜欢，认真收藏。</span></div>
-      <div class="section-heading">
+      <div class="section-heading" data-arrive="0">
         <div><h2 id="gallery-title" tabindex="-1">心动，有迹可循<span class="pink-period">.</span></h2><p>像收集票根一样，收集每一次舍不得划走的瞬间。</p></div>
         <div class="filters" role="group" aria-label="筛选收藏">
           <button v-for="filter in filters" :key="filter.id" type="button" class="filter" :class="{ active: activeFilter === filter.id }" :data-filter="filter.id" :aria-pressed="activeFilter === filter.id" @click="setFilter(filter.id)">{{ filter.label }}<span v-if="filter.id === 'all'">{{ String(allImages.length).padStart(2, '0') }}</span></button>
@@ -282,23 +298,17 @@ onBeforeUnmount(() => {
       </div>
       <div class="gallery-discovery" role="search" aria-label="查找收藏图片">
         <label class="gallery-search-field" for="gallery-search"><span>找一份心动</span><input id="gallery-search" v-model="query" type="search" maxlength="200" placeholder="搜索标题、描述或作者 / 来源"></label>
-        <label class="gallery-character-field" for="gallery-character"><span>角色</span><select id="gallery-character" v-model="character" aria-describedby="gallery-character-hint"><option value="all">全部角色</option><option v-for="member in galleryCharacters" :key="member.id" :value="member.id">{{ member.label }}</option><option value="unmarked">未标注角色</option></select></label>
-        <label class="gallery-character-field" for="gallery-creator"><span>画师 / 来源</span><select id="gallery-creator" v-model="creator"><option value="all">全部画师与来源</option><option v-for="name in creators" :key="name" :value="name">{{name}}</option><option value="pending">原作者待确认</option></select></label>
         <button type="button" class="gallery-favorites-only" :aria-pressed="favoritesOnly" @click="favoritesOnly = !favoritesOnly">♥ 我的收藏 <span>{{ knownFavoriteCount }}</span></button>
+        <button type="button" class="gallery-filter-toggle" :aria-expanded="filtersOpen" aria-controls="gallery-advanced" @click="filtersOpen=!filtersOpen">筛选 <span v-if="character!=='all'||creator!=='all'" class="filter-dot" aria-label="已启用高级筛选">●</span><span aria-hidden="true">{{filtersOpen?'−':'＋'}}</span></button>
       </div>
-      <p id="gallery-character-hint" class="gallery-character-hint">优先使用站主标注的角色；旧图片沿用标题和画面描述识别。</p>
+      <SmoothFold id="gallery-advanced" :open="filtersOpen"><div class="gallery-advanced-fields">        <label class="gallery-character-field" for="gallery-character"><span>角色</span><select id="gallery-character" v-model="character" aria-describedby="gallery-character-hint"><option value="all">全部角色</option><option v-for="member in galleryCharacters" :key="member.id" :value="member.id">{{ member.label }}</option><option value="unmarked">未标注角色</option></select></label>
+        <label class="gallery-character-field" for="gallery-creator"><span>画师 / 来源</span><select id="gallery-creator" v-model="creator"><option value="all">全部画师与来源</option><option v-for="name in creators" :key="name" :value="name">{{name}}</option><option value="pending">原作者待确认</option></select></label>
+<p id="gallery-character-hint" class="gallery-character-hint">优先使用站主标注的角色；旧图片沿用标题和画面描述识别。</p></div></SmoothFold>
+      <div v-if="filterChips.length" class="gallery-filter-chips" aria-label="已启用的筛选"><span v-for="chip in filterChips" :key="chip">{{chip}}</span><button type="button" @click="resetFilters">清除全部 ×</button></div>
       <div class="gallery-discovery-tools">
         <span class="gallery-result-count" aria-live="polite">{{ cloudComplete ? `找到 ${images.length} / ${allImages.length} 张` : `已读取 ${allImages.length} 张，当前符合 ${images.length} 张` }}</span><span v-if="hasFilters && !cloudComplete" class="gallery-search-coverage" role="status">{{ cloudError ? '全部收藏尚未检索完，请重试读取。' : '正在检索全部云端收藏，结果会继续补充…' }}</span>
         <button v-if="hasFilters" type="button" class="gallery-reset-filters" @click="resetFilters">清除筛选</button>
-        <details class="gallery-backup">
-          <summary>收藏备份</summary>
-          <div class="gallery-backup-panel" :aria-busy="importing">
-            <p>备份收藏编号，换设备后可导入。导入会与本机记录合并，保留已有收藏；图片文件不包含在备份中。</p>
-            <div><button type="button" @click="exportFavorites">导出收藏</button><button type="button" :disabled="importing" @click="backupInput.click()">{{ importing ? '正在导入…' : '导入收藏' }}</button></div>
-            <input ref="backupInput" type="file" accept=".json,application/json" hidden aria-label="选择收藏备份文件" @change="importFavorites">
-            <p v-if="backupMessage" class="gallery-backup-message" :role="backupError ? 'alert' : 'status'">{{ backupMessage }}</p>
-          </div>
-        </details>
+
       </div>
       <div class="gallery-view-bar">
         <div class="gallery-view-switch" role="group" aria-label="相册展示方式">
@@ -306,27 +316,35 @@ onBeforeUnmount(() => {
           <button type="button" :aria-pressed="mode === 'flow'" @click="mode = 'flow'"><span aria-hidden="true">≋</span> 流动视图</button>
         </div>
         <button v-if="mode === 'flow'" type="button" class="gallery-motion-toggle" :disabled="reducedMotion" :aria-pressed="paused || reducedMotion" @click="paused = !paused">{{ reducedMotion ? '已减少动态效果' : paused ? '继续流动 ▶' : '暂停流动 Ⅱ' }}</button>
-        <RouterLink to="/manage-gallery" class="gallery-upload-link">站主上传图片 ↗</RouterLink>
+        <button type="button" class="gallery-tools-toggle" :aria-expanded="toolsOpen" aria-controls="gallery-tools" @click="toolsOpen=!toolsOpen">备份与工具 {{toolsOpen?'−':'＋'}}</button>
       </div>
-      <p v-if="cloudLoading" class="gallery-cloud-loading" role="status">{{ remoteImages.length ? `正在读取更多云端收藏（已有 ${remoteImages.length} 张）…` : '正在读取首批云端收藏，原有收藏可继续浏览…' }}</p>
-      <p v-if="cloudError" class="gallery-cloud-notice" role="status">{{ cloudError }} <button type="button" :disabled="cloudLoading" @click="retryCloud">重试读取</button></p>
-      <div v-if="cloudConfigured" class="gallery-cloud-controls"><span>{{ cloudComplete ? '云端收藏已全部读取' : `云端已读取 ${remoteImages.length} 张 · 可继续翻阅` }}</span><button type="button" :disabled="cloudLoading" @click="refreshCloud">刷新云端收藏</button><span v-if="cloudUpdatedAt">本次数据缓存在页面间保留 5 分钟</span></div>
+      <p v-if="cloudLoading || cloudError" class="gallery-cloud-status" :class="{'has-error':cloudError,'gallery-cloud-notice':cloudError}" role="status">{{cloudError || '正在补齐云端收藏，已载入的图片可继续翻阅…'}}<button v-if="cloudError" type="button" :disabled="cloudLoading" @click="retryCloud">重试读取</button></p>
+      <SmoothFold id="gallery-tools" :open="toolsOpen"><div class="gallery-tools-panel">        <details class="gallery-backup">
+          <summary>收藏备份</summary>
+          <div class="gallery-backup-panel" :aria-busy="importing">
+            <p>备份收藏编号，换设备后可导入。导入会与本机记录合并，保留已有收藏；图片文件不包含在备份中。</p>
+            <div><button type="button" @click="exportFavorites">导出收藏</button><button type="button" :disabled="importing" @click="backupInput.click()">{{ importing ? '正在导入…' : '导入收藏' }}</button></div>
+            <input ref="backupInput" type="file" accept=".json,application/json" hidden aria-label="选择收藏备份文件" @change="importFavorites">
+            <p v-if="backupMessage" class="gallery-backup-message" :role="backupError ? 'alert' : 'status'">{{ backupMessage }}</p>
+          </div>
+        </details>      <div v-if="cloudConfigured" class="gallery-cloud-controls"><span>{{ cloudComplete ? '云端收藏已全部读取' : `云端已读取 ${remoteImages.length} 张 · 可继续翻阅` }}</span><button type="button" :disabled="cloudLoading" @click="refreshCloud">刷新云端收藏</button><span v-if="cloudUpdatedAt">本次数据缓存在页面间保留 5 分钟</span></div>
+<RouterLink to="/manage-gallery" class="gallery-upload-link">站主上传与管理 ↗</RouterLink></div></SmoothFold>
       <p v-if="linkNotice" class="gallery-link-notice" role="status">{{ linkNotice }} <button type="button" @click="clearLink">清除图片定位</button></p>
-      <div v-if="mode === 'wall'" id="gallery-grid" class="gallery-grid">
+      <FluidPanel><Transition name="gallery-mode"><div v-if="mode === 'wall'" key="wall" class="gallery-wall-panel" data-arrive="1"><TransitionGroup tag="div" name="photo-card" id="gallery-grid" class="gallery-grid">
         <article v-for="item in visibleImages" :key="item.id" class="gallery-card" :data-category="item.category">
-          <button type="button" class="gallery-image-button" :aria-label="`放大图片：${item.title}`" @click="openImage(item, $event)">
+          <button type="button" class="gallery-image-button" :data-photo-id="item.id" :aria-label="`放大图片：${item.title}`" @click="openImage(item, $event)">
             <img :src="asset(item.thumbnail || item.src)" :alt="item.alt" :class="{ 'is-small-image': isSmallImage(item) }" :style="imageStyle(item)" loading="lazy" decoding="async" :width="item.width || 600" :height="item.height || 620">
             <span class="gallery-tag">{{ item.tag }}</span><span class="expand-icon" aria-hidden="true">↗</span>
           </button>
-          <div class="gallery-card-caption"><div><h3>{{ item.title }}</h3><small>{{ item.subtitle }}</small></div><button type="button" class="favorite" :aria-label="favoriteLabel(item)" :aria-pressed="favorites.has(item.id)" @click="toggleFavorite(item)">{{ favorites.has(item.id) ? '♥' : '♡' }}</button></div>
+          <div class="gallery-card-caption"><div><h3>{{ item.title }}</h3><small>{{ item.subtitle }}</small></div><button type="button" class="favorite" :aria-label="favoriteLabel(item)" :aria-pressed="favorites.has(item.id)" @click="toggleFavorite(item, $event)">{{ favorites.has(item.id) ? '♥' : '♡' }}</button></div>
         </article>
-      </div>
-      <div v-else class="gallery-flow-view" :data-playing="flowing">
+      </TransitionGroup></div>
+      <div v-else key="flow" class="gallery-flow-view" :data-playing="flowing">
         <div class="gallery-flow-wall" aria-hidden="true">
           <div v-for="(row, rowIndex) in rows" :key="`${activeFilter}-${rowIndex}`" class="gallery-flow-row" :class="{ 'is-reversed': rowIndex % 2 }" :style="{ '--flow-duration': flowDuration(row.length, rowIndex) }">
             <div class="gallery-flow-track">
               <div v-for="copy in 2" :key="copy" class="gallery-flow-group">
-                <button v-for="(item, index) in row" :key="`${copy}-${item.id}-${index}`" type="button" tabindex="-1" class="gallery-flow-photo" :data-category="item.category" @click="openImage(item, $event)">
+                <button v-for="(item, index) in row" :key="`${copy}-${item.id}-${index}`" type="button" tabindex="-1" class="gallery-flow-photo" :data-photo-id="item.id" :data-category="item.category" @click="openImage(item, $event)">
                   <img :src="asset(item.thumbnail || item.src)" :class="{ 'is-small-image': isSmallImage(item) }" :style="imageStyle(item)" alt="" loading="lazy" decoding="async" :width="item.width || 440" :height="item.height || 260"><span>{{ item.title }}</span>
                 </button>
               </div>
@@ -338,6 +356,7 @@ onBeforeUnmount(() => {
           <span>选择预览</span><button v-for="item in images" :key="item.id" type="button" :data-preview-id="item.id" @click="openImage(item, $event)">{{ item.title }} <span aria-hidden="true">↗</span></button>
         </div>
       </div>
+      </Transition></FluidPanel>
       <div v-if="mode === 'wall' && images.length" class="gallery-pagination">
         <span>已展示 {{ visibleImages.length }} / {{ images.length }} 张</span>
         <button v-if="visibleImages.length < images.length || cloudHasMore" type="button" class="gallery-load-more" :disabled="cloudLoading" @click="loadMore">{{ cloudLoading ? '正在读取…' : visibleImages.length < images.length ? `再翻 ${Math.min(wallPageSize, images.length - visibleImages.length)} 张` : '读取更多云端收藏' }} <span aria-hidden="true">↓</span></button><span v-else>已经翻到最后一张</span>
@@ -350,7 +369,7 @@ onBeforeUnmount(() => {
     </div>
     <Teleport to="body">
       <dialog id="lightbox" ref="lightbox" class="lightbox gallery-lightbox" aria-labelledby="lightbox-title" @close="onDialogClose" @cancel.prevent="closeImage" @keydown="dialogKeydown" @click="dialogBackdrop">
-        <template v-if="selectedImage">
+        <div v-if="selectedImage" class="lightbox-content">
           <div class="lightbox-toolbar"><span id="lightbox-count" aria-live="polite">{{ imageCounter }}</span><span class="lightbox-hint">适配时滑动切图 · 放大后拖动查看</span><button id="lightbox-close" type="button" class="icon-button" aria-label="关闭图片" @click="closeImage">×</button></div>
           <div class="lightbox-zoom-controls" role="group" aria-label="图片缩放"><button type="button" aria-label="缩小图片" :disabled="zoom.scale.value <= 1" @click="zoom.setZoom(zoom.scale.value / 1.4)">−</button><output aria-live="polite">{{ zoom.zoomLabel.value }}</output><button type="button" aria-label="放大图片" :disabled="zoom.scale.value >= zoom.maxScale.value" @click="zoom.setZoom(zoom.scale.value * 1.4)">＋</button><button type="button" @click="zoom.fit">适配屏幕</button><button type="button" @click="zoom.oneToOne">1:1 查看</button></div>
           <div class="lightbox-image-wrap">
@@ -362,8 +381,8 @@ onBeforeUnmount(() => {
             <button v-if="previewImages.length > 1" id="lightbox-next" type="button" class="icon-button lightbox-next" aria-label="下一张" @click="stepImage(1)">→</button>
           </div>
           <p class="lightbox-gesture-hint">双击放大或还原 · 放大后可拖动、双指调整 · + / − 缩放，0 适配，Shift + 方向键移动</p>
-          <div class="lightbox-bottom"><h3 id="lightbox-title">{{ selectedImage.title }}</h3><p id="lightbox-credit">{{ selectedImage.credit }}</p><p v-if="imageState.status === 'loading'" class="visually-hidden" role="status">正在加载高清图片…</p><p v-if="imageState.status === 'fallback'" class="lightbox-preview-notice" role="status">高清图片暂时无法加载，正在显示预览图。</p><p class="source-label">{{selectedImage.creator||'原作者待确认'}} · {{selectedImage.method}}</p><div class="source-links"><a v-if="selectedImage.sourceUrl" :href="selectedImage.sourceUrl" target="_blank" rel="noopener noreferrer">原作发布页 ↗</a><a v-if="selectedImage.creatorUrl" :href="selectedImage.creatorUrl" target="_blank" rel="noopener noreferrer">画师主页 ↗</a><RouterLink to="/room/sources">查看来源档案 ↗</RouterLink></div><div class="lightbox-actions"><button type="button" class="lightbox-favorite" :aria-label="favoriteLabel(selectedImage)" :aria-pressed="favorites.has(selectedImage.id)" @click="toggleFavorite(selectedImage)">{{ favorites.has(selectedImage.id) ? '♥ 已收藏' : '♡ 收藏这张' }}</button><a v-if="selectedImage.originalSrc" class="lightbox-original" :href="asset(selectedImage.originalSrc)" target="_blank" rel="noopener noreferrer">查看原图 <span aria-hidden="true">↗</span></a><button type="button" class="lightbox-share" @click="copyShareLink">复制分享链接 ↗</button></div><div v-if="shareLink" class="lightbox-share-field"><label for="gallery-share-link">图片分享链接</label><input id="gallery-share-link" ref="shareInput" :value="shareLink" readonly @focus="$event.target.select()"><p role="status">{{ shareMessage }}</p></div></div>
-        </template>
+          <div class="lightbox-bottom"><h3 id="lightbox-title">{{ selectedImage.title }}</h3><p id="lightbox-credit">{{ selectedImage.credit }}</p><p v-if="imageState.status === 'loading'" class="visually-hidden" role="status">正在加载高清图片…</p><p v-if="imageState.status === 'fallback'" class="lightbox-preview-notice" role="status">高清图片暂时无法加载，正在显示预览图。</p><p class="source-label">{{selectedImage.creator||'原作者待确认'}} · {{selectedImage.method}}</p><div class="source-links"><a v-if="selectedImage.sourceUrl" :href="selectedImage.sourceUrl" target="_blank" rel="noopener noreferrer">原作发布页 ↗</a><a v-if="selectedImage.creatorUrl" :href="selectedImage.creatorUrl" target="_blank" rel="noopener noreferrer">画师主页 ↗</a><RouterLink to="/room/sources">查看来源档案 ↗</RouterLink></div><div class="lightbox-actions"><button type="button" class="lightbox-favorite" :aria-label="favoriteLabel(selectedImage)" :aria-pressed="favorites.has(selectedImage.id)" @click="toggleFavorite(selectedImage, $event)">{{ favorites.has(selectedImage.id) ? '♥ 已收藏' : '♡ 收藏这张' }}</button><a v-if="selectedImage.originalSrc" class="lightbox-original" :href="asset(selectedImage.originalSrc)" target="_blank" rel="noopener noreferrer">查看原图 <span aria-hidden="true">↗</span></a><button type="button" class="lightbox-share" @click="copyShareLink">复制分享链接 ↗</button></div><div v-if="shareLink" class="lightbox-share-field"><label for="gallery-share-link">图片分享链接</label><input id="gallery-share-link" ref="shareInput" :value="shareLink" readonly @focus="$event.target.select()"><p role="status">{{ shareMessage }}</p></div></div>
+        </div>
       </dialog>
     </Teleport>
   </section>

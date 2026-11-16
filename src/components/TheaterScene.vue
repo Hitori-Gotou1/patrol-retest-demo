@@ -3,6 +3,11 @@ import { ref, computed, shallowRef, onBeforeUnmount } from 'vue';
 import { useChord } from '../composables/useChord.js';
 import { interactionFeatures } from '../data/interactions.js';
 import { liveModeActive } from '../composables/useInteractionSession.js';
+import SceneAtmosphere from './motion/SceneAtmosphere.vue';
+import SmoothFold from './motion/SmoothFold.vue';
+import { useSceneMotion } from '../composables/useSceneMotion.js';
+const root = ref(null), growthOpen = ref(false);
+useSceneMotion(root);
 import PlayroomPreview from './PlayroomPreview.vue';
 const selected = ref('box');
 const scenes = {
@@ -36,11 +41,12 @@ function leaveLive() { liveOpen.value = false; liveModeActive.value = false; }
 onBeforeUnmount(() => { disposed = true; liveModeActive.value = false; });
 </script>
 <template>
-    <section class="theater-scene scene" id="theater" data-scene-name="纸箱剧场" aria-labelledby="theater-title">
+    <section ref="root" class="theater-scene scene" id="theater" data-scene-name="纸箱剧场" aria-labelledby="theater-title">
+      <SceneAtmosphere kind="theater" />
       <div class="scene-inner">
-        <div class="scene-heading"><div><span class="scene-kicker">03 / 社交电量充电站</span><h2 id="theater-title">嘘，纸箱里有人。</h2></div><span class="theater-sticker">本人很安静<br><strong>脑内很热闹！</strong></span></div>
+        <div class="scene-heading" data-arrive="0"><div><span class="scene-kicker">03 / 社交电量充电站</span><h2 id="theater-title">嘘，纸箱里有人。</h2></div><span class="theater-sticker">本人很安静<br><strong>脑内很热闹！</strong></span></div>
         <p class="scene-intro">如果此刻是一里，她的脑内小剧场大概已经开演了。</p>
-      <div class="theater-section">
+      <div class="theater-section" data-arrive="1">
 
         <div class="scene-controls" role="group" aria-label="选择脑内小剧场情境"><button v-for="(scene, id) in scenes" :key="id" type="button" :data-scene="id" :aria-pressed="selected === id" :class="{active:selected === id}" @click="selected = id">{{ scene.label }}</button></div>
         <div class="bocchi-theater" id="bocchi-theater" :data-scene="selected">
@@ -53,8 +59,8 @@ onBeforeUnmount(() => { disposed = true; liveModeActive.value = false; });
           <div class="thought-panel"><div class="thought-bubble" role="status" aria-live="polite" aria-atomic="true"><h3 id="thought-title">{{ current.title }}</h3><p id="thought-text">{{ current.text }}</p><span id="scene-note">{{ current.note }}</span></div><div class="strum-row"><button id="strum-button" class="strum-button" :data-playing="playing || undefined" @click="play" type="button"><span class="string-icon" aria-hidden="true">≋</span><span id="strum-label">听一声和弦</span><span aria-hidden="true">♪</span></button><span class="sound-hint">轻轻拨一下，只响一小段</span></div><p class="strum-status" id="strum-status" role="status" aria-live="polite">{{ message }}</p></div>
         </div>
       </div>
-      <details class="growth-note"><summary><span><span class="growth-dot" aria-hidden="true"></span> 从房间到舞台，那些很小、很重要的变化</span><span class="details-symbol" aria-hidden="true">＋</span></summary><ol><li><strong>一个人，也认真练习。</strong><p>在房间里反复磨练技巧，在网络上以「吉他英雄」的身份分享演奏。</p></li><li><strong>有人邀请，就试着迈一步。</strong><p>虹夏的出现，让一个人的吉他声有了与鼓、贝斯和歌声相遇的机会。</p></li><li><strong>带着紧张，继续站上舞台。</strong><p>信心没有突然变满。但她开始为了伙伴，尝试把练习过的声音真正弹出来。</p></li></ol></details>
-      <div v-if="interactionFeatures.liveMode" class="starry-ticket">
+      <div class="growth-note"><button type="button" class="growth-summary" :aria-expanded="growthOpen" aria-controls="growth-story" @click="growthOpen=!growthOpen"><span><span class="growth-dot" aria-hidden="true"></span> 从房间到舞台，那些很小、很重要的变化</span><span class="details-symbol" aria-hidden="true">＋</span></button><SmoothFold id="growth-story" :open="growthOpen"><ol><li><strong>一个人，也认真练习。</strong><p>在房间里反复磨练技巧，在网络上以「吉他英雄」的身份分享演奏。</p></li><li><strong>有人邀请，就试着迈一步。</strong><p>虹夏的出现，让一个人的吉他声有了与鼓、贝斯和歌声相遇的机会。</p></li><li><strong>带着紧张，继续站上舞台。</strong><p>信心没有突然变满。但她开始为了伙伴，尝试把练习过的声音真正弹出来。</p></li></ol></SmoothFold></div>
+      <div v-if="interactionFeatures.liveMode" class="starry-ticket" data-arrive="2">
         <div class="starry-ticket-copy"><span>ONE NIGHT / FOUR COLORS</span><h3>房间之外，舞台之上。</h3><p>灯光就位。今晚的 STARRY，也为你留了位置。</p></div>
         <button id="enter-starry" ref="liveEntry" type="button" :disabled="liveLoading" :aria-busy="liveLoading" @click="enterLive"><small>LIVE HOUSE / 下北沢</small><strong>{{ liveLoading ? '准备舞台…' : 'ENTER STARRY' }} <span aria-hidden="true">↗</span></strong><span class="starry-ticket-tear" aria-hidden="true"></span></button>
         <p v-if="liveMessage" class="starry-entry-status" role="status">{{ liveMessage }}</p>

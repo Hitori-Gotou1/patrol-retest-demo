@@ -1,0 +1,48 @@
+{
+  "date": "2026-11-15",
+  "nodeTests": 196,
+  "galleryImportTests": 15,
+  "build": "PASS",
+  "browser": "Chromium",
+  "viewports": [
+    "1440x900",
+    "768x1024",
+    "390x844",
+    "360x800"
+  ],
+  "reports": {
+    "browser-results.json": {
+      "result": "PASS",
+      "groups": 7
+    },
+    "photo-final-results.json": {
+      "result": "PASS",
+      "groups": 1
+    },
+    "existing-v3-results.json": {
+      "result": "PASS",
+      "groups": 9
+    },
+    "gallery-results.json": {
+      "result": "PASS",
+      "groups": 2
+    },
+    "cloud-gallery-results.json": {
+      "result": "PASS",
+      "groups": 5
+    },
+    "lightbox-results.json": {
+      "result": "PASS",
+      "groups": 5
+    }
+  },
+  "recording": {
+    "file": "previews/visual-tour.mp4",
+    "durationSeconds": 16.52,
+    "width": 1440,
+    "height": 900,
+    "bytes": 2380237,
+    "sha256": "9714b0d070822fcec9b0e6137d65c665a5870aa690a86defff96c6a1e5ffcebc",
+    "playbackVerified": true
+  }
+}

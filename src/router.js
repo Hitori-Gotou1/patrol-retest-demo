@@ -1,3 +1,4 @@
+import { settledSceneAnchor } from './services/sceneAnchor.js';
 import {motionPreference as createMotionQuery} from './room/preferences.js';
 import { createRouter, createWebHashHistory } from 'vue-router';
 // 兼容迁移前分享过的 #gallery 等锚点，不额外产生一条历史记录。
@@ -5,6 +6,7 @@ const legacyScenes = new Set(['#home', '#about', '#theater', '#gallery', '#video
 if (legacyScenes.has(location.hash)) {
   history.replaceState(history.state, '', `${location.pathname}${location.search}#/${location.hash}`);
 }
+let scrollGeneration = 0;
 export default createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
@@ -55,14 +57,17 @@ export default createRouter({
     ] },
     { path: '/:pathMatch(.*)*', redirect: '/' }
   ],
-  scrollBehavior(to, from, savedPosition) {
+  async scrollBehavior(to, from, savedPosition) {
+    const generation = ++scrollGeneration;
     // Modal query changes keep the current page position; fresh links still
     // use their gallery anchor and ordinary scene navigation stays unchanged.
     if (from.matched.length && to.path === '/' && from.path === '/'
       && (to.query.image != null || from.query.image != null)
       && (to.hash === from.hash || (to.query.image != null && from.query.image == null && !from.hash && to.hash === '#gallery'))) return false;
     if (savedPosition) return savedPosition;
-    if (to.hash) return { el: to.hash, behavior: createMotionQuery().matches ? 'instant' : 'smooth' };
+    if (to.path === '/' && to.hash) await settledSceneAnchor(to.hash);
+    if (generation !== scrollGeneration) return false;
+    if (to.hash) return { el: to.hash, behavior: from.path === to.path && from.matched.length && !createMotionQuery().matches ? 'smooth' : 'instant' };
     return { top: 0, behavior: 'instant' };
   }
 });

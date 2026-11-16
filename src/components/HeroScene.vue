@@ -2,8 +2,10 @@
 import {motionPreference as createMotionQuery} from '../room/preferences.js';
 import { ref, onMounted, onUnmounted } from 'vue';
 import gsap from 'gsap';
+import { useSceneMotion } from '../composables/useSceneMotion.js';
 import { site, assetUrl } from '../data/site.js';
 const root = ref(null);
+const { active } = useSceneMotion(root, { entrance: false });
 const backdrop = ref(null);
 const backgroundVideo = ref(null);
 const failedVideo = ref(false);
@@ -11,13 +13,13 @@ const reduce = ref(false);
 let motion, observer, context;
 let moveX, moveY;
 function move(event) {
-  if (reduce.value || event.pointerType !== 'mouse' || !moveX) return;
+  if (!active.value || reduce.value || event.pointerType !== 'mouse' || !moveX) return;
   const bounds = root.value.getBoundingClientRect();
   moveX((event.clientX / bounds.width - .5) * 10);
   moveY(((event.clientY - bounds.top) / bounds.height - .5) * 8);
 }
 function reset() { moveX?.(0); moveY?.(0); }
-function updateMotion() { reduce.value = motion.matches; if (reduce.value) { reset(); backgroundVideo.value?.pause(); } }
+function updateMotion() { reduce.value = motion.matches; if (reduce.value) { gsap.killTweensOf(backdrop.value); gsap.set(backdrop.value, {x:0,y:0}); backgroundVideo.value?.pause(); } }
 onMounted(() => {
   motion = createMotionQuery();
   updateMotion(); motion.addEventListener('change', updateMotion);
@@ -25,7 +27,7 @@ onMounted(() => {
   context.add('(prefers-reduced-motion: no-preference)', () => {
     const elements = root.value.querySelectorAll('.hero-content > *, .hero-bottom');
     // 信息始终在文档中可读，GSAP 只负责短暂的分层入场。
-    gsap.from(elements, { y: 24, opacity: 0, stagger: .09, duration: .8, ease: 'power3.out', clearProps: 'transform,opacity' });
+    if (!motion.matches) gsap.from(elements, { y: 24, opacity: 0, stagger: .09, duration: .8, ease: 'power3.out', clearProps: 'transform,opacity' });
     moveX = gsap.quickTo(backdrop.value, 'x', { duration: .8, ease: 'power2.out' });
     moveY = gsap.quickTo(backdrop.value, 'y', { duration: .8, ease: 'power2.out' });
     return () => { moveX = null; moveY = null; };
@@ -41,7 +43,7 @@ onMounted(() => {
   observer.observe(root.value);
   document.addEventListener('visibilitychange', pauseHidden);
 });
-function pauseHidden() { if (document.hidden) backgroundVideo.value?.pause(); }
+function pauseHidden() { if (document.hidden) { reset(); backgroundVideo.value?.pause(); } }
 onUnmounted(() => { context?.revert(); observer?.disconnect(); motion?.removeEventListener('change', updateMotion); document.removeEventListener('visibilitychange', pauseHidden); backgroundVideo.value?.pause(); });
 </script>
 <template>

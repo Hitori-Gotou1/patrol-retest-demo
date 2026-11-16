@@ -93,6 +93,8 @@ class Fixture:
         self.context.close()
 
     def import_file(self, text):
+        if self.page.locator('.gallery-tools-toggle').get_attribute('aria-expanded') != 'true':
+            self.page.locator('.gallery-tools-toggle').click()
         if self.page.locator('.gallery-backup').get_attribute('open') is None:
             self.page.locator('.gallery-backup summary').click()
         self.page.get_by_label('选择收藏备份文件', exact=True).set_input_files({'name': 'favorites.json', 'mimeType': 'application/json', 'buffer': text.encode()})
@@ -104,6 +106,7 @@ def test_search(browser):
     fixture.goto()
     page.locator('[data-filter=collection]').click()
     page.locator('#gallery-search').fill('aRTist')
+    page.locator('.gallery-filter-toggle').click()
     page.locator('#gallery-character').select_option('nijika')
     expect(page.locator('.gallery-card')).to_have_count(1)
     expect(page.locator('.gallery-card h3')).to_have_text(ROW['title'])
@@ -120,7 +123,7 @@ def test_search(browser):
     page.locator('.gallery-load-more').click()
     expect(page.locator('.gallery-card')).to_have_count(18)
     page.locator('#gallery-character').select_option('hitori')
-    assert page.locator('.gallery-card').count() <= 9
+    page.wait_for_function("document.querySelectorAll('.gallery-card').length <= 9")
     page.locator('.gallery-view-switch button').nth(1).click()
     for entry in page.locator('.gallery-flow-access button').all():
         assert entry.get_attribute('data-preview-id') != CLOUD_ID
@@ -154,6 +157,7 @@ def test_backup(browser):
     page.locator('.gallery-favorites-only').click()
     expect(page.locator('.gallery-card')).to_have_count(3)
     page.locator('#gallery-search').fill(ROW['title'])
+    expect(page.locator('.gallery-card')).to_have_count(1)
     page.locator('.gallery-image-button').click()
     page.locator('.lightbox-favorite').click()
     expect(page.locator('#lightbox-title')).to_have_text(ROW['title'])
@@ -254,6 +258,7 @@ def test_storage_and_mobile(browser):
     page.locator('.favorite').first.click()
     expect(page.locator('.favorite').first).to_have_attribute('aria-pressed', 'true')
     expect(page.locator('#gallery-status')).to_contain_text('仅本次有效')
+    page.locator('.gallery-tools-toggle').click()
     page.locator('.gallery-backup summary').click()
     with page.expect_download() as pending:
         page.get_by_role('button', name='导出收藏', exact=True).click()
@@ -266,6 +271,7 @@ def test_storage_and_mobile(browser):
         fixture.goto()
         page.locator('#gallery').evaluate("element => window.scrollTo({top: element.offsetTop, behavior: 'instant'})")
         page.screenshot(path=str(OUTPUT / f'gallery-discovery-{width}.png'))
+        page.locator('.gallery-tools-toggle').click()
         page.locator('.gallery-backup summary').click()
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
         page.locator('.gallery-image-button').first.click()

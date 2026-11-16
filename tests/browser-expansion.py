@@ -192,6 +192,7 @@ try:
         expect(page.locator('.resource-grid article')).to_have_count(51)
         expect(page.locator('.room-intro').first).to_contain_text('原作者待确认51张')
         page.goto(BASE+'#/#gallery',wait_until='networkidle')
+        page.locator('.gallery-filter-toggle').click()
         page.locator('#gallery-creator').select_option('pending')
         page.locator('#gallery-grid button').first.click()
         expect(page.locator('#lightbox .source-label')).to_contain_text('原作者待确认')

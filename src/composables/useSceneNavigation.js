@@ -1,3 +1,4 @@
+import { settledSceneAnchor } from '../services/sceneAnchor.js';
 import {motionPreference as createMotionQuery} from '../room/preferences.js';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
@@ -22,6 +23,7 @@ export function useSceneNavigation() {
   let rebindFrame = 0;
   let focusFrame = 0;
   let focusToken = 0;
+  let inputVersion = 0;
   let routeToken = 0;
   let temporaryFocus = null;
   let reducedMotion;
@@ -64,6 +66,8 @@ export function useSceneNavigation() {
     cancelAnimationFrame(focusFrame);
     focusFrame = 0;
   }
+
+  function userInput() { inputVersion++; cancelFocus(); }
 
   function clearTemporaryFocus() {
     if (!temporaryFocus) return;
@@ -147,6 +151,7 @@ export function useSceneNavigation() {
   async function navigateToScene(event, id, navigate) {
     // 保留 Ctrl / Command 点击、新标签页等浏览器原生行为。
     if (!plainActivation(event)) return;
+    const input = inputVersion;
     const sameLocation = isHome.value && route.hash === `#${id}`;
     const keyboard = event.detail === 0;
     await navigate(event);
@@ -155,7 +160,12 @@ export function useSceneNavigation() {
     const section = document.getElementById(id);
     if (!section) return;
     if (sameLocation) scrollToSection(section);
-    if (keyboard) focusHeadingWhenSettled(section);
+    if (keyboard) {
+      await settledSceneAnchor(`#${id}`);
+      if (!mounted || !isHome.value || route.hash !== `#${id}` || input !== inputVersion) return;
+      const readySection = document.getElementById(id);
+      if (readySection) focusHeadingWhenSettled(readySection);
+    }
   }
 
   async function navigateToAbout(event, navigate) {
@@ -248,9 +258,9 @@ export function useSceneNavigation() {
     listen(window, 'resize', scheduleActiveUpdate, { passive: true });
     listen(window, 'hitori:scene-ready', bindScenes);
     listen(window, 'wheel', onWheel, { passive: false });
-    listen(window, 'pointerdown', cancelFocus, { passive: true });
-    listen(window, 'touchstart', cancelFocus, { passive: true });
-    listen(window, 'keydown', cancelFocus, { capture: true });
+    listen(window, 'pointerdown', userInput, { passive: true });
+    listen(window, 'touchstart', userInput, { passive: true });
+    listen(window, 'keydown', userInput, { capture: true });
     listen(reducedMotion, 'change', resetWheel);
     listen(desktopPaging, 'change', resetWheel);
     bindScenes();

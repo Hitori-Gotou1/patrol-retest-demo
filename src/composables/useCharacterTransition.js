@@ -118,12 +118,12 @@ export function useCharacterTransition({ members, scene, baseLayer, revealLayer,
     revealProgress.value = 0; renderReveal();
     revealLayer.value.style.opacity = '1';
     // 单一事务：旧内容退场 → 完整圆形覆盖 → 同步提交人物和主题 → 新内容依次入场。
-    // 点击期间只保留最后一个目标，不中断半径/颜色，也不创建第二个人物层。
+    // 新选择取消旧事务，以已经提交的人物为起点；generation 拦截过期提交。
     await animate(tl => {
-      tl.to($$('.cast-reveal-item'), { y: -9, autoAlpha: 0, duration: .2, stagger: .01, ease: 'power2.in' }, 0)
-        .to($('.cast-portrait-motion'), { x: outgoing.motion.exitX, scale: .96, autoAlpha: 0, duration: .3, ease: 'power2.in' }, 0)
-        .to($$('.cast-decorations, .cast-peripheral'), { opacity: 0, duration: .25 }, 0)
-        .to(revealProgress, { value: 1, duration: .62, ease: 'power3.inOut', onUpdate: renderReveal }, .12);
+      tl.to($$('.cast-reveal-item'), { y: -9, autoAlpha: 0, duration: .13, stagger: .006, ease: 'power2.in' }, 0)
+        .to($('.cast-portrait-motion'), { x: outgoing.motion.exitX, scale: .96, autoAlpha: 0, duration: .19, ease: 'power2.in' }, 0)
+        .to($$('.cast-decorations, .cast-peripheral'), { opacity: 0, duration: .17 }, 0)
+        .to(revealProgress, { value: 1, duration: .38, ease: 'power3.inOut', onUpdate: renderReveal }, .04);
     });
     if (disposed || token !== generation) return;
     selectedIndex.value = index;
@@ -140,9 +140,9 @@ export function useCharacterTransition({ members, scene, baseLayer, revealLayer,
     // 底层已是相同颜色，再撤走遮罩；没有透明中间帧或旧色角落。
     revealLayer.value.style.opacity = '0';
     await animate(tl => {
-      tl.to(portrait, { x: 0, scale: 1, autoAlpha: 1, duration: .65, ease: incoming.motion.ease }, 0)
-        .to(details, { y: 0, autoAlpha: 1, duration: .32, stagger: .035, ease: 'power3.out' }, .13)
-        .to(decorations, { opacity: 1, duration: .4, ease: 'sine.out' }, .24);
+      tl.to(portrait, { x: 0, scale: 1, autoAlpha: 1, duration: .38, ease: incoming.motion.ease }, 0)
+        .to(details, { y: 0, autoAlpha: 1, duration: .24, stagger: .018, ease: 'power3.out' }, .045)
+        .to(decorations, { opacity: 1, duration: .27, ease: 'sine.out' }, .09);
     });
     if (disposed || token !== generation) return;
     showAll(); busy.value = false;
@@ -157,7 +157,11 @@ export function useCharacterTransition({ members, scene, baseLayer, revealLayer,
     originElement = origin || scene.value?.querySelector(`#tab-${members[target].id}`);
     feedback(originElement);
     if (media?.matches || !visible || document.hidden) { settleInstant(target); return; }
-    if (!busy.value && selectedIndex.value !== target) transition(target, originElement);
+    if (busy.value) {
+      generation++; stopTimeline(); showAll(); synchronizeTheme(); busy.value = false;
+    }
+    if (selectedIndex.value !== target) transition(target, originElement);
+    else startAmbient();
   }
   function react() {
     if (busy.value || media?.matches || !visible || suspended.value) return;

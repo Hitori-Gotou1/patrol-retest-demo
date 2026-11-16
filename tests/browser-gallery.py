@@ -51,6 +51,8 @@ def test_layouts(browser):
         expect(page.locator('.gallery-image-button').first).to_be_focused()
 
         page.locator('.gallery-view-switch button').nth(1).click()
+        expect(page.locator('.gallery-mode-enter-active')).to_have_count(0)
+        page.wait_for_function("document.querySelector('.gallery-section .fluid-panel').style.height === ''")
         expect(page.locator('.gallery-flow-access button')).to_have_count(len(COLLECTION))
         expect(page.locator('.gallery-flow-photo')).to_have_count(len(COLLECTION) * 2)
         for row in page.locator('.gallery-flow-row').all():
@@ -67,7 +69,7 @@ def test_layouts(browser):
             item.click()
             expect(page.locator('#lightbox-title')).to_have_text(title)
             page.locator('#lightbox-close').click()
-            assert title in page.evaluate('document.activeElement.textContent')
+            page.wait_for_function('(title)=>document.activeElement.textContent.includes(title)',arg=title)
 
         # 小幅上传原图应按原始像素显示，不能被灯箱强行撑满。
         small = min(COLLECTION, key=lambda item: max(item['width'], item['height']))
@@ -83,6 +85,7 @@ def test_layouts(browser):
         expect(entry).to_be_focused()
 
         page.locator('.gallery-view-switch button').first.click()
+        expect(page.locator('.gallery-mode-enter-active')).to_have_count(0)
         expect(page.locator('.gallery-card')).to_have_count(9)
         for image in page.locator('.gallery-card img').all():
             assert image.evaluate('e=>getComputedStyle(e).objectFit') == 'contain'

@@ -1,7 +1,7 @@
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
-const props = defineProps({ id: { type:String, required:true }, title:String, name:String, sceneClass:String, loader:{ type:Function, required:true }, minHeight:{type:String,default:'100svh'} });
+const props = defineProps({ eager: Boolean, id: { type:String, required:true }, title:String, name:String, sceneClass:String, loader:{ type:Function, required:true }, minHeight:{type:String,default:'100svh'} });
 const route = useRoute(), host = ref(null), Scene = shallowRef(null), loading = ref(false), failed = ref(false);
 let observer, alive = true;
 async function load() {
@@ -19,9 +19,10 @@ async function load() {
 }
 function refresh() { location.reload(); }
 function requested() { return route.hash === '#'+props.id || (props.id === 'gallery' && route.query.image); }
+watch(() => props.eager, value => { if(value) load(); });
 watch(() => route.fullPath, () => { if (requested()) load(); });
 onMounted(() => {
-  if (requested() || typeof IntersectionObserver === 'undefined') { load(); return; }
+  if (props.eager || requested() || typeof IntersectionObserver === 'undefined') { load(); return; }
   observer = new IntersectionObserver(entries => { if (entries.some(entry=>entry.isIntersecting)) load(); }, { rootMargin:'180px 0px' });
   observer.observe(host.value);
 });
