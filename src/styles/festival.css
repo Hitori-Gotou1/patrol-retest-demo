@@ -264,10 +264,12 @@ body:has(.festival-page) .room-companion { display: none; }
 .festival-page .fest-panel input[type=range] { accent-color: #83556a; padding: 0; height: 37px; cursor: ew-resize; }
 .fest-path-list { max-height: 210px; overflow: auto; margin: 0; padding-left: 24px; color: #5d4251; font-size: .87rem; }
 .fest-path-list li + li { margin-top: 5px; }
-.fest-overlay { position: relative; overflow: hidden; border-radius: 5px; }
+.fest-overlay { position: relative; isolation: isolate; overflow: hidden; border-radius: 5px; }
+.fest-overlay > .fest-art { pointer-events: none; }
 .fest-hoop-board > svg { margin: 0; }
 .festival-page .fest-overlay button {
   position: absolute;
+  z-index: 2;
   transform: translate(-50%, -50%);
   padding: 0;
   font-size: .73rem;
