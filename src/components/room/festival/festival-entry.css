@@ -14,7 +14,7 @@
 .festival-entry:hover { border-color: #edb78a; }
 .festival-entry-art { min-width: 0; position: relative; background: #352238; }
 .festival-entry-art svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.festival-entry-copy { display: grid; align-content: center; gap: 8px; padding: 20px clamp(14px, 4vw, 52px); }
+.festival-entry-copy { display: grid; align-content: center; gap: 8px; padding: 16px clamp(12px, 2vw, 25px); }
 .festival-entry h3 { color: #fff0dc; font-size: clamp(1.2rem, 2.8vw, 2.1rem); line-height: 1.2; margin: 0; }
 .festival-entry p { color: #ebcdbf; font-size: .89rem; line-height: 1.6; margin: 0; }
 .festival-entry-copy > span { color: #f2bb8d; font-size: .86rem; text-decoration: underline; text-underline-offset: 4px; margin-top: 3px; }

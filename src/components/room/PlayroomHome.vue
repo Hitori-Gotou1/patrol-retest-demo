@@ -26,18 +26,20 @@ const editorial = journalNotes.filter(note=>note.category!=='小屋更新').slic
   <section aria-labelledby="playroom-title" class="discovery-home">
     <h2 id="playroom-title" class="visually-hidden">放学以后，小屋还亮着灯。</h2>
     <nav v-if="favoriteCards.length" class="room-pinned-shortcuts" aria-label="常用活动快捷入口"><span>★ 常去的角落</span><RouterLink v-for="card in favoriteCards.slice(0,4)" :key="card.id" :to="card.path">{{card.short}} ↗</RouterLink></nav>
-    <FestivalEntry :to="festivalPath" :title="festivalTitle" />
-    <RouterLink :to="aftershow.path" class="aftershow-entry" aria-labelledby="aftershow-entry-title" aria-describedby="aftershow-entry-description">
-      <div class="aftershow-entry-art">
-        <img :src="assetUrl('assets/activities/aftershow.webp')" alt="专题的实际舞台分镜" width="960" height="540" fetchpriority="high" decoding="async">
-      </div>
-      <div class="aftershow-entry-copy">
-        <p class="aftershow-entry-duration">互动专题 · 约 2–3 分钟</p>
-        <h3 id="aftershow-entry-title"><span>STARRY</span> 散场以后</h3>
-        <p id="aftershow-entry-description">选一拍，亲手印成四色海报，再带着它坐上末班车。</p>
-        <span class="aftershow-entry-cta" aria-hidden="true">走进舞台 <span>↗</span></span>
-      </div>
-    </RouterLink>
+    <div class="room-featured-topics">
+      <FestivalEntry :to="festivalPath" :title="festivalTitle" />
+      <RouterLink :to="aftershow.path" class="aftershow-entry" aria-labelledby="aftershow-entry-title" aria-describedby="aftershow-entry-description">
+        <div class="aftershow-entry-art">
+          <img :src="assetUrl('assets/activities/aftershow.webp')" alt="专题的实际舞台分镜" width="960" height="540" fetchpriority="high" decoding="async">
+        </div>
+        <div class="aftershow-entry-copy">
+          <p class="aftershow-entry-duration">互动专题 · 约 2–3 分钟</p>
+          <h3 id="aftershow-entry-title"><span>STARRY</span> 散场以后</h3>
+          <p id="aftershow-entry-description">选一拍，亲手印成四色海报，再带着它坐上末班车。</p>
+          <span class="aftershow-entry-cta" aria-hidden="true">走进舞台 <span>↗</span></span>
+        </div>
+      </RouterLink>
+    </div>
     <div class="discovery-intro"><p>拍张合影，写个小故事，或者只是听一会儿雨。</p><span>从这三个角落开始</span></div>
     <div class="featured-activities" data-arrive="1">
       <RouterLink v-for="(card,index) in featuredActivities" :key="card.id" :to="card.path" class="featured-activity" :style="{'--feature-color':card.color}">
@@ -61,6 +63,13 @@ const editorial = journalNotes.filter(note=>note.category!=='小屋更新').slic
 </template>
 
 <style scoped>
+.room-featured-topics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+.room-featured-topics > a { margin: 0; }
 .aftershow-entry {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
@@ -76,7 +85,7 @@ const editorial = journalNotes.filter(note=>note.category!=='小屋更新').slic
 
 .aftershow-entry-art {
   position: relative;
-  min-height: 210px;
+  min-height: 178px;
   overflow: hidden;
   isolation: isolate;
   background: #211e31;
@@ -99,13 +108,13 @@ const editorial = journalNotes.filter(note=>note.category!=='小屋更新').slic
   align-items: flex-start;
   justify-content: center;
   gap: 10px;
-  padding: clamp(18px, 3.6vw, 40px);
+  padding: clamp(14px, 1.9vw, 25px);
   border-inline-start: 1px solid #64546d;
   background: linear-gradient(135deg, #252237, #1a1a2a 80%);
 }
 
 .aftershow-entry-copy h3 {
-  font-size: clamp(22px, 3.15vw, 37px);
+  font-size: clamp(21px, 2.15vw, 31px);
   line-height: 1.23;
   letter-spacing: -.04em;
   margin: 0;
@@ -136,15 +145,13 @@ const editorial = journalNotes.filter(note=>note.category!=='小屋更新').slic
   .aftershow-entry:hover img { transform: scale(1.025); }
 }
 
-@media (max-width: 700px) {
-  .aftershow-entry { grid-template-columns: minmax(0, 1fr); margin: 15px 0 22px; }
-  .aftershow-entry-art { min-height: 0; aspect-ratio: 2.02; }
-  .aftershow-entry-copy {
-    padding: 14px 16px 16px;
-    gap: 6px;
-    border-inline-start: 0;
-    border-top: 1px solid #64546d;
-  }
+@media (max-width: 820px) {
+  .room-featured-topics { grid-template-columns: minmax(0, 1fr); gap: 11px; }
+  .aftershow-entry { grid-template-columns: 36% minmax(0, 1fr); min-height: 142px; }
+  .aftershow-entry-art { min-height: 0; }
+  .aftershow-entry-copy { padding: 10px 12px; gap: 5px; }
+  .aftershow-entry-copy h3 { font-size: clamp(19px, 4.8vw, 24px); }
+  .aftershow-entry-cta { margin-top: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

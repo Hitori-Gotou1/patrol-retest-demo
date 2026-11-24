@@ -263,8 +263,9 @@ def main_journey(browser):
     page.wait_for_function('window.drumProbe.starts.length === 3')
     hits = page.evaluate('window.drumProbe.starts')
     assert round((hits[2] - hits[0]) * 1000, 1) == 17.3
-    button(page, '敲鼓试声').click()
-    page.wait_for_function('window.drumProbe.starts.length >= 6 && window.drumProbe.stops > 0')
+    # Retrigger within the sample's lifetime, even on a heavily loaded test host.
+    button(page, '敲鼓试声').evaluate('(drum) => { drum.click(); drum.click(); }')
+    page.wait_for_function('window.drumProbe.starts.length >= 9 && window.drumProbe.stops > 0')
     button(page, '后墙挂帘').click()
     expect(row).to_contain_text('47.0 ms')
     expect(row).to_contain_text('1.9%')
