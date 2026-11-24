@@ -153,7 +153,12 @@ export function hoopArt(piece, options) {
 }
 
 export const caseBox = { width: 620, height: 360 };
-export const sewingPoints = [{ x: -100, y: -85 }, { x: 100, y: -85 }, { x: 89, y: 102 }, { x: -89, y: 102 }];
+const sewingPointOffsets = {
+  round: [[-77, -81], [77, -81], [77, 81], [-77, 81]],
+  ticket: [[-103, -97], [103, -97], [103, 97], [-103, 97]],
+  crest: [[-86, -94], [86, -94], [52, 68], [-52, 68]]
+};
+export const sewingPoints = edge => sewingPointOffsets[edge].map(([x, y]) => ({ x, y }));
 
 export function casePosition(mount, point) {
   const angle = mount.angle * Math.PI / 180;
@@ -171,9 +176,12 @@ export function caseArt(piece, { peeled = false, editor = false } = {}) {
   const mask = `fest-case-${++maskNumber}`;
   const bag = 'M103 77Q134 55 216 65L490 98Q549 107 554 166L555 217Q552 260 497 271L217 308Q122 323 93 274Q63 224 67 166Q70 105 103 77Z';
   const peelMask = `fest-peel-${++maskNumber}`;
-  const attachment = sewingPoints.map((point, index) => {
-    if (!editor && !pins.includes(index)) return '';
-    return circle(point.x, point.y, 7, pins.includes(index) ? '#edb552' : '#9a6d5d', 'stroke="#fff0c9" stroke-width="2"');
+  const attachment = sewingPoints(piece.edge).map((point, index) => {
+    if (!pins.includes(index)) return editor ? circle(point.x, point.y, 6, '#9a6d5d', 'stroke="#fff0c9" stroke-width="2"') : '';
+    const a = { x: point.x - 7, y: point.y + 4 }, b = { x: point.x + 7, y: point.y - 4 };
+    return circle(a.x, a.y, 3, '#735348') + circle(b.x, b.y, 3, '#735348')
+      + line(a, b, '#97662e', 5, 'stroke-linecap="round"')
+      + line(a, b, '#f4c672', 3, 'stroke-linecap="round"');
   }).join('');
   const cloth = peeled
     ? `<path d="M-133 24Q-93 82 8 129Q-30 112-62 90Q-105 75-133 24Z" fill="#9b644f" stroke="#593829" stroke-width="3"/>

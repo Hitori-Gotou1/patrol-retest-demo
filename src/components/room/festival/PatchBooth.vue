@@ -190,7 +190,7 @@ function saveEdition() {
               @pointerdown="startMountDrag" @pointermove="previewDrag" @pointerup="finishDrag(true)" @pointercancel="finishDrag(false)"
               @keydown.left.prevent="moveMount(-10, 0)" @keydown.right.prevent="moveMount(10, 0)"
               @keydown.up.prevent="moveMount(0, -10)" @keydown.down.prevent="moveMount(0, 10)">挪动</button>
-            <button v-for="(point, index) in sewingPoints" :key="index" type="button" class="fest-attach-pin"
+            <button v-for="(point, index) in sewingPoints(viewPiece.edge)" :key="index" type="button" class="fest-attach-pin"
               :style="pinStyle(casePosition(viewPiece.mount, point), caseBox)" :aria-label="`缝点 ${index + 1}`"
               :aria-pressed="piece.mount.pins.includes(index)" @pointerdown="startPinTap" @pointerup="finishPinTap($event, () => toggleSewPoint(index))"
               @pointercancel="pinPress = null" @click="$event.detail === 0 && toggleSewPoint(index)">{{ index + 1 }}</button>
