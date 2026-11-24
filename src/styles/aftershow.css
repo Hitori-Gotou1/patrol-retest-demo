@@ -1,0 +1,69 @@
+.room-page.aftershow-page {
+  width: min(1260px, 100%);
+  padding-top: 110px;
+}
+.aftershow-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .6rem 1.5rem;
+  margin-bottom: 1rem;
+}
+.aftershow-heading h1 { color: #f3dedf; margin: 0; font-size: clamp(1.55rem, 4.2vw, 3.1rem); line-height: 1.1; }
+.aftershow-heading a { color: #e0bccc; font-size: .84rem; padding-block: .65rem; }
+.aftershow-experience {
+  --aftershow-focus: #e4a1bb;
+  min-width: 0;
+  scroll-margin-top: 100px;
+  color: #f9e6e1;
+}
+.aftershow-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-bottom: 1px solid #62515d;
+  margin-bottom: 14px;
+  gap: 4px;
+}
+.room-page .aftershow-steps button {
+  justify-content: center;
+  padding: 7px 4px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #d6bfc8;
+  min-width: 0;
+}
+.room-page .aftershow-steps button[aria-current='step'] {
+  border-color: var(--aftershow-focus);
+  color: #fff0ed;
+  background: linear-gradient(0deg, #a7516d24, transparent);
+  font-weight: 700;
+}
+.aftershow-steps button:hover { color: #fff0ed; }
+.aftershow-panel:focus { outline: none; }
+.aftershow-panel:focus-visible { outline: 2px solid var(--aftershow-focus); outline-offset: 4px; }
+.aftershow-alternate { margin: 12px 0 0; }
+.room-page .aftershow-alternate button { color: #eacbd8; background: transparent; border-color: #70536a; }
+.aftershow-notice { margin: .85rem 0 0; color: #f0ccbe; font-size: .88rem; }
+.aftershow-dialog {
+  width: min(440px, calc(100% - 32px));
+  max-width: none;
+  padding: 22px;
+  border: 1px solid #bba193;
+  background: #fff1da;
+  color: #42313b;
+  box-shadow: 0 18px 70px #0d0912a8;
+}
+.aftershow-dialog::backdrop { background: #140e19ba; }
+.aftershow-dialog h2 { font-size: 1.15rem; margin: 0 0 .6rem; }
+.aftershow-dialog p { line-height: 1.65; }
+.aftershow-dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 760px) {
+  .room-page.aftershow-page { padding: 115px 12px 32px; }
+  .aftershow-heading { gap: 3px 11px; margin-bottom: 7px; }
+  .aftershow-heading a { font-size: .75rem; }
+  .aftershow-experience { scroll-margin-top: 112px; }
+  .aftershow-steps { margin-bottom: 8px; }
+  .aftershow-steps button { font-size: .76rem; }
+  body:has(.aftershow-page) .room-companion { display: none; }
+}

@@ -19,6 +19,7 @@ export default createRouter({
     { path: '/room', component: () => import('./views/RoomLayout.vue'), children: [
       { path: '', redirect: '/room/play' },
       { path: 'play', component: () => import('./components/room/PlayroomHome.vue') },
+      { path: 'aftershow', component: () => import('./components/room/AftershowExperience.vue') },
       { path: 'pilgrimage', component: () => import('./components/room/PilgrimageGuide.vue') },
       { path: 'project', component: () => import('./components/room/ProjectStudio.vue') },
       { path: 'sources', component: () => import('./components/room/SourceArchive.vue') },
