@@ -166,21 +166,26 @@ function togglePlaying() {
   playingTimer = setInterval(() => step(1, false), 165);
 }
 
-function pointerAngle(event, element) {
-  const bounds = element.getBoundingClientRect();
-  return Math.atan2(event.clientY - bounds.y - bounds.height / 2, event.clientX - bounds.x - bounds.width / 2) * 180 / Math.PI;
+function pointerAngle(event, center) {
+  return Math.atan2(event.clientY - center.y, event.clientX - center.x) * 180 / Math.PI;
 }
 
 function startCrank(event) {
+  if (event.button !== 0) return;
   pause();
+  const element = event.currentTarget;
+  const bounds = element.getBoundingClientRect();
+  const center = { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 };
+  event.preventDefault();
+  element.focus({ preventScroll: true });
   draggedCrank = false;
-  crankDrag = { angle: pointerAngle(event, event.currentTarget), remainder: 0 };
-  event.currentTarget.setPointerCapture(event.pointerId);
+  crankDrag = { center, angle: pointerAngle(event, center), remainder: 0 };
+  element.setPointerCapture(event.pointerId);
 }
 
 function turnCrank(event) {
   if (!crankDrag) return;
-  const angle = pointerAngle(event, event.currentTarget);
+  const angle = pointerAngle(event, crankDrag.center);
   crankDrag.remainder += (angle - crankDrag.angle + 540) % 360 - 180;
   crankDrag.angle = angle;
   const steps = Math.trunc(crankDrag.remainder / 38);

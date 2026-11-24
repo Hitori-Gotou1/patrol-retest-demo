@@ -237,11 +237,12 @@ def main_journey(browser):
     expect(page.locator('.fest-counter')).to_contain_text('停留 2/3')
     crank.press('ArrowLeft')
     expect(page.locator('.fest-counter')).to_contain_text('停留 1/3')
+    crank.evaluate("node => node.scrollIntoView({block: 'center', behavior: 'instant'})")
     bounds = crank.bounding_box()
     x, y = bounds['x'] + bounds['width'] / 2, bounds['y'] + bounds['height'] / 2
     page.mouse.move(x, y - 22)
     page.mouse.down()
-    page.mouse.move(x + 17, y - 14, steps=8)
+    page.mouse.move(x + 18, y - 12, steps=8)
     page.mouse.up()
     expect(page.locator('.fest-counter')).to_contain_text('停留 2/3')
     button(page, '打开静态逐格页').click()
