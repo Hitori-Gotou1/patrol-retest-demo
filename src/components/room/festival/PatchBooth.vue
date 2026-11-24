@@ -23,7 +23,7 @@ const segmentToRemove = ref('');
 const notice = ref('');
 const board = ref(null);
 const mountPreview = ref(null);
-let drag;
+let drag, pinPress;
 const viewPiece = computed(() => mountPreview.value ? { ...piece.value, mount: mountPreview.value } : piece.value);
 const crossings = computed(() => stitchCrossings(piece.value));
 const paths = computed(() => needlePaths(piece.value));
@@ -62,6 +62,18 @@ async function pullThread(id) {
       strokeDashoffset: 0, duration: .23, ease: 'power2.out', clearProps: 'strokeDasharray,strokeDashoffset'
     });
   }
+}
+
+function startPinTap(event) {
+  if (event.button !== 0) return;
+  pinPress = { id: event.pointerId, x: event.clientX, y: event.clientY };
+  event.currentTarget.setPointerCapture(event.pointerId);
+}
+
+function finishPinTap(event, action) {
+  const start = pinPress;
+  pinPress = null;
+  if (start?.id === event.pointerId && Math.hypot(event.clientX - start.x, event.clientY - start.y) < 14) action();
 }
 
 function choosePin(id) {
@@ -170,7 +182,8 @@ function saveEdition() {
             <button v-for="pin in pins" :key="pin.id" type="button" class="fest-needle-pin"
               :class="{ 'fest-needle-grid': piece.template === 'blank' }"
               :style="pinStyle({ x: hoopBox.x + pin.x, y: hoopBox.y + pin.y }, hoopBox)" :aria-label="`针孔 ${pin.id}`"
-              :aria-pressed="selected === pin.id" @click="choosePin(pin.id)">{{ pin.id }}</button>
+              :aria-pressed="selected === pin.id" @pointerdown="startPinTap" @pointerup="finishPinTap($event, () => choosePin(pin.id))"
+              @pointercancel="pinPress = null" @click="$event.detail === 0 && choosePin(pin.id)">{{ pin.id }}</button>
           </template>
           <template v-if="phase === 'mount'">
             <button type="button" class="fest-patch-drag" :style="pinStyle(viewPiece.mount, caseBox)" aria-label="拖动布章或用方向键移动"
@@ -179,7 +192,8 @@ function saveEdition() {
               @keydown.up.prevent="moveMount(0, -10)" @keydown.down.prevent="moveMount(0, 10)">挪动</button>
             <button v-for="(point, index) in sewingPoints" :key="index" type="button" class="fest-attach-pin"
               :style="pinStyle(casePosition(viewPiece.mount, point), caseBox)" :aria-label="`缝点 ${index + 1}`"
-              :aria-pressed="piece.mount.pins.includes(index)" @click="toggleSewPoint(index)">{{ index + 1 }}</button>
+              :aria-pressed="piece.mount.pins.includes(index)" @pointerdown="startPinTap" @pointerup="finishPinTap($event, () => toggleSewPoint(index))"
+              @pointercancel="pinPress = null" @click="$event.detail === 0 && toggleSewPoint(index)">{{ index + 1 }}</button>
           </template>
         </div>
         <p class="fest-surface-note">

@@ -104,7 +104,8 @@ def sew(page, first, last, *, touch=False, keyboard=False):
         elif keyboard:
             hole.press('Enter')
         else:
-            hole.click()
+            bounds = hole.bounding_box()
+            page.mouse.click(bounds['x'] + bounds['width'] / 2, bounds['y'] + bounds['height'] / 2)
 
 
 def selected_page(page, number):
