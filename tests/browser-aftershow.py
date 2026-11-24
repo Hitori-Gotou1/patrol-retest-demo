@@ -44,11 +44,17 @@ def session(browser, width=1440, height=1000, reduced=False, block_storage=False
         }''')
     context.add_init_script('''
         window.aftershowAudioContexts = 0;
+        window.aftershowSoundStarts = 0;
         const Audio = window.AudioContext || window.webkitAudioContext;
         if (Audio) window.AudioContext = new Proxy(Audio, { construct(target, args, receiver) {
           window.aftershowAudioContexts++;
           return Reflect.construct(target, args, receiver);
         } });
+        const start = AudioBufferSourceNode.prototype.start;
+        AudioBufferSourceNode.prototype.start = function (...args) {
+          window.aftershowSoundStarts++;
+          return start.apply(this, args);
+        };
     ''')
 
     def intercept(route):
@@ -471,8 +477,26 @@ def routing_and_storage(browser):
             'storageDenied': True, 'defaultPosterExported': True}
 
 
+def sound_preferences(browser):
+    ctx, page = session(browser)
+    open_route(page)
+    page.get_by_role('button', name='开启互动音效', exact=True).click()
+    expect(page.get_by_role('button', name='关闭互动音效', exact=True)).to_be_visible()
+    page.reload(wait_until='domcontentloaded')
+    expect(button(page, '播放八拍')).to_be_visible()
+    assert page.evaluate('window.aftershowAudioContexts') == 0
+    button(page, '播放八拍').click()
+    page.wait_for_function('window.aftershowSoundStarts > 0')
+    page.get_by_role('button', name='关闭互动音效', exact=True).click()
+    starts = page.evaluate('window.aftershowSoundStarts')
+    expect(page.locator(FRAME)).to_have_attribute('data-beat', '4', timeout=5000)
+    assert page.evaluate('window.aftershowSoundStarts') == starts
+    ctx.close()
+    return {'silentOnEntry': True, 'restoredOnPlay': True, 'mutedOnToggle': True}
+
+
 if __name__ == '__main__':
-    cases = [complete_journey, rapid_and_lifecycle, keyboard_reduced, mobile, routing_and_storage]
+    cases = [complete_journey, rapid_and_lifecycle, keyboard_reduced, mobile, routing_and_storage, sound_preferences]
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(
             executable_path=os.getenv('HITORI_CHROMIUM', '/usr/bin/chromium'), args=['--no-sandbox'])

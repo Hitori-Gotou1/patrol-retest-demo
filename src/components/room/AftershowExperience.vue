@@ -35,16 +35,22 @@ const hasPosterChanges = computed(() => hasImpressions.value || poster.value.tit
   inkOrder.some(ink => poster.value.offsets[ink].x || poster.value.offsets[ink].y));
 const trainPoster = computed(() => hasImpressions.value ? poster.value : defaultTrainPoster);
 let playbackTimer, pressTimer, pressedPoster, returnFocus;
+let soundGeneration = 0;
 let disposed = false;
 
 function updateMotion() {
   reduced.value = motion.matches;
 }
 
-function cue(type, frequency) {
-  if (sound.enabled.value && preferences.effectsEnabled && !preferences.muted && !document.hidden) {
-    void sound.play(type, frequency);
-  }
+function canPlaySound() {
+  return !disposed && preferences.effectsEnabled && !preferences.muted && !document.hidden;
+}
+
+async function cue(type, frequency) {
+  if (!canPlaySound()) return;
+  const generation = soundGeneration;
+  if (!sound.enabled.value && !await sound.setEnabled(true)) return;
+  if (generation === soundGeneration && canPlaySound()) await sound.play(type, frequency);
 }
 
 function playBeat(beat) {
@@ -57,6 +63,7 @@ function playBeat(beat) {
 function pause() {
   clearTimeout(playbackTimer);
   playing.value = false;
+  soundGeneration++;
   sound.stop();
 }
 
@@ -77,7 +84,7 @@ function togglePlayback() {
   if (playing.value) return pause();
   if (document.hidden) return;
   if (state.value.beat === 8) state.value.beat = 1;
-  if (sound.enabled.value && preferences.effectsEnabled && !preferences.muted) claimMedia();
+  if (canPlaySound()) claimMedia();
   playing.value = true;
   playBeat(state.value.beat);
   playbackTimer = setTimeout(nextPlaybackBeat, 660);
