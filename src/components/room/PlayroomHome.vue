@@ -1,4 +1,6 @@
 <script setup>
+import { festivalPath, festivalTitle } from '../../data/festival.js';
+import FestivalEntry from './festival/FestivalEntry.vue';
 import TopicSketch from './TopicSketch.vue';
 import { useActivityFavorites } from '../../composables/useActivityFavorites.js';
 import { siteSections } from '../../data/siteSections.js';
@@ -24,6 +26,7 @@ const editorial = journalNotes.filter(note=>note.category!=='小屋更新').slic
   <section aria-labelledby="playroom-title" class="discovery-home">
     <h2 id="playroom-title" class="visually-hidden">放学以后，小屋还亮着灯。</h2>
     <nav v-if="favoriteCards.length" class="room-pinned-shortcuts" aria-label="常用活动快捷入口"><span>★ 常去的角落</span><RouterLink v-for="card in favoriteCards.slice(0,4)" :key="card.id" :to="card.path">{{card.short}} ↗</RouterLink></nav>
+    <FestivalEntry :to="festivalPath" :title="festivalTitle" />
     <RouterLink :to="aftershow.path" class="aftershow-entry" aria-labelledby="aftershow-entry-title" aria-describedby="aftershow-entry-description">
       <div class="aftershow-entry-art">
         <img :src="assetUrl('assets/activities/aftershow.webp')" alt="专题的实际舞台分镜" width="960" height="540" fetchpriority="high" decoding="async">

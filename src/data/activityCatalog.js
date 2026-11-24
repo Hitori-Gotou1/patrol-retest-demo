@@ -1,3 +1,4 @@
+import { festivalPath, festivalStations, festivalTitle } from './festival.js';
 import { siteSections } from './siteSections.js';
 import { playroomCards } from './playroom.js';
 import { adventureCards } from './adventures.js';
@@ -10,11 +11,13 @@ export const activityGroups = [
   { id: 'read', title: '读读与相遇' }
 ];
 const groupIds = {
-  creative: ['aftershow', 'project', 'photobooth', 'comic', 'decorate', 'graffiti', 'lights', 'concert'],
-  sound: ['ambient', 'effects', 'mix', 'echo', 'rhythm', 'studio', 'practice'],
+  creative: ['festival', 'patch', 'animation', 'zine', 'aftershow', 'project', 'photobooth', 'comic', 'decorate', 'graffiti', 'lights', 'concert'],
+  sound: ['soundcheck', 'ambient', 'effects', 'mix', 'echo', 'rhythm', 'studio', 'practice'],
   read: ['calendar', 'pilgrimage', 'sources', 'stats', 'stories', 'notes', 'guestbook', 'relay', 'companion']
 };
 const extra = [
+  { id: 'festival', path: festivalPath, title: festivalTitle, short: '地下文化祭', icon: '◒', description: '缝布章、做手摇动画、空场试声，把作品编成可打印的八页同人志。', color: '#e8b883' },
+  ...festivalStations,
   { id: 'aftershow', title: 'STARRY 散场以后', short: '散场以后', icon: '◈', description: '从四个位置看同一拍，把选中的舞台画面印成四色海报，再带上末班车。', color: '#e8c0a8' },
   { id: 'rhythm', title: '节奏练习', icon: '♫', description: '从四个按键开始，找到稳稳的节拍。', color: '#e8cd88' },
   { id: 'stories', title: '分支小剧场', icon: '▤', description: '替放学后的故事，选一个小小的下一步。', color: '#c5b2d5' },
@@ -23,12 +26,12 @@ const extra = [
   { id: 'notes', title: '小屋手记', icon: '✎', description: '角色小记、听歌札记，还有认真挑选的心动。', color: '#d9b3ca' },
   { id: 'guestbook', title: '留言与点歌', icon: '✉', description: '留下一句话，或把喜欢的一首歌推荐给大家。', color: '#b8c4a5' }
 ];
-const lengths={aftershow:2,photobooth:2,decorate:5,walk:5,search:2,concert:5,ambient:0,maze:5,effects:5,companion:2,echo:2,escape:10,duet:5,cards:10,jigsaw:5,shop:5,platform:5,lights:10,comic:10,mix:5,graffiti:10,relay:2,pinball:5,rhythm:2,stories:5,studio:10,practice:10,notes:5,guestbook:2};
+const lengths={festival:10,patch:5,animation:5,soundcheck:5,zine:10,aftershow:2,photobooth:2,decorate:5,walk:5,search:2,concert:5,ambient:0,maze:5,effects:5,companion:2,echo:2,escape:10,duet:5,cards:10,jigsaw:5,shop:5,platform:5,lights:10,comic:10,mix:5,graffiti:10,relay:2,pinball:5,rhythm:2,stories:5,studio:10,practice:10,notes:5,guestbook:2};
 const challenging=new Set(['maze','escape','cards','platform','pinball','rhythm','echo','mix']);
 export function filterActivities(cards,{query='',group='all',duration='all',difficulty='all'}={}){const terms=query.normalize('NFKC').toLowerCase().trim().split(/\s+/).filter(Boolean);return cards.filter(c=>(group==='all'||c.group===group)&&(duration==='all'||(duration==='free'?c.minutes===0:duration==='10'?c.minutes>=10:c.minutes===Number(duration)))&&(difficulty==='all'||c.difficulty===difficulty)&&terms.every(t=>(c.title+' '+c.short+' '+c.description).normalize('NFKC').toLowerCase().includes(t)));}
 export const activityCatalog = [...playroomCards, ...adventureCards, ...playgroundCards, ...extra, ...siteSections.map(c=>({...c,icon:({project:'♫',calendar:'▦',pilgrimage:'⌖',sources:'▤',stats:'↗'})[c.id],color:'#c6add5'}))].map(card => ({
   ...card, minutes:lengths[card.id]??5,difficulty:challenging.has(card.id)?'challenge':'easy', group: Object.keys(groupIds).find(group => groupIds[group].includes(card.id)) || 'play',
-  path: `/room/${card.id}`, short: card.short || card.title, action: card.action || '进去看看'
+  path: card.path || `/room/${card.id}`, short: card.short || card.title, action: card.action || '进去看看'
 }));
 export const featuredActivities = [
   { id: 'photobooth', eyebrow: '留一张合影', duration: '约 2 分钟', image: 'assets/activities/photobooth.webp', position: '50% 44%', note: '四个人，一张属于你的照片。' },
