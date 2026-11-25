@@ -35,6 +35,7 @@ onBeforeUnmount(exit);
 <template>
   <div ref="root" class="editor-workspace" :class="{'is-fullscreen':fullscreen,'tools-collapsed':!toolsOpen}" :role="fullscreen?'dialog':undefined" :aria-modal="fullscreen?true:undefined" :aria-label="fullscreen?`${title}全屏编辑`:undefined">
     <div class="editor-workspace-bar"><strong>{{title}}</strong><div><button v-if="!fullscreen" ref="trigger" type="button" class="editor-enter" @click="enter">⛶ 全屏编辑</button><button v-else type="button" class="editor-exit" @click="exit">退出全屏</button><button type="button" class="editor-save" @click="emit('save')">{{saveLabel}}</button><button type="button" class="editor-save-work" :disabled="shelfBusy" @click="saveToShelf">{{shelfBusy?'保存中…':'存入作品架'}}</button></div></div>
+    <slot name="overview"/>
     <div class="editor-workspace-body"><div class="editor-workspace-canvas"><slot name="canvas"/><div class="editor-workspace-actions"><slot name="actions"/></div></div><div class="editor-workspace-tools"><slot name="tools"/></div></div>
     <p v-if="shelfMessage" class="editor-workspace-notice" role="status">{{shelfMessage}}</p><div class="editor-mobile-footer"><button type="button" :aria-expanded="toolsOpen" @click="toolsOpen=!toolsOpen">{{toolsOpen?'收起工具 · 看画面':'展开工具 · 继续编辑'}}</button><span>编辑会沿用本机自动保存</span></div>
   </div>

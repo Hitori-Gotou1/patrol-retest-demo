@@ -1,0 +1,30 @@
+.room-page.activity-redesign { width:min(1210px,100%); padding-top:108px; }
+.activity-redesign .room-heading-refresh { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; column-gap:18px; }
+.activity-redesign .room-heading-refresh .room-back { align-self:center; white-space:nowrap; }
+.activity-redesign .room-heading-line { align-items:center; }
+.activity-redesign .room-heading-refresh h1 { font-size:21px; line-height:1.25; margin:0; letter-spacing:0; }
+.activity-redesign .room-shelf-link { padding:6px 12px; }
+.activity-redesign .room-quick-nav { gap:8px 20px; margin:4px 0 10px; }
+.activity-redesign .room-panel { background:#faf1e2; border-color:#bdab99; padding:clamp(14px,3vw,36px); }
+.activity-redesign .activity-title { margin:0 0 20px; }
+.activity-redesign .activity-title :is(.play-eyebrow,.pg-kicker) { color:#7c485e; margin:0 0 5px; font-size:12px; letter-spacing:.08em; }
+.activity-redesign .activity-title h2 { color:#3e303c; margin:0; font-size:clamp(25px,4vw,38px); line-height:1.22; letter-spacing:-.028em; }
+.activity-redesign .activity-title .room-intro { color:#634e55; margin:7px 0 0; }
+.activity-redesign .activity-pin-current { margin-top:12px; }
+.activity-redesign .work-save-bar { margin-top:8px; }
+.activity-redesign :focus-visible { outline-offset:2px; }
+@media(max-width:1100px) {
+  body:has(.activity-redesign) .room-companion.in-room { position:relative; inset:auto; margin:0 14px calc(14px + env(safe-area-inset-bottom)) auto; }
+  body:has(.activity-redesign) .room-companion.in-room .buddy-dialog { position:fixed; bottom:62px; right:12px; top:auto; }
+}
+@media(max-width:760px) {
+  .room-page.activity-redesign { padding:112px 12px 35px; }
+  .activity-redesign .room-heading-refresh { column-gap:10px; }
+  .activity-redesign .room-heading-refresh h1 { font-size:16px; }
+  .activity-redesign .room-heading-refresh .room-back,.activity-redesign .room-shelf-link { font-size:11px; }
+  .activity-redesign .room-shelf-link { min-height:44px; padding:6px 8px; }
+  .activity-redesign .room-quick-nav { gap:0 10px!important; margin:2px 0 8px; }
+  .activity-redesign .room-quick-nav>a,.activity-redesign .room-quick-nav>button { min-height:44px; display:inline-flex; align-items:center; }
+  .activity-redesign .room-panel { padding:13px 11px; }
+  .activity-redesign .activity-title { margin-bottom:13px; }
+}

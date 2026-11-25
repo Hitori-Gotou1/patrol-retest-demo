@@ -52,7 +52,7 @@ try:
      b=page.locator(selector).bounding_box();assert b['height']>=44 and b['width']>=44,(width,selector,b)
     if route=='lights' and width<=760:
      buttons=page.locator('.light-timeline button:visible');expect(buttons).to_have_count(12)
-     page.locator('.light-mobile-segments button').nth(2).click();expect(page.locator('.light-timeline button:visible').first).to_have_text('9')
+     page.locator('.light-mobile-segments button').nth(2).click();expect(page.locator('.light-timeline button:visible').first).to_have_attribute('aria-label','灯 1 第 9 步')
      b=page.locator('.light-timeline button:visible').first.bounding_box();assert b['width']>=44 and b['height']>=44,b
     if width==390:
      if route=='photobooth':

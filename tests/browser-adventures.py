@@ -197,7 +197,9 @@ def test_layouts_lifecycle_storage(browser):
             assert p.evaluate('document.documentElement.scrollWidth<=innerWidth'),(route,width)
             if route=='effects':
                 panel=p.locator('.room-panel').bounding_box();strings=p.locator('.tone-strings').bounding_box()
-                assert strings['x']>=panel['x'] and strings['y']>=panel['y'] and strings['height']>200
+                assert strings['x']>=panel['x'] and strings['y']>=panel['y']
+                buttons=p.locator('.tone-strings button').all()
+                assert len(buttons)==6 and all(button.bounding_box()['height']>=(44 if width<800 else 35) for button in buttons)
             p.screenshot(path=str(OUTPUT/f'{route}-{width}.png'),full_page=width<800)
         if width==390:
             f.goto('maze');p.get_by_role('button',name='向右走',exact=True).tap();expect(p.locator('.maze-board')).to_have_attribute('data-position','2,1')

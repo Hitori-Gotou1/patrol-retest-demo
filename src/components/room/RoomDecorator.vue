@@ -9,6 +9,7 @@ import { useLocalDraft } from '../../composables/useLocalDraft.js';
 import { useStageEditor } from '../../composables/useStageEditor.js';
 import { downloadStage } from '../../room/exportImage.js';
 import RoomProp from './RoomProp.vue';
+import RoomLightScene from './RoomLightScene.vue';
 const hangingWorks=ref(readWorks().filter(w=>w.preview)),chosenWork=ref('');
 function hangWork(){const work=hangingWorks.value.find(w=>w.id===chosenWork.value);if(!work){message.value='先在作品架存一张带预览的合影、漫画或海报。';return;}if(objects.value.length>=20){message.value='房间已放满20件物品，先收起一件。';return;}const item={key:`art-${Date.now()}`,id:'photo',x:620,y:200,size:1.5,rotation:0,artwork:work.preview,artTitle:work.title};objects.value.push(item);editor.selectedKey.value=item.key;message.value=`已挂上「${work.title}」，可以挪动、缩放和旋转。`;}
 const { state, saved, persist } = useLocalDraft('hitori-room:decoration:v1', defaultRoom, validateRoom);
@@ -16,8 +17,22 @@ const asset=path=>`${import.meta.env.BASE_URL}${path}`;
 const stage = ref(null), message = ref('把纸箱移到一里身边，再轻点它试试。'), busy = ref(false), boxedKey = ref(''), ampOn = ref(false), undo = ref(null);
 const objects = computed(() => state.value.objects);
 const hiding = computed(() => objects.value.some(o => o.key === boxedKey.value));
-const colors = computed(() => ({warm:['#f3e3cf','#d3b3a4','#f1d6a1'],pink:['#ecd3df','#b69baa','#e5afc9'],night:['#77738e','#514d66','#c1aedc']}[state.value.light]));
+const contactPoints = { guitar: [5, 54, 19], amp: [0, 52, 54], box: [0, 41, 62], plant: [0, 49, 23], lamp: [0, 65, 30], chair: [0, 52, 36] };
 const prop = item => roomProps.find(p => p.id === item.id);
+const edges = computed(() => ({ warm: '#ffe8ad', pink: '#ffcfeb', night: '#bea0c0' }[state.value.light]));
+const onWall = item => item.id === 'poster' || item.id === 'photo';
+function contactShadow(item) {
+  const [baseX, baseY, width] = contactPoints[item.id];
+  const radians = item.rotation * Math.PI / 180;
+  const x = item.x + item.size * (baseX * Math.cos(radians) - baseY * Math.sin(radians));
+  const y = item.y + item.size * (baseX * Math.sin(radians) + baseY * Math.cos(radians));
+  return { cx: x, cy: y, rx: width * item.size, ry: Math.max(4, width / 5) * item.size,
+    transform: `rotate(${item.rotation} ${x} ${y})` };
+}
+function front() {
+  const index = objects.value.indexOf(selected.value);
+  if (index >= 0) objects.value.push(...objects.value.splice(index, 1));
+}
 const editor = useStageEditor(stage, objects, { width: 960, height: 620, minY: 100, maxY: 550, onClick: interact });
 const selected = computed(() => objects.value.find(o => o.key === editor.selectedKey.value));
 function interact(item) {
@@ -40,33 +55,53 @@ function restore(){state.value=undo.value;undo.value=null;editor.selectedKey.val
 async function exportRoom(){if(busy.value)return;busy.value=true;persist();try{await downloadStage(stage.value,'my-hitori-room.png');message.value='房间照片已生成。今晚的灯，替你留住了。';recordActivity('room','留下一张自己的房间照片',JSON.stringify(state.value));}catch(e){message.value=e.message;}finally{busy.value=false;}}
 </script>
 <template>
-  <section class="room-panel" aria-labelledby="decorate-title">
-    <div class="play-heading"><div><p class="play-eyebrow">MY LITTLE ROOM / 给喜欢的东西留位置</p><h2 id="decorate-title">今天，想住在怎样的房间？</h2><p class="room-intro">点选物品后拖动，或用方向键挪动。纸箱、音箱、台灯和合照都有一点小回应。</p></div><span class="play-number" aria-hidden="true">02</span></div>
+  <section class="room-panel decorate-room" aria-labelledby="decorate-title">
+    <header class="activity-title">
+      <p class="play-eyebrow">一里的房间</p>
+      <h2 id="decorate-title">今天，想住在怎样的房间？</h2>
+      <p class="room-intro">拖动物品，挂上自己的作品，看看窗光落在哪里。</p>
+    </header>
     <EditorWorkspace title="房间布置" save-label="保存房间照片" @save="exportRoom"><template #canvas><div class="play-preview">
       <svg ref="stage" class="play-editor-svg" viewBox="0 0 960 620" role="group" aria-label="一里的房间布置画布" @pointermove="editor.move" @pointerup="editor.up" @pointercancel="editor.up">
-        <rect width="960" height="620" :fill="colors[0]"/><path d="M0 0h100v382L0 470Z" fill="#745466" opacity=".12"/><path d="M100 382h860v238H0V470Z" :fill="colors[1]"/><path d="M100 0v382H960" fill="none" stroke="#7b5b62" stroke-width="3"/>
-        <g opacity=".25" stroke="#785a64"><path d="M0 470h960M0 540h960M210 382 60 620M470 382 470 620M720 382 860 620"/></g>
-        <rect x="155" y="85" width="218" height="218" rx="110" fill="#fff1da" stroke="#927485" stroke-width="5"/><path d="M264 86v215M158 195h212" fill="none" stroke="#927485" stroke-width="5"/>
-        <circle cx="320" cy="132" r="24" :fill="state.light==='night'?'#fff4d4':'#f0c987'"/><path d="M160 267q110-90 210-18v51H160Z" fill="#b9c4bf" opacity=".7"/>
-        <path d="M40 80h105v260H40Z" fill="#be8fa4" opacity=".55"/><path d="M385 80h35v260h-35Z" fill="#be8fa4" opacity=".55"/>
-        <ellipse cx="515" cy="495" rx="228" ry="70" fill="#e8d9c5" opacity=".9"/><ellipse cx="515" cy="495" rx="207" ry="55" fill="none" stroke="#ad8d8e" stroke-dasharray="7 5"/>
-        <g transform="translate(804 340)"><rect x="-94" y="-16" width="188" height="21" fill="#ab877b"/><path d="M-80 5v74M80 5v74" stroke="#8a6865" stroke-width="8"/><path d="M-42-61h48v45h-48" fill="#9eafab"/><path d="M18-36h38v20H18" fill="#d7bd87"/></g>
+        <RoomLightScene :light="state.light"/>
         <image v-if="!hiding" :href="asset(cast[0].image)" x="420" y="300" width="175" height="215" preserveAspectRatio="xMidYMid meet"/>
-        <g v-for="item in objects" :key="item.key" :transform="`translate(${item.x},${item.y}) rotate(${item.rotation}) scale(${item.size})`" role="button" tabindex="0" :aria-label="`移动或轻点${prop(item).name}`" @pointerdown="editor.down($event,item)" @keydown="editor.key($event,item)" @focus="editor.selectedKey.value=item.key">
-          <rect :x="-prop(item).w/2-8" :y="-prop(item).h/2-8" :width="prop(item).w+16" :height="prop(item).h+16" fill="transparent"/>
-          <RoomProp v-if="!item.artwork" :kind="item.id" :lit="item.id==='amp'?ampOn:state.light!=='night'"/><g v-else><rect x="-64" y="-48" width="128" height="96" fill="#fff8ed" stroke="#957087" stroke-width="3"/><image :href="item.artwork" x="-58" y="-42" width="116" height="84" preserveAspectRatio="xMidYMid meet"/></g>
-          <text v-if="boxedKey===item.key" y="-58" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#79546b">…在这里</text>
-          <rect v-show="editor.selectedKey.value===item.key" data-editor-only class="play-selected" :x="-prop(item).w/2-8" :y="-prop(item).h/2-8" :width="prop(item).w+16" :height="prop(item).h+16"/>
-        </g>
-        <rect x="18" y="18" width="924" height="584" fill="none" stroke="#7c5e70" stroke-width="1.5"/><text x="32" y="588" font-family="monospace" font-size="12" letter-spacing="3" fill="#664c61">HITORI ROOM / MAKE YOURSELF AT HOME.</text>
+        <template v-for="item in objects" :key="item.key">
+          <ellipse v-if="!onWall(item)" v-bind="contactShadow(item)" fill="url(#room-floor-contact)" :data-contact="item.key"/>
+          <g :data-object="item.key" :transform="`translate(${item.x},${item.y}) rotate(${item.rotation}) scale(${item.size})`" role="button" tabindex="0" :aria-label="`移动或轻点${prop(item).name}`" @pointerdown="editor.down($event,item)" @keydown="editor.key($event,item)" @focus="editor.selectedKey.value=item.key">
+            <rect :x="-prop(item).w/2-8" :y="-prop(item).h/2-8" :width="prop(item).w+16" :height="prop(item).h+16" fill="transparent"/>
+            <rect v-if="onWall(item)" :x="item.artwork ? -62 : -prop(item).w/2+2" :y="item.artwork ? -45 : -prop(item).h/2+3"
+              :width="item.artwork ? 128 : prop(item).w+2" :height="item.artwork ? 96 : prop(item).h+2" fill="#2a1a2b" opacity=".33" stroke="none"/>
+            <RoomProp v-if="!item.artwork" :kind="item.id" :lit="item.id==='amp' ? ampOn : true" :edge="edges"/>
+            <g v-else pointer-events="none">
+              <rect x="-64" y="-48" width="128" height="96" fill="#fff8ed" stroke="#815f70" stroke-width="3"/>
+              <image :href="item.artwork" x="-58" y="-42" width="116" height="84" preserveAspectRatio="xMidYMid meet"/>
+              <path d="M-64-47H64" :stroke="edges" stroke-width="1.5"/>
+            </g>
+            <text v-if="boxedKey===item.key" y="-58" text-anchor="middle" font-family="sans-serif" font-size="16"
+              :fill="state.light==='night' ? '#ffdfcb' : '#613b52'">…在这里</text>
+            <rect v-show="editor.selectedKey.value===item.key" data-editor-only class="play-selected" :x="-prop(item).w/2-8" :y="-prop(item).h/2-8" :width="prop(item).w+16" :height="prop(item).h+16"/>
+          </g>
+        </template>
+        <rect x="18" y="18" width="924" height="584" fill="none" :stroke="state.light==='night' ? '#aaa0b5' : '#9a7666'" stroke-width="1.5"/><text x="32" y="588" font-family="monospace" font-size="12" letter-spacing="3" :fill="state.light==='night' ? '#f0d5db' : '#4b333b'">HITORI ROOM</text>
       </svg>
     </div></template><template #tools>
-    <div class="room-actions play-sticky-actions"><button type="button" class="primary" :disabled="busy" @click="exportRoom">{{busy?'保存中…':'保存房间照片 ↓'}}</button><button v-for="[id,label] in [['warm','暖色午后'],['pink','粉色灯光'],['night','深夜小屋']]" :key="id" type="button" :aria-pressed="state.light===id" @click="state.light=id">{{label}}</button></div>
+    <div class="room-actions play-sticky-actions room-light-options"><button type="button" class="primary" :disabled="busy" @click="exportRoom">{{busy?'保存中…':'保存房间照片 ↓'}}</button><button v-for="[id,label] in [['warm','暖色午后'],['pink','粉色灯光'],['night','深夜小屋']]" :key="id" type="button" :aria-pressed="state.light===id" @click="state.light=id">{{label}}</button></div>
     <p id="decoration-reaction" class="room-status" role="status">{{message}}</p>
     <h3 class="play-subheading">把自己的作品挂上墙</h3><div class="room-fields"><label class="room-field">从作品架选择<select v-model="chosenWork"><option value="">选择带预览的作品</option><option v-for="work in hangingWorks" :key="work.id" :value="work.id">{{work.title}}</option></select></label></div><div class="room-actions"><button id="hang-work" type="button" @click="hangWork">挂到房间里 ＋</button><RouterLink to="/room/works">去作品架整理 ↗</RouterLink></div><p class="play-footer-note">保存的是作品画面副本；原作品后来被移出作品架，这张挂画仍会保留。</p><h3 class="play-subheading">从这里，添一件喜欢的东西</h3><div class="play-palette room-prop-palette"><button v-for="item in roomProps" :key="item.id" type="button" :aria-label="`添加${item.name}`" @click="add(item)"><svg viewBox="-80 -85 160 170" width="58" height="62" aria-hidden="true"><RoomProp :kind="item.id"/></svg>{{item.name}}</button></div>
     <label class="room-field" for="decoration-object">选择已经摆放的物品<select id="decoration-object" v-model="editor.selectedKey.value"><option value="">选择一件物品</option><option v-for="(item,index) in objects" :key="item.key" :value="item.key">{{index+1}} / {{prop(item).name}}</option></select></label>
-    <div v-if="selected" class="play-editor-controls"><strong>正在摆放：{{prop(selected).name}}</strong><div class="room-fields"><label>物品大小<input v-model.number="selected.size" class="play-range" type="range" min="0.5" max="1.8" step="0.05"></label><label>物品角度<input v-model.number="selected.rotation" class="play-range" type="range" min="-30" max="30"></label></div><div class="play-toolbar"><button v-for="[label,key] in [['←','ArrowLeft'],['↑','ArrowUp'],['↓','ArrowDown'],['→','ArrowRight']]" :key="key" type="button" :aria-label="`挪动${label}`" @click="editor.key({key,preventDefault(){}},selected)">{{label}}</button><button type="button" @click="interact(selected)">轻点互动</button><button type="button" @click="editor.remove">收起这件</button></div></div>
+    <div v-if="selected" class="play-editor-controls"><strong>正在摆放：{{prop(selected).name}}</strong><div class="room-fields"><label>物品大小<input v-model.number="selected.size" class="play-range" type="range" min="0.5" max="1.8" step="0.05"></label><label>物品角度<input v-model.number="selected.rotation" class="play-range" type="range" min="-30" max="30"></label></div><div class="play-toolbar"><button v-for="[label,key] in [['←','ArrowLeft'],['↑','ArrowUp'],['↓','ArrowDown'],['→','ArrowRight']]" :key="key" type="button" :aria-label="`挪动${label}`" @click="editor.key({key,preventDefault(){}},selected)">{{label}}</button><button type="button" @click="interact(selected)">轻点互动</button><button type="button" @click="front">移到最前</button><button type="button" @click="editor.remove">收起这件</button></div></div>
     <div class="play-toolbar"><button type="button" @click="reset">恢复初始房间</button><button v-if="undo" type="button" @click="restore">撤销重置</button></div><p class="play-footer-note">{{saved?'房间布置自动保存在这台设备。':'浏览器无法保存草稿，可以保存房间照片。'}} 场景与物品为本站原创图形，人物沿用站主提供的素材。</p></template></EditorWorkspace>
   </section>
 </template>
-<style scoped>.room-prop-palette{grid-template-columns:repeat(8,minmax(0,1fr))}@media(max-width:760px){.room-prop-palette{grid-template-columns:repeat(4,minmax(0,1fr))}}</style>
+<style scoped>
+.decorate-room .play-preview { padding:7px; background:#4a3546; border:1px solid #70576a; }
+.room-prop-palette { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.room-prop-palette button { padding-inline:2px; }
+.room-light-options { margin-top:0; }
+.room-light-options button { flex:1 1 auto; }
+@media(max-width:760px) {
+  .decorate-room .play-preview { padding:4px; }
+  .room-light-options { position:static; margin:0; padding:0; }
+  .room-light-options button.primary { flex-basis:100%; }
+}
+</style>
