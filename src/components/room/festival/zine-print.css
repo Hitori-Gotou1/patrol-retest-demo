@@ -1,0 +1,26 @@
+.festival-print { display: none; }
+
+@page {
+  size: A4 landscape;
+  margin: 0;
+}
+
+@media print {
+  body:has(.festival-print) {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: white !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  body:has(.festival-print) > :not(.festival-print) { display: none !important; }
+  body > .festival-print {
+    display: block !important;
+    width: 297mm;
+    height: 210mm;
+    overflow: hidden;
+    break-inside: avoid;
+  }
+  .festival-print > svg { display: block; width: 297mm; height: 210mm; }
+}

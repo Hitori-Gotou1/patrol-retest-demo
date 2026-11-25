@@ -20,6 +20,13 @@ export default createRouter({
       { path: '', redirect: '/room/play' },
       { path: 'play', component: () => import('./components/room/PlayroomHome.vue') },
       { path: 'aftershow', component: () => import('./components/room/AftershowExperience.vue') },
+      { path: 'festival', component: () => import('./components/room/festival/FestivalLayout.vue'), children: [
+        { path: '', component: () => import('./components/room/festival/FestivalHome.vue') },
+        { path: 'patch', component: () => import('./components/room/festival/PatchBooth.vue') },
+        { path: 'animation', component: () => import('./components/room/festival/AnimationBooth.vue') },
+        { path: 'soundcheck', component: () => import('./components/room/festival/SoundcheckBooth.vue') },
+        { path: 'zine', component: () => import('./components/room/festival/ZineBooth.vue') }
+      ] },
       { path: 'pilgrimage', component: () => import('./components/room/PilgrimageGuide.vue') },
       { path: 'project', component: () => import('./components/room/ProjectStudio.vue') },
       { path: 'sources', component: () => import('./components/room/SourceArchive.vue') },
