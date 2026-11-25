@@ -146,6 +146,8 @@
 }
 
 .press-controls {
+  position: relative;
+  z-index: 1;
   min-width: 0;
   display: grid;
   gap: 12px;
@@ -485,4 +487,16 @@
   .is-pressing .press-platen {
     animation: none;
   }
+}
+
+.press-board { --press-sheet-width: 357px; padding-block: 13px; }
+.press-board-edge { width: min(100%, calc(var(--press-sheet-width) + 32px)); min-height: 18px; }
+.press-register-mark { color: #7f625e; font-weight: 750; }
+.press-paper {
+  width: min(100%, var(--press-sheet-width));
+  transform: rotate(var(--aftershow-paper-angle));
+  box-shadow: 2px 3px #bd9b7e, 4px 7px 0 #65525640, 6px 12px 18px #67514c60;
+}
+@media (max-width: 650px) {
+  .press-board { --press-sheet-width: clamp(178px, 62vw, 259px); }
 }

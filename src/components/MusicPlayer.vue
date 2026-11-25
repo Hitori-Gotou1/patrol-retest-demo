@@ -278,7 +278,7 @@ onBeforeUnmount(() => {
 <template>
   <section class="music-player" :style="{ '--track-color': track.color }" aria-labelledby="music-title">
     <div class="music-heading">
-      <div><span class="music-kicker">SOUND CHECK / 试听练习</span><h3 id="music-title">先听一小段。</h3></div>
+      <h3 id="music-title">练习唱片</h3>
       <span class="music-demo-note">本站原创 Demo · 非动画原曲</span>
     </div>
     <div class="music-deck">
@@ -287,20 +287,20 @@ onBeforeUnmount(() => {
         <div class="music-vinyl" :class="{ 'is-spinning': isPlaying && !reducedMotion && visualActive }"><span class="music-vinyl-label">HITORI ROOM<strong>DEMO</strong><small>{{ String(selectedIndex + 1).padStart(2, '0') }} / 03</small></span></div>
       </div>
       <div class="music-console">
-        <p class="music-now-label"><span :class="{ 'is-on': isPlaying }" aria-hidden="true"></span>{{ isPlaying ? 'NOW PLAYING' : 'READY WHEN YOU ARE' }}</p>
-        <h4 class="music-track-title">{{ track.title }}</h4>
-        <p class="music-track-subtitle">{{ track.subtitle }}</p>
-        <canvas ref="spectrumCanvas" class="music-spectrum" width="320" height="52" aria-hidden="true"></canvas>
-        <div class="music-timeline">
-          <label class="visually-hidden" for="music-progress">播放进度</label>
-          <input id="music-progress" class="music-range" type="range" min="0" :max="displayedDuration" step="0.1" :value="currentTime" :disabled="!duration" :aria-valuetext="`${formatTime(currentTime)}，共 ${formatTime(displayedDuration)}`" :style="{ '--range-progress': `${progress}%` }" @input="seek">
-          <div class="music-time"><span>{{ formatTime(currentTime) }}</span><span>{{ formatTime(displayedDuration) }}</span></div>
-        </div>
-        <div class="music-controls">
+        <div class="music-now">
+          <div><p class="music-now-label">{{ isPlaying ? '正在播放' : '当前曲目' }}</p><h4 class="music-track-title">{{ track.title }}</h4><p class="music-track-subtitle">{{ track.subtitle }}</p></div>
           <div class="music-transport">
             <button type="button" class="music-skip" aria-label="上一首" @click="selectTrack(selectedIndex - 1)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5v14M19 5 8 12l11 7Z"/></svg></button>
             <button type="button" class="music-play" :aria-label="isPlaying || (isLoading && wantsPlayback) ? '暂停音乐' : '播放音乐'" :aria-busy="isLoading" @click="togglePlayback"><svg v-if="isPlaying || isLoading" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><svg v-else viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7Z"/></svg></button>
             <button type="button" class="music-skip" aria-label="下一首" @click="selectTrack(selectedIndex + 1)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 5v14M5 5l11 7-11 7Z"/></svg></button>
+          </div>
+        </div>
+        <canvas ref="spectrumCanvas" class="music-spectrum" width="320" height="52" aria-hidden="true"></canvas>
+        <div class="music-controls">
+          <div class="music-timeline">
+          <label class="visually-hidden" for="music-progress">播放进度</label>
+          <input id="music-progress" class="music-range" type="range" min="0" :max="displayedDuration" step="0.1" :value="currentTime" :disabled="!duration" :aria-valuetext="`${formatTime(currentTime)}，共 ${formatTime(displayedDuration)}`" :style="{ '--range-progress': `${progress}%` }" @input="seek">
+          <div class="music-time"><span>{{ formatTime(currentTime) }}</span><span>{{ formatTime(displayedDuration) }}</span></div>
           </div>
           <label class="music-volume" for="music-volume"><span>音量</span><input id="music-volume" class="music-range" type="range" min="0" max="1" step="0.01" :value="volume" :aria-valuetext="`${Math.round(volume * 100)}%`" :style="{ '--range-progress': `${volume * 100}%` }" @input="changeVolume"></label>
         </div>

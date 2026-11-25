@@ -19,6 +19,8 @@ const spread = ref(false);
 const guides = ref(false);
 const proof = ref(false);
 const paper = ref(null);
+const pagePicker = ref(null);
+const pagesOpen = ref(false);
 const foldBox = ref(null);
 const foldStep = ref(0);
 const foldOpen = ref(false);
@@ -44,6 +46,7 @@ const foldSteps = [
 ];
 const drawings = foldIllustrations();
 const pages = computed(() => state.value.pages);
+const thumbnails = computed(() => pages.value.map((item, position) => pageArt(item, position + 1)));
 const index = computed(() => Math.max(0, pages.value.findIndex(page => page.id === state.value.selected)));
 const page = computed(() => pages.value[index.value]);
 const activeLayout = computed(() => zineLayouts[page.value.layout]);
@@ -81,12 +84,20 @@ const visiblePages = computed(() => showPages.value.map(position => ({
   picture: pageArt(pages.value[position], position + 1, { guides: mode.value === 'edit' && guides.value })
 })));
 
+async function closePages() {
+  if (!pagesOpen.value) return;
+  pagesOpen.value = false;
+  await nextTick();
+  pagePicker.value?.focus({ preventScroll: true });
+}
+
 function selectPage(number) {
   const selected = pages.value[number];
   if (!selected) return;
   edit(draft => { draft.selected = selected.id; });
   activeSlot.value = 0;
   notice.value = '';
+  void closePages();
 }
 
 function movePage(offset) {
@@ -105,6 +116,7 @@ function changeLayout(key) {
 
 async function changeMode(next) {
   mode.value = next;
+  pagesOpen.value = false;
   if (next === 'edit' || reducedMotion()) return;
   await nextTick();
   if (paper.value) gsap.fromTo(paper.value, { rotationY: next === 'print' ? -11 : 11, opacity: .8 },
@@ -159,16 +171,22 @@ watch(last, value => { if (value < first.value) first.value = value; });
       <button type="button" :aria-pressed="mode === 'read'" @click="changeMode('read')">屏幕阅读</button>
       <button type="button" :aria-pressed="mode === 'print'" @click="changeMode('print')">A4 单面折页</button>
     </div>
-    <template v-if="mode !== 'print'">
-      <nav class="fest-page-tabs" aria-label="八页页序">
-        <button v-for="(item, position) in pages" :key="item.id" type="button"
-          :aria-label="`${pageNumber(position + 1)} · ${item.title || '未命名'}`" :aria-pressed="position === index" @click="selectPage(position)">
-          <span>{{ position + 1 }}</span>{{ pageRole(position + 1) }}
-        </button>
-      </nav>
-      <div :class="mode === 'edit' ? 'fest-workbench fest-zine-bench' : 'fest-reading-workbench'">
+    <div v-if="mode !== 'print'" class="fest-zine-layout" :class="{ 'fest-reading-workbench': mode === 'read' }">
+        <aside class="fest-zine-page-list" @keydown.esc.stop="closePages">
+          <button ref="pagePicker" type="button" class="fest-page-picker" :aria-expanded="pagesOpen" aria-controls="fest-page-list" @click="pagesOpen = !pagesOpen">
+            <strong>第 {{ index + 1 }} / {{ pages.length }} 页</strong>
+            <span>{{ pageRole(index + 1) }} <span aria-hidden="true">{{ pagesOpen ? '−' : '+' }}</span></span>
+          </button>
+          <nav id="fest-page-list" class="fest-page-tabs" :class="{ 'fest-pages-open': pagesOpen }" aria-label="八页页序">
+            <button v-for="(item, position) in pages" :key="item.id" type="button"
+              :aria-label="`${pageNumber(position + 1)} · ${item.title || '未命名'}`" :aria-pressed="position === index" @click="selectPage(position)">
+              <FestivalArt :picture="thumbnails[position]" />
+              <span>{{ position + 1 }} <small>{{ pageRole(position + 1) }}</small></span>
+            </button>
+          </nav>
+        </aside>
         <section class="fest-surface fest-paper-surface" aria-label="小刊版面">
-          <div class="fest-surface-label"><span>STARRY / PAPER PROOF</span><span>{{ pageNumber(index + 1) }}</span></div>
+          <div class="fest-surface-label fest-proof-label"><span>{{ mode === 'edit' ? '稿页校样' : '小刊预览' }}</span><span>{{ pageNumber(index + 1) }}</span></div>
           <div v-if="mode === 'read'" class="fest-button-row fest-surface-buttons">
             <button type="button" :aria-pressed="!spread" @click="spread = false">逐页阅读</button>
             <button type="button" :aria-pressed="spread" @click="spread = true">跨页校对</button>
@@ -227,8 +245,7 @@ watch(last, value => { if (value < first.value) first.value = value; });
             </div>
           </section>
         </div>
-      </div>
-    </template>
+    </div>
 
     <section v-else class="fest-panel fest-print-panel" aria-label="A4 横向拼版">
       <div class="fest-print-heading">

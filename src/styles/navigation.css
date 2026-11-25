@@ -44,3 +44,32 @@ html:not(.has-scene-pages) { scroll-snap-type: none; }
  .navigation-sound .sound-toggle{min-width:44px}
  .navigation-sound .sound-toggle>span{display:none}
 }
+
+body[data-active-scene='home'] .site-header.site-navigation-header {
+  --nav-focus: #ffcc81;
+  color: #fff0f5;
+  background: #15111bef;
+  border-bottom-color: #8f667c66;
+}
+body[data-active-scene='about'] .site-header.site-navigation-header {
+  --nav-focus: #733341;
+  color: #421c2b;
+  background: #f3c8d7f5;
+  border-bottom-color: #9b526a6e;
+}
+body[data-active-scene='gallery'] .site-header.site-navigation-header {
+  --nav-focus: #693246;
+  color: #392b28;
+  background: #f7edddfa;
+  border-bottom-color: #9170607a;
+}
+.site-header.site-navigation-header :is(a, button, summary):focus-visible {
+  outline: 2px solid var(--nav-focus, #ffcb83);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+.site-header.site-navigation-header nav a { opacity: .88; }
+.site-header.site-navigation-header nav a[aria-current] { font-weight: 700; }
+@media (max-width: 370px) {
+  .site-header.site-navigation-header nav { gap: clamp(4px, 1.65vw, 6px); font-size: clamp(.63rem, 3vw, .72rem); }
+}

@@ -9,9 +9,9 @@ export const seats = {
   side: { name: '侧台', x: 1.8, y: 8 }
 };
 export const routes = {
-  direct: { name: '直达声', color: '#f6ca71' },
-  left: { name: '左墙反射', color: '#9fd6c3' },
-  rear: { name: '后墙反射', color: '#f1a8a9' }
+  direct: { name: '直达声', color: '#f6d388', dash: '' },
+  left: { name: '左墙反射', color: '#a8e1d1', dash: '12 5' },
+  rear: { name: '后墙反射', color: '#ffc0bd', dash: '9 4 2 4' }
 };
 
 export function initialRoom() {
@@ -99,11 +99,23 @@ export function exampleReport() {
 export const roomBox = { width: 460, height: 363, x: 46, y: 74, scaleX: 29.7, scaleY: 13.9 };
 export const mapPoint = ({ x, y }) => ({ x: roomBox.x + x * roomBox.scaleX, y: roomBox.y + y * roomBox.scaleY });
 
+function routeMark(id, x, y, radius, color, attributes = '') {
+  if (id === 'direct') return circle(x, y, radius, color, attributes);
+  if (id === 'left') return `<path d="M${x} ${y - radius}l${radius} ${radius} -${radius} ${radius} -${radius} -${radius}Z" fill="${color}" ${attributes}/>`;
+  return rect(x - radius, y - radius, radius * 2, radius * 2, color, attributes);
+}
+
+export function routeSwatch(id) {
+  const { color, dash } = routes[id];
+  return art(46, 16, line({ x: 1, y: 8 }, { x: 44, y: 8 }, color, 1.9, `stroke-dasharray="${dash}"`)
+    + routeMark(id, 24, 8, 4, color, 'stroke="#22252e" stroke-width="1"'));
+}
+
 function curtainLine(first, second, color, hung) {
   return line(first, second, color, hung ? 8 : 3, hung ? 'stroke-dasharray="3 3" opacity=".85"' : 'opacity=".65"');
 }
 
-export function roomArt(room, paths = readings(room), { compare = false } = {}) {
+export function roomArt(room, paths = readings(room), { compare = false, highlighted = '' } = {}) {
   const { width, height, x, y, scaleX, scaleY } = roomBox;
   const wallY = mapPoint({ x: 0, y: room.depth }).y;
   const rightX = x + roomWidth * scaleX;
@@ -111,46 +123,65 @@ export function roomArt(room, paths = readings(room), { compare = false } = {}) 
     if (col === 4 || col === 8) return '';
     const cx = x + 24 + col * 34.5, cy = y + 35 + row * 20;
     if (cy > wallY - 13) return '';
-    return rect(cx, cy, 19, 10, '#3c484e', 'rx="2"') + line({ x: cx + 2, y: cy + 8 }, { x: cx + 17, y: cy + 8 }, '#637175', 1);
+    return rect(cx, cy, 19, 10, 'none', 'rx="2" stroke="#66767f" stroke-width=".7"')
+      + line({ x: cx + 2, y: cy + 8 }, { x: cx + 17, y: cy + 8 }, '#82909b', .8);
   }).join('')).join('');
   const { source, listener } = room;
   const s = mapPoint(source), l = mapPoint(listener);
-  const lines = paths.map(path => {
+  const paintOrder = [...paths.filter(path => path.id !== highlighted), ...paths.filter(path => path.id === highlighted)];
+  const lines = paintOrder.map(path => {
     const points = path.points.map(mapPoint);
-    return `<polyline data-sound-path="${path.id}" points="${points.map(point => `${point.x},${point.y}`).join(' ')}" fill="none"
-      stroke="${path.color}" stroke-width="${path.id === 'direct' ? 2.8 : 1.4 + 2.4 * Math.sqrt(path.relative)}"
-      stroke-linejoin="round" stroke-opacity="${path.id === 'direct' ? 1 : .43 + Math.sqrt(path.relative) * .65}"
-      ${path.id === 'direct' ? '' : 'stroke-dasharray="7 4"'}/>
-      ${points.length === 3 ? circle(points[1].x, points[1].y, 4, path.color, 'stroke="#222a2e" stroke-width="1"') : ''}`;
+    const coordinates = points.map(point => `${point.x},${point.y}`).join(' ');
+    const active = path.id === highlighted;
+    const weight = path.id === 'direct' ? 3 : 1.65 + 2.8 * Math.sqrt(path.relative);
+    const opacity = path.id === 'direct' ? 1 : .58 + Math.min(.36, Math.sqrt(path.relative) * .7);
+    const strength = active ? 1 : highlighted ? opacity * .8 : opacity;
+    const segment = `points="${coordinates}" fill="none" stroke-linejoin="round" stroke-dasharray="${path.dash}"`;
+    return `<g data-sound-emphasis="${active}">
+      ${active ? `<polyline ${segment} stroke="#151523" stroke-width="${weight + 3}"/>` : ''}
+      <polyline data-sound-path="${path.id}" ${segment} stroke="${path.color}" stroke-width="${weight + (active ? 1.4 : 0)}" stroke-opacity="${strength}"/>
+      ${points.length === 3 ? routeMark(path.id, points[1].x, points[1].y, active ? 5.5 : 4.2, path.color, 'stroke="#20232e" stroke-width="1"') : ''}
+      </g>`;
   }).join('');
-  return art(width, height, rect(0, 0, width, height, '#222b30')
-    + rect(x, 17, roomWidth * scaleX, y - 17, '#46383d', 'rx="4"')
-    + text(x + 13, 40, 'STARRY / STAGE', 12, '#ebc692', 'letter-spacing="2"')
-    + rect(x, y, roomWidth * scaleX, wallY - y, '#29353b', 'stroke="#566067" stroke-width="1"')
+  return art(width, height, rect(0, 0, width, height, '#20242e')
+    + `<path d="M${x} 26l10-10H${rightX - 10}l10 10v${y - 26}H${x}Z" fill="#493841" stroke="#9b7782" stroke-width="1.4"/>`
+    + text(x + 13, 39, 'STARRY · 舞台', 13, '#ffdbac', 'letter-spacing="1.4"')
+    + rect(x, y, roomWidth * scaleX, wallY - y, '#292e39', 'stroke="#7a808a" stroke-width="1"')
     + chairs
     + curtainLine({ x, y }, { x, y: wallY }, routes.left.color, room.curtains.left)
     + curtainLine({ x, y: wallY }, { x: rightX, y: wallY }, routes.rear.color, room.curtains.rear)
+    + `<path d="M${rightX + 10} ${wallY - 11}v22m-4-18 4-4 4 4m-8 14 4 4 4-4" fill="none" stroke="#f1bdbe" stroke-width="1.7"/>`
     + lines
-    + circle(s.x, s.y, 9, '#f7c770', 'stroke="#5f4137" stroke-width="2"')
+    + rect(s.x - 8, s.y - 8, 16, 16, '#f7c770', 'rx="3" stroke="#503b3a" stroke-width="2"')
     + circle(l.x, l.y, 9, '#b7d2e6', 'stroke="#49687b" stroke-width="2"')
     + (compare ? text(s.x + 12, s.y - 4, '声源', 11, cream) + text(l.x + 11, l.y + 16, '听者', 11, cream) : '')
-    + text(x, height - 14, `${seatName(room)} · 后墙 ${room.depth.toFixed(1)} m${room.curtains.rear ? '（帘）' : ''}`, 13, '#eddfc6')
-    + registration(rightX - 5, height - 20, '#a78872', 6));
+    + text(x, height - 15, `${seatName(room)} · 后墙 ${room.depth.toFixed(1)} m${room.curtains.rear ? '（帘）' : ''}`, 13, '#f8e7cf')
+    + registration(rightX - 5, height - 20, '#b99786', 6));
 }
 
-export function timeRulerArt(paths) {
-  const width = 460, height = 115, start = 39, end = 424, x = ms => start + ms / 110 * (end - start);
+export function timeRulerArt(paths, highlighted = '') {
+  const width = 460, height = 113, start = 39, end = 428;
+  const x = ms => start + ms / 110 * (end - start);
   const ticks = Array.from({ length: 12 }, (_, index) => {
     const at = x(index * 10);
-    return line({ x: at, y: 73 }, { x: at, y: 80 }, '#b5a999')
-      + (index % 2 === 0 ? text(at, 95, index * 10, 10, '#ead9be', 'text-anchor="middle"') : '');
+    return line({ x: at, y: 83 }, { x: at, y: index % 2 === 0 ? 91 : 87 }, '#bdb2a8')
+      + (index % 2 === 0 ? text(at, 105, index * 10, 12, '#f0e0cb', 'text-anchor="middle"') : '');
   }).join('');
-  const marks = paths.map((path, index) => line({ x: x(path.ms), y: 20 + index * 16 }, { x: x(path.ms), y: 73 }, path.color, 1.2, 'opacity=".6"')
-    + circle(x(path.ms), 20 + index * 16, 3.5 + Math.sqrt(path.relative) * 4, path.color)
-    + text(clamp(x(path.ms) + 12, 44, 386), 24 + index * 16, milliseconds(path.ms), 11, path.color)).join('');
-  return art(width, height, rect(0, 0, width, height, '#283136')
-    + line({ x: start, y: 73 }, { x: end, y: 73 }, '#b5a999') + ticks + marks
-    + text(end, 95, 'ms', 10, '#ead9be', 'text-anchor="end"'));
+  const marks = paths.map((path, index) => {
+    const active = highlighted === path.id;
+    const at = x(path.ms);
+    const y = 19 + index * 24;
+    const opacity = active || !highlighted ? 1 : .67;
+    return `<g data-arrival="${path.id}" data-arrival-active="${active}" opacity="${opacity}">
+       ${active ? rect(8, y - 10, 442, 20, '#5a4b56') : ''}
+       ${line({ x: start, y }, { x: at, y }, path.color, active ? 2.9 : 1.65, `stroke-dasharray="${path.dash}"`)}
+       ${line({ x: at, y }, { x: at, y: 83 }, path.color, active ? 2 : 1.05, 'stroke-dasharray="2 3" opacity=".72"')}
+       ${routeMark(path.id, at, y, active ? 6.4 : 4.3, path.color, 'stroke="#22252e" stroke-width="1"')}
+       </g>`;
+  }).join('');
+  return art(width, height, rect(0, 0, width, height, '#252936')
+    + line({ x: start, y: 83 }, { x: end, y: 83 }, '#bdb2a8') + ticks + marks
+    + text(end, 105, 'ms', 12, '#ede0d1', 'text-anchor="end"'));
 }
 
 function reportPanel(room, x, heading) {
@@ -160,7 +191,7 @@ function reportPanel(room, x, heading) {
     + inset(roomArt(room, paths, { compare: true }), x, 142, 413, 326)
     + paths.map((path, index) => {
       const y = 497 + 27 * index;
-      return circle(x + 5, y - 5, 4, path.color, 'stroke="#384249"') + text(x + 16, y, path.name, 14)
+      return routeMark(path.id, x + 5, y - 5, 4, path.color, 'stroke="#384249"') + text(x + 16, y, path.name, 14)
         + text(x + 183, y, milliseconds(path.ms), 14) + text(x + 298, y, percentage(path.relative), 14);
     }).join('');
 }

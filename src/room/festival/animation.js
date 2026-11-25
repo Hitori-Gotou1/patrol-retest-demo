@@ -61,34 +61,53 @@ function pivot(point, color) {
     + line({ x: point.x - 3, y: point.y + 3 }, { x: point.x + 3, y: point.y - 3 }, color, 1.5);
 }
 
+function jointOutline(a, b, radius) {
+  const length = Math.hypot(b.x - a.x, b.y - a.y);
+  const x = (a.y - b.y) * radius / length;
+  const y = (b.x - a.x) * radius / length;
+  return `M${a.x + x} ${a.y + y}L${b.x + x} ${b.y + y}A${radius} ${radius} 0 0 0 ${b.x - x} ${b.y - y}
+    L${a.x - x} ${a.y - y}A${radius} ${radius} 0 0 0 ${a.x + x} ${a.y + y}Z`;
+}
+
 function puppetArt(model, pose, ghost) {
   const { root, elbow, end, total, badge } = poseGeometry(pose);
   const { texture, dark } = puppets[model.puppet];
-  const colors = ghost === 'previous' ? { shade: '#c26786', body: '#f4c1ce' }
-    : ghost === 'next' ? { shade: '#527da3', body: '#b5d6e9' }
+  const colors = ghost === 'previous' ? { shade: '#9c4d70', body: 'none' }
+    : ghost === 'next' ? { shade: '#426b92', body: 'none' }
       : { shade: dark, body: texture };
+  const accent = fill => ghost ? 'none' : fill;
   const borders = 'stroke-linecap="round" stroke-linejoin="round"';
   let prop;
   if (model.puppet === 'cable') {
-    prop = `<path d="M0 0C19-33 83-44 78-11C73 27 37 41 36 17C35 6 50 2 58 9" fill="none" stroke="${colors.shade}" stroke-width="9" ${borders}/>
+    prop = `<path d="M0 0C19-33 83-44 78-11C73 27 37 41 36 17C35 6 50 2 58 9" fill="none" stroke="${colors.shade}" stroke-width="${ghost ? 2 : 9}" ${borders}/>
       <path d="M0 0C19-33 83-44 78-11C73 27 37 41 36 17C35 6 50 2 58 9" fill="none" stroke="${colors.body}" stroke-width="5" ${borders}/>
-      <rect x="53" y="3" width="16" height="8" rx="2" fill="#b6854c"/>`;
+      <rect x="53" y="3" width="16" height="8" rx="2" fill="${accent('#b6854c')}" stroke="${colors.shade}"/>`;
   } else if (model.puppet === 'hand') {
     prop = `<path d="M-12 10Q-21 15-22 3L-21-19Q-20-28-13-23L-9-13L-7-35Q-5-42 1-36L4-23L10-31Q15-34 18-28L17-14Q30-26 35-18Q37-10 21 3L15 14Z" fill="${colors.body}" stroke="${colors.shade}" stroke-width="2.5"/>
-      <path d="M16-12Q22-35 39-34Q54-30 51-20Q48-9 35 2Q25-2 16-12Z" fill="#e8ba5b" stroke="#793e39" stroke-width="2.5"/>`;
+      <path d="M16-12Q22-35 39-34Q54-30 51-20Q48-9 35 2Q25-2 16-12Z" fill="${accent('#e8ba5b')}" stroke="${colors.shade}" stroke-width="2.5"/>`;
   } else {
-    prop = `<path d="M-29-7L66-4Q81-12 84-3Q85 6 68 5L-29 8Z" fill="#e8b668" stroke="${colors.shade}" stroke-width="2.5"/>
-      <path d="M-22-3L63-1" stroke="#f9df91" stroke-width="2"/>
-      <path d="M-26-7L-10-6V7L-26 8Z" fill="#885b50" opacity=".8"/>`;
+    prop = `<path d="M-29-7L66-4Q81-12 84-3Q85 6 68 5L-29 8Z" fill="${accent('#e8b668')}" stroke="${colors.shade}" stroke-width="2.5"/>
+      <path d="M-22-3L63-1" stroke="${accent('#f9df91')}" stroke-width="2"/>
+      <path d="M-26-7L-10-6V7L-26 8Z" fill="${accent('#885b50')}" opacity=".8"/>`;
   }
-  return `<g opacity="${ghost ? .38 : 1}">
+  if (ghost) {
+    const thin = model.puppet === 'cable';
+    const pattern = ghost === 'previous' ? '8 4' : '2 6';
+    return `<g data-onion="${ghost}" stroke="${colors.shade}" stroke-dasharray="${pattern}" stroke-width="2.2" opacity=".83" fill="none">
+      <path d="${jointOutline(root, elbow, thin ? 6 : 16)}"/>
+      <path d="${jointOutline(elbow, end, thin ? 5.5 : 13.5)}"/>
+      <circle cx="${elbow.x}" cy="${elbow.y}" r="5"/>
+      <g transform="translate(${end.x} ${end.y}) rotate(${total})">${prop}</g>
+      </g>`;
+  }
+  return `<g data-onion="current">
     ${line(root, elbow, colors.shade, model.puppet === 'cable' ? 12 : 32, borders)}
     ${line(root, elbow, colors.body, model.puppet === 'cable' ? 8 : 27, borders)}
     ${line(elbow, end, colors.shade, model.puppet === 'cable' ? 11 : 27, borders)}
     ${line(elbow, end, colors.body, model.puppet === 'cable' ? 7 : 22, borders)}
     ${pivot(root, colors.shade)}${pivot(elbow, colors.shade)}${pivot(end, colors.shade)}
     <g transform="translate(${end.x} ${end.y}) rotate(${total})">${prop}</g>
-    ${model.patch && !ghost ? `<g data-puppet-patch="" transform="translate(${badge.x} ${badge.y}) rotate(${total})">${inset(patchArt(model.patch.data), -20, -38, 42, 43)}</g>` : ''}
+    ${model.patch ? `<g data-puppet-patch="" transform="translate(${badge.x} ${badge.y}) rotate(${total})">${inset(patchArt(model.patch.data), -20, -38, 42, 43)}</g>` : ''}
     </g>`;
 }
 
@@ -101,8 +120,8 @@ export function poseArt(model, pose, { previous, next, guides = false } = {}) {
     <path d="M253 252L259 272M270 256L273 273M350 250L343 272" stroke="#eac5a0" stroke-width="2"/>
     </g>` : '';
   return art(width, height, rect(0, 0, width, height, '#f4e8cf')
-    + rect(11, 11, width - 22, height - 22, '#fbf2dc', 'stroke="#c7ab8d" stroke-width="1"')
-    + weft(width, height, '#c4a282', 13)
+    + rect(11, 11, width - 22, height - 22, '#fff5d8', 'stroke="#c7ab8d" stroke-width="1"')
+    + weft(width, height, '#d9c4a5', 17)
     + registration(25, 27, '#9e695b') + registration(width - 25, 27, '#9e695b')
     + line({ x: 24, y: 223 }, { x: width - 24, y: 223 }, '#c1a88e', 1, 'stroke-dasharray="3 5"')
     + circle(26, 146, 5, '#b99c7d') + circle(394, 146, 5, '#b99c7d')

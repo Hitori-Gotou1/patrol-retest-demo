@@ -100,7 +100,7 @@ const viewLabel = computed(() => viewLabels[props.poster.view] || viewLabels.aud
 .aftershow-carriage {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(110px, 19%);
+  grid-template-columns: minmax(0, 1fr) minmax(134px, 28%);
   gap: clamp(7px, 2vw, 26px);
   align-items: center;
   padding: clamp(8px, 2.1vw, 24px);
@@ -114,8 +114,8 @@ const viewLabel = computed(() => viewLabels[props.poster.view] || viewLabels.aud
 .aftershow-carriage-window, .aftershow-train-paper { margin: 0; min-width: 0; }
 .aftershow-carriage-window :deep(.aftershow-window-art) { aspect-ratio: 720 / 365; height: auto; border-radius: clamp(9px, 2vw, 32px); }
 .aftershow-carriage-window figcaption { color: var(--train-muted); margin-top: 9px; font-size: .83rem; line-height: 1.55; }
-.aftershow-train-paper { width: 100%; max-width: 153px; margin-inline: auto; }
-.aftershow-train-paper-frame { position: relative; transform: rotate(-3deg); background: #d3b99e; border: 1px solid #dbb699; box-shadow: 0 5px 15px #0a1025aa; }
+.aftershow-train-paper { width: 100%; max-width: 238px; margin-inline: auto; }
+.aftershow-train-paper-frame { position: relative; transform: rotate(var(--aftershow-paper-angle)); background: #d3b99e; border: 1px solid #dbb699; box-shadow: 0 5px 15px #0a1025aa; }
 .aftershow-train-paper-frame::before {
   content: '';
   position: absolute;
@@ -200,10 +200,10 @@ const viewLabel = computed(() => viewLabels[props.poster.view] || viewLabels.aud
 @media (max-width: 620px) {
   .aftershow-train { padding: 13px; }
   .aftershow-train-header { margin-bottom: 12px; }
-  .aftershow-carriage { grid-template-columns: minmax(0, 1fr) minmax(62px, 24%); padding: 8px; }
-  .aftershow-carriage-window :deep(.aftershow-window-art) { aspect-ratio: 1.53; }
+  .aftershow-carriage { grid-template-columns: minmax(0, 1fr) minmax(101px, 36%); padding: 10px; }
+  .aftershow-carriage-window :deep(.aftershow-window-art) { aspect-ratio: 1.34; }
   .aftershow-carriage-window figcaption, .aftershow-train-paper figcaption { font-size: .72rem; }
-  .aftershow-ticket-zone { grid-template-columns: 1fr; gap: 18px; }
+  .aftershow-ticket-zone { grid-template-columns: 1fr; gap: 10px; margin-top: 14px; }
   .aftershow-ticket { max-width: 100%; }
 }
 </style>

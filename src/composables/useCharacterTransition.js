@@ -117,13 +117,13 @@ export function useCharacterTransition({ members, scene, baseLayer, revealLayer,
     revealLayer.value.style.backgroundColor = incoming.theme.primary;
     revealProgress.value = 0; renderReveal();
     revealLayer.value.style.opacity = '1';
-    // 单一事务：旧内容退场 → 完整圆形覆盖 → 同步提交人物和主题 → 新内容依次入场。
+    // 单一事务：旧海报退场后同步换人、图形和底色，姓名留在原位。
     // 新选择取消旧事务，以已经提交的人物为起点；generation 拦截过期提交。
     await animate(tl => {
       tl.to($$('.cast-reveal-item'), { y: -9, autoAlpha: 0, duration: .13, stagger: .006, ease: 'power2.in' }, 0)
-        .to($('.cast-portrait-motion'), { x: outgoing.motion.exitX, scale: .96, autoAlpha: 0, duration: .19, ease: 'power2.in' }, 0)
-        .to($$('.cast-decorations, .cast-peripheral'), { opacity: 0, duration: .17 }, 0)
-        .to(revealProgress, { value: 1, duration: .38, ease: 'power3.inOut', onUpdate: renderReveal }, .04);
+        .to($$('.cast-portrait-motion, .cast-decorations'), { x: outgoing.motion.exitX, autoAlpha: 0, duration: .17, ease: 'power2.in' }, 0)
+        .to($$('.cast-peripheral'), { opacity: 0, duration: .17 }, 0)
+        .to(revealProgress, { value: 1, duration: .24, ease: 'power3.inOut', onUpdate: renderReveal }, .02);
     });
     if (disposed || token !== generation) return;
     selectedIndex.value = index;
@@ -131,18 +131,18 @@ export function useCharacterTransition({ members, scene, baseLayer, revealLayer,
     if (disposed || token !== generation) return;
     updateGeometry(); revealProgress.value = 1; renderReveal();
     synchronizeTheme();
-    const portrait = $('.cast-portrait-motion');
+    const poster = $$('.cast-portrait-motion, .cast-decorations');
     const details = $$('.cast-reveal-item');
-    const decorations = $$('.cast-decorations, .cast-peripheral');
-    gsap.set(portrait, { x: incoming.motion.enterX, scale: .95, autoAlpha: 0 });
+    const captions = $$('.cast-peripheral');
+    gsap.set(poster, { x: incoming.motion.enterX, autoAlpha: 0 });
     gsap.set(details, { y: 16, autoAlpha: 0 });
-    gsap.set(decorations, { opacity: 0 });
+    gsap.set(captions, { opacity: 0 });
     // 底层已是相同颜色，再撤走遮罩；没有透明中间帧或旧色角落。
     revealLayer.value.style.opacity = '0';
     await animate(tl => {
-      tl.to(portrait, { x: 0, scale: 1, autoAlpha: 1, duration: .38, ease: incoming.motion.ease }, 0)
-        .to(details, { y: 0, autoAlpha: 1, duration: .24, stagger: .018, ease: 'power3.out' }, .045)
-        .to(decorations, { opacity: 1, duration: .27, ease: 'sine.out' }, .09);
+      tl.to(poster, { x: 0, autoAlpha: 1, duration: .24, ease: incoming.motion.ease }, 0)
+        .to(details, { y: 0, autoAlpha: 1, duration: .19, stagger: .012, ease: 'power3.out' }, .025)
+        .to(captions, { opacity: 1, duration: .2, ease: 'sine.out' }, .03);
     });
     if (disposed || token !== generation) return;
     showAll(); busy.value = false;
