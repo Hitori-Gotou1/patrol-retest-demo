@@ -77,7 +77,11 @@ function onPlateKeys(event) {
 function startDrag(event) {
   if (!canMove.value || drag.value || !event.isPrimary || event.button !== 0) return;
   const surface = event.currentTarget;
-  const bounds = paper.value.getBoundingClientRect();
+  const paperWidth = paper.value.clientWidth;
+  const paperHeight = paper.value.clientHeight;
+  const inverse = surface === paper.value
+    ? new DOMMatrixReadOnly(getComputedStyle(paper.value).transform).inverse()
+    : null;
   drag.value = {
     id: event.pointerId,
     surface,
@@ -85,8 +89,9 @@ function startDrag(event) {
     startY: event.clientY,
     originalX: offset.value.x,
     originalY: offset.value.y,
-    horizontalScale: 480 / bounds.width,
-    verticalScale: 620 / bounds.height,
+    horizontalScale: 480 / paperWidth,
+    verticalScale: 620 / paperHeight,
+    inverse,
   };
   surface.setPointerCapture?.(event.pointerId);
 }
@@ -94,10 +99,9 @@ function startDrag(event) {
 function moveDrag(event) {
   const start = drag.value;
   if (event.pointerId !== start?.id) return;
-  offsetPlate(
-    start.originalX + (event.clientX - start.startX) * start.horizontalScale,
-    start.originalY + (event.clientY - start.startY) * start.verticalScale,
-  );
+  const screenDelta = new DOMPoint(event.clientX - start.startX, event.clientY - start.startY);
+  const delta = start.inverse ? screenDelta.matrixTransform(start.inverse) : screenDelta;
+  offsetPlate(start.originalX + delta.x * start.horizontalScale, start.originalY + delta.y * start.verticalScale);
 }
 
 function stopDrag(event) {

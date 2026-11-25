@@ -109,6 +109,9 @@ def sew(page, first, last, *, touch=False, keyboard=False):
 
 
 def selected_page(page, number):
+    picker = page.locator('.fest-page-picker')
+    if picker.is_visible() and picker.get_attribute('aria-expanded') == 'false':
+        picker.click()
     tab = page.locator('.fest-page-tabs').get_by_role('button', name=f'第 {number} 页', exact=False)
     tab.click()
 
@@ -253,6 +256,7 @@ def main_journey(browser):
     animation = stored(page, 'editions-animation')['items'][0]
     compare_film_cells(download(page, '下载编号帧条 PNG', '成品-动画编号帧条.png', (1600, 738)))
 
+    page.locator('.fest-station-picker > button').click()
     page.get_by_role('navigation', name='文化祭展位').get_by_role('link', name='空场试声').click()
     button(page, '后排').click()
     button(page, '固定为调整前').click()
@@ -437,6 +441,7 @@ def storage_fallback(browser):
     button(page, '保存为一版布章').tap()
     expect(page.locator('.fest-output')).to_contain_text('已放入本次选稿架')
     download(page, '下载正反面工艺卡', '无存储-布章工艺卡.png', (1520, 860))
+    page.locator('.fest-station-picker > button').tap()
     page.get_by_role('navigation', name='文化祭展位').get_by_role('link', name='同人志编辑部').tap()
     choose_work(page, 'patch', 'back')
     button(page, '用选中稿件替换').tap()

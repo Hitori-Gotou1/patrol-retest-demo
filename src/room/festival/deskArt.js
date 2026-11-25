@@ -3,9 +3,9 @@ import { examplePatch, hoopArt } from './patch.js';
 import { filmStripArt, initialAnimation } from './animation.js';
 import { initialRoom, roomArt } from './soundcheck.js';
 
-export function deskArtwork() {
+export function deskArtwork({ onDesk = false } = {}) {
   const width = 430, height = 245;
-  const backdrop = (fill, texture) => rect(0, 0, width, height, fill) + weft(width, height, texture, 5)
+  const backdrop = (fill, texture) => onDesk ? '' : rect(0, 0, width, height, fill) + weft(width, height, texture, 5)
     + registration(24, 24, texture) + registration(406, 221, texture);
   const animation = initialAnimation();
   const binding = '#30232d';
@@ -13,7 +13,7 @@ export function deskArtwork() {
     patch: art(width, height, backdrop('#544039', '#c69771')
       + '<path d="M23 189Q59 184 75 155Q106 94 63 86Q32 84 46 111Q61 135 95 109L127 87" fill="none" stroke="#e5af53" stroke-width="2.5"/>'
       + '<g transform="rotate(-10 224 121)"><ellipse cx="226" cy="134" rx="99" ry="101" fill="#251e25" opacity=".44"/>'
-      + inset(hoopArt(examplePatch()), 86, 12, 275, 219) + '</g>'
+      + inset(hoopArt(examplePatch(), { onDesk }), 74, 0, 271, 229) + '</g>'
       + '<path d="M350 48Q354 64 340 105L333 119" fill="none" stroke="#d8c5ad" stroke-width="3"/>'
       + circle(351, 46, 3, '#f5e8ba')),
     animation: art(width, height, backdrop('#848fa4', '#4e596f')

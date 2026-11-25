@@ -36,7 +36,7 @@ watch(() => route.path, async path => {
 }, { immediate: true });
 </script>
 <template>
-  <main id="main" ref="roomRoot" class="room-page room-refresh" :class="{'room-page-compact':route.path!=='/room/play','aftershow-page':isAftershow,'festival-page':isFestival}" tabindex="-1">
+  <main id="main" ref="roomRoot" class="room-page room-refresh" :class="{'room-page-compact':route.path!=='/room/play','discovery-page':route.path==='/room/play','aftershow-page':isAftershow,'festival-page':isFestival}" tabindex="-1">
     <SceneAtmosphere v-if="!isFestival" kind="room" />
     <header v-if="isAftershow" class="aftershow-heading">
       <RouterLink to="/room/play">← 活动室</RouterLink>

@@ -224,8 +224,6 @@
  :root .gallery-tools-panel{padding:8px 12px 14px;gap:5px 12px}
  :root .gallery-cloud-controls>span:last-child{display:none}
  :root .photo-card-leave-active{width:calc((100% - 14px)/2)}
- :root .gallery-grid .photo-card-leave-active:first-child{width:100%}
- :root .gallery-section .gallery-card:first-child .gallery-image-button{aspect-ratio:1.35}
  :root .cinema-mood-bar{padding:15px 0;margin-bottom:18px;gap:10px}
  :root .cinema-mood-label{min-width:100%}
  :root .cinema-mood-label>p{margin-top:5px;font-size:11px}

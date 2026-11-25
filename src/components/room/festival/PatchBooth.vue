@@ -175,7 +175,7 @@ function saveEdition() {
     </div>
     <div class="fest-workbench">
       <section class="fest-surface" aria-label="布章画面">
-        <div class="fest-surface-label"><span>STARRY / NEEDLEWORK</span><span>{{ templates[piece.template].name }} · {{ piece.stitches.length }} 针</span></div>
+        <div class="fest-surface-label"><span>{{ phase === 'mount' ? '琴盒实装' : side === 'back' ? '布章背面' : '绣绷 · 布章正面' }}</span><span>{{ templates[piece.template].name }} · {{ piece.stitches.length }} 针</span></div>
         <div ref="board" class="fest-overlay fest-patch-board" :class="{ 'fest-hoop-board': phase !== 'mount' }">
           <FestivalArt :picture="picture" :label="phase === 'mount' ? '琴盒和摆在上面的布章' : side === 'back' ? '布章背面针路' : '布章正面针路'" />
           <template v-if="phase === 'sew'">
@@ -198,7 +198,7 @@ function saveEdition() {
         </div>
         <p class="fest-surface-note">
           <template v-if="phase === 'sew'">{{ selected ? `起针在 ${selected}，再选一个孔。` : '点第一个孔起针，再点第二个孔收针。' }}</template>
-          <template v-else-if="phase === 'turn'">{{ side === 'front' ? '交叉点的编号与右侧选项对应。' : '从布背看，左右镜像；同色线在相邻针脚之间绕回。' }}</template>
+          <template v-else-if="phase === 'turn'">{{ side === 'front' ? '沿绣绷顶上的三角认方向。交叉点的编号与选项对应。' : '绣绷顶上的三角仍在原处。针路左右镜像，同色线在相邻针脚之间绕回。' }}</template>
           <template v-else>{{ piece.mount.pins.length ? `已固定 ${piece.mount.pins.length} 个缝点。` : '布章还没有固定。选缝点把它缝到琴盒上。' }}</template>
         </p>
       </section>

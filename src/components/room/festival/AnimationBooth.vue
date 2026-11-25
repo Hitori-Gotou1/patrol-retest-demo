@@ -17,6 +17,7 @@ const patchChoice = ref('');
 const ghosts = ref(true);
 const notice = ref('');
 const board = ref(null);
+const frameStrip = ref(null);
 const anglePreview = ref(null);
 let dragJoint;
 const staticOpen = ref(false);
@@ -42,6 +43,8 @@ const picture = computed(() => state.value.phase === 'play'
     previous: ghosts.value ? frames.value[selected.value - 1]?.pose : null,
     next: ghosts.value ? frames.value[selected.value + 1]?.pose : null
   }));
+const frameOrder = computed(() => frames.value.map(frame => frame.id).join(' '));
+const framePreviews = computed(() => frames.value.map(frame => poseArt(state.value, frame.pose)));
 const film = computed(() => staticOpen.value ? filmStripArt(state.value) : null);
 const jointStyle = point => ({ left: `${point.x / poseBox.width * 100}%`, top: `${point.y / poseBox.height * 100}%` });
 
@@ -205,6 +208,14 @@ function saveEdition() {
   notice.value = `${saved ? '已放入文化祭选稿架' : '已放入本次选稿架'} · ${editionLabel('animation', edition)}`;
 }
 
+watch([frameStrip, () => state.value.phase, () => state.value.selected, frameOrder], () => {
+  const strip = frameStrip.value;
+  const activeFrame = strip?.querySelector('[aria-pressed="true"]');
+  if (!activeFrame) return;
+  const distance = activeFrame.offsetLeft - (strip.clientWidth - activeFrame.offsetWidth) / 2;
+  strip.scrollLeft = distance;
+}, { flush: 'post' });
+
 watch(expanded, next => { playPosition.value = clamp(playPosition.value, 0, next.length - 1); });
 onBeforeUnmount(pause);
 </script>
@@ -218,7 +229,7 @@ onBeforeUnmount(pause);
     </div>
     <div class="fest-workbench">
       <section class="fest-surface" aria-label="动画画面">
-        <div class="fest-surface-label"><span>{{ state.phase === 'play' ? 'STARRY / FILM VIEWER' : 'STARRY / LIGHT TABLE' }}</span><span>{{ puppets[state.puppet].name }} · {{ expanded.length }} 格</span></div>
+        <div class="fest-surface-label"><span>{{ state.phase === 'play' ? '手摇放映' : '常亮透光台' }}</span><span>{{ puppets[state.puppet].name }} · {{ expanded.length }} 格</span></div>
         <div ref="board" class="fest-overlay fest-pose-board" :class="{ 'fest-projector-window': state.phase === 'play' }">
           <FestivalArt :picture="picture" :label="state.phase === 'play' ? `放映第 ${onScreen.slot} 格` : `第 ${selected + 1} 帧的纸偶`" />
           <template v-if="state.phase !== 'play'">
@@ -235,7 +246,18 @@ onBeforeUnmount(pause);
             @pointercancel="crankDrag = null; draggedCrank = false" @click="clickCrank"
             @keydown.left.prevent="pause(); step(-1)" @keydown.right.prevent="pause(); step(1)"><span aria-hidden="true"></span></button>
         </div>
-        <p v-else class="fest-surface-note">{{ ghosts ? '粉色是前一帧，蓝色是后一帧。拖动关节可改当前帧。' : '拖动关节可改当前帧，也可用右侧的角度按钮。' }}</p>
+        <div v-else class="fest-onion-legend" aria-label="纸偶轮廓图例">
+          <span><i></i>当前帧</span><template v-if="ghosts"><span><i></i>前一帧</span><span><i></i>后一帧</span></template>
+        </div>
+        <div v-if="state.phase === 'frames'" ref="frameStrip" class="fest-frame-buttons" aria-label="选择要编辑的帧">
+          <button v-for="(frame, index) in frames" :key="frame.id" type="button"
+            :aria-label="`第 ${index + 1} 帧`" :aria-description="`停留 ${frame.hold} 格`"
+            :aria-pressed="selected === index" @click="select(index)">
+            <FestivalArt :picture="framePreviews[index]" />
+            <span class="fest-frame-beats" aria-hidden="true"><i v-for="beat in frame.hold" :key="beat"></i></span>
+            <span class="fest-frame-num" aria-hidden="true">第 {{ index + 1 }} 帧</span>
+          </button>
+        </div>
         <div v-if="state.phase !== 'pose'" class="fest-button-row fest-surface-buttons" aria-label="放映控制">
           <template v-if="state.phase === 'play'">
             <button type="button" @click="pause(); step(-1)">上一格</button><button type="button" @click="pause(); step(1)">下一格</button>
@@ -258,9 +280,6 @@ onBeforeUnmount(pause);
             </div>
           </template>
           <template v-else>
-            <div class="fest-frame-buttons" aria-label="选择要编辑的帧">
-              <button v-for="(frame, index) in frames" :key="frame.id" type="button" :aria-label="`第 ${index + 1} 帧`" :aria-pressed="selected === index" @click="select(index)">{{ index + 1 }} <span>×{{ frame.hold }}</span></button>
-            </div>
             <label class="fest-field">第 {{ selected + 1 }} 帧停留格数
               <select :value="current.hold" @change="editFrame(frame => { frame.hold = Number($event.target.value); })"><option v-for="count in maxHold" :key="count" :value="count">{{ count }} 格</option></select>
             </label>

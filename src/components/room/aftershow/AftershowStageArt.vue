@@ -2,7 +2,7 @@
 import { computed, useId } from 'vue';
 import StagePerformer from './StagePerformer.vue';
 
-const props = defineProps({ view: String, beat: Number });
+const props = defineProps({ view: String, beat: Number, embedded: Boolean });
 const prefix = useId();
 const link = name => `url(#${prefix}-${name})`;
 const members = [
@@ -19,14 +19,14 @@ const views = { audience: '观众席的四人舞台', guitar: '一里手里的�
 </script>
 
 <template>
-  <svg class="aftershow-stage-art" viewBox="0 0 900 490" role="img" :aria-label="`${views[view]}，第 ${beat} 拍`" :data-climax="beat === 8" :data-hesitation="beat === 5">
+  <svg :class="{ 'aftershow-stage-art': !embedded }" viewBox="0 0 900 490" role="img" :aria-label="`${views[view]}，第 ${beat} 拍`" :data-climax="beat === 8" :data-hesitation="beat === 5">
     <defs>
       <linearGradient :id="`${prefix}-wall`" x2="1" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#171624"/><stop offset=".56" stop-color="#30253d"/><stop offset="1" stop-color="#1b1729"/></linearGradient>
       <linearGradient :id="`${prefix}-floor`" x2="0" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#3e2c43"/><stop offset="1" stop-color="#171222"/></linearGradient>
       <radialGradient :id="`${prefix}-amber`"><stop stop-color="#ffc377" stop-opacity=".46"/><stop offset="1" stop-color="#ffd68a" stop-opacity="0"/></radialGradient>
       <radialGradient :id="`${prefix}-rose`"><stop stop-color="#e193ba" stop-opacity=".42"/><stop offset="1" stop-color="#e193ba" stop-opacity="0"/></radialGradient>
       <radialGradient :id="`${prefix}-blue`"><stop stop-color="#7b8dcb" stop-opacity=".46"/><stop offset="1" stop-color="#7b8dcb" stop-opacity="0"/></radialGradient>
-      <linearGradient :id="`${prefix}-beam`" x2="0" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#ffe4aa" stop-opacity=".43"/><stop offset="1" stop-color="#e7a9c4" stop-opacity="0"/></linearGradient>
+      <linearGradient :id="`${prefix}-beam`" x2="0" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#ffe4aa" stop-opacity=".66"/><stop offset="1" stop-color="#e7a9c4" stop-opacity="0"/></linearGradient>
       <linearGradient :id="`${prefix}-shade`" x2="1" y2="0" gradientUnits="objectBoundingBox"><stop stop-color="#120f1e"/><stop offset=".55" stop-color="#211a2b"/><stop offset="1" stop-color="#3f2a43"/></linearGradient>
       <pattern :id="`${prefix}-paper`" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".77" fill="#f3d5bd" opacity=".12"/><circle cx="4.5" cy="4.5" r=".63" fill="#100e1b" opacity=".34"/></pattern>
       <pattern :id="`${prefix}-grille`" width="5" height="5" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r=".55" fill="#958393" opacity=".44"/></pattern>
@@ -35,7 +35,7 @@ const views = { audience: '观众席的四人舞台', guitar: '一里手里的�
 
     <g v-if="view==='audience'">
       <path d="M0 24H900M0 49H900M100 24l38 25 36-25 38 25 36-25 38 25 36-25 38 25 36-25 38 25 36-25 38 25 36-25 38 25 36-25 38 25 36-25 38 25 36-25 38 25 36-25 38 25" stroke="#655367" fill="none" stroke-width="2" opacity=".7"/>
-      <path d="M133 54h34L90 412h343Zm222 0h37L303 419h250Zm331 0h46L556 420h287Z" :fill="link('beam')" :opacity="beat===8 ? .94 : .65"/>
+      <path d="M133 54h34L90 412h343Zm222 0h37L303 419h250Zm331 0h46L556 420h287Z" :fill="link('beam')" :opacity="beat===8 ? .95 : .79"/>
       <ellipse cx="322" cy="241" rx="260" ry="186" :fill="link('rose')"/><ellipse cx="578" cy="230" rx="260" ry="203" :fill="link('blue')"/>
       <ellipse cx="450" cy="235" rx="195" ry="150" :fill="link('amber')"/>
       <path d="M113 317H784L900 490H0Z" :fill="link('floor')" stroke="#77586f" stroke-width="2"/>
@@ -60,7 +60,7 @@ const views = { audience: '观众席的四人舞台', guitar: '一里手里的�
       <path v-if="beat===5" d="M248 268q14 13 38 8m-32-17 4-8m24 7 6-10" fill="none" stroke="#f3b4ca" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4 5"/>
       <path v-if="beat===6" d="m392 204 8-22m9 24 11-14m-34 10-5-19" fill="none" stroke="#f8d897" stroke-width="2.5" stroke-linecap="round"/>
       <path v-if="beat>=7" d="m530 227 15-9m110 12 16-12m-407 12 15-11" fill="none" stroke="#ebc1d1" stroke-width="2" stroke-linecap="round" opacity=".8"/>
-      <g v-for="(head,index) in audience" :key="head.x" :transform="`translate(${head.x} ${head.y}) scale(${head.size})`" :fill="index%2 ? '#21182a' : '#191420'" stroke="#372538" stroke-width="1.6">
+      <g v-for="(head,index) in audience" :key="head.x" :transform="`translate(${head.x} ${head.y}) scale(${head.size})`" :fill="index%2 ? '#201725' : '#110f1a'" stroke="#654f62" stroke-opacity=".7" stroke-width="1.6">
         <path d="M-52 42q8-41 35-39-18-12-11-32 5-20 28-20 22 0 29 15 8 22-12 37 26 1 37 40Z"/>
       </g>
     </g>

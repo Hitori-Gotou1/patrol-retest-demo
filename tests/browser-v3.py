@@ -107,9 +107,11 @@ def test_transitions(browser):
     unhidden_portrait(page)
     # Verify a real in-progress circle, rather than a static theme replacement.
     page.locator('#tab-kita').click()
-    page.wait_for_timeout(320)
-    circle=page.locator('.cast-background-reveal').evaluate('(e)=>({clip:getComputedStyle(e).clipPath,opacity:getComputedStyle(e).opacity})')
-    assert circle['clip'].startswith('circle(') and float(circle['opacity']) > 0,circle
+    page.wait_for_function(r'''() => {
+      const style = getComputedStyle(document.querySelector('.cast-background-reveal'));
+      const radius = style.clipPath.match(/^circle\(([0-9.]+)px/);
+      return radius && Number(radius[1]) > 1 && Number(style.opacity) > 0;
+    }''')
     expect(page.locator('#about')).to_have_attribute('data-transitioning','false',timeout=6000)
     no_overflow(page)
     page.close()
