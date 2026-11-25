@@ -87,7 +87,9 @@ try:
         go(page,'room/play');expect(page.locator('.room-resume')).to_contain_text('结束乐队拍贴机')
         go(page,'room/notes');expect(page.locator('.journal-list article')).to_have_count(13)
         page.locator('#journal-category').select_option('角色小记');expect(page.locator('.journal-list article')).to_have_count(4)
-        go(page,'room/notes/four-songs-one-evening');expect(page.locator('.journal-sources a')).to_have_count(1)
+        go(page,'room/notes/four-songs-one-evening')
+        references=page.locator('.journal-reference').filter(has=page.get_by_role('heading',name='参考资料',exact=True))
+        expect(references.locator('a')).to_have_count(1)
         assert '四首歌' in page.title()
         assert page.locator('.journal-reading').inner_text().count('青春コンプレックス')>=1
         page.screenshot(path=str(OUT/'article-mobile.png'))

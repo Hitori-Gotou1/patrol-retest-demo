@@ -30,7 +30,7 @@ export function renderArticle(note, readingCss = '') {
   const sections = note.sections.map(section => `<section><h2 class="journal-section-heading">${esc(section.heading)}</h2>
     <p class="journal-text">${esc(section.text)}</p></section>`).join('');
   const illustration = cover ? `<figure class="journal-cover">
-    <img src="${esc(image)}" alt="${esc(cover.alt)}">
+    <img src="${esc('../../' + cover.src)}" alt="${esc(cover.alt)}">
     <figcaption>《${esc(cover.title)}》 · ${esc(cover.credit)}</figcaption></figure>` : '';
   return `<!doctype html>
 <html lang="zh-CN">
