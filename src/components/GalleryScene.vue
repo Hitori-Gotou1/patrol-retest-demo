@@ -126,6 +126,45 @@ watch(selectedImage, item => {
 }, { flush: 'sync' });
 const isSmallImage = item => Number.isFinite(item.width) && Number.isFinite(item.height) && Math.max(item.width, item.height) <= 300;
 const imageStyle = item => isSmallImage(item) ? { '--gallery-image-width': `${item.width}px`, '--gallery-image-height': `${item.height}px` } : undefined;
+const frameMeasurements = ref({});
+const framesWithoutCors = ref(new Set());
+
+function retryFrameWithoutCors(item) {
+  if (item.cloudManaged) framesWithoutCors.value.add(item.id);
+}
+function measureFrame(item, event) {
+  const image = event.target;
+  const source = item.thumbnail || item.src;
+  if (!image.naturalWidth || !image.naturalHeight || frameMeasurements.value[item.id]?.source === source) return;
+  let transparent = false;
+  // The visible derivative can preserve alpha even when its extension is WebP.
+  // Images on servers without canvas access still get a neutral backing.
+  try {
+    const sample = document.createElement('canvas');
+    sample.width = sample.height = 32;
+    const paint = sample.getContext('2d');
+    paint.drawImage(image, 0, 0, sample.width, sample.height);
+    const pixels = paint.getImageData(0, 0, sample.width, sample.height).data;
+    transparent = pixels.some((value, index) => index % 4 === 3 && value < 240);
+  } catch {
+    transparent = /\.(png|svg|webp)(?:$|[?#])/i.test(source);
+  }
+  frameMeasurements.value[item.id] = { source, ratio: image.naturalWidth / image.naturalHeight, transparent };
+}
+function frameRatio(item) {
+  if (item.width > 0 && item.height > 0) return item.width / item.height;
+  const measured = frameMeasurements.value[item.id];
+  return measured?.source === (item.thumbnail || item.src) ? measured.ratio : 1;
+}
+function frameShape(item) {
+  const ratio = frameRatio(item);
+  if (ratio >= 1.48) return 'landscape';
+  return ratio <= .83 ? 'portrait' : 'square';
+}
+function hasMat(item) {
+  const measured = frameMeasurements.value[item.id];
+  return measured?.source === (item.thumbnail || item.src) && measured.transparent;
+}
 const flowDuration = (length, index) => `${([47, 57, 39][index] * length / 3).toFixed(1)}s`;
 let observer;
 let motionQuery;
@@ -331,12 +370,20 @@ onBeforeUnmount(() => {
 <RouterLink to="/manage-gallery" class="gallery-upload-link">站主上传与管理 ↗</RouterLink></div></SmoothFold>
       <p v-if="linkNotice" class="gallery-link-notice" role="status">{{ linkNotice }} <button type="button" @click="clearLink">清除图片定位</button></p>
       <FluidPanel><Transition name="gallery-mode"><div v-if="mode === 'wall'" key="wall" class="gallery-wall-panel" data-arrive="1"><TransitionGroup tag="div" name="photo-card" id="gallery-grid" class="gallery-grid">
-        <article v-for="item in visibleImages" :key="item.id" class="gallery-card" :data-category="item.category">
-          <button type="button" class="gallery-image-button" :data-photo-id="item.id" :aria-label="`放大图片：${item.title}`" @click="openImage(item, $event)">
-            <img :src="asset(item.thumbnail || item.src)" :alt="item.alt" :class="{ 'is-small-image': isSmallImage(item) }" :style="imageStyle(item)" loading="lazy" decoding="async" :width="item.width || 600" :height="item.height || 620">
-            <span class="gallery-tag">{{ item.tag }}</span><span class="expand-icon" aria-hidden="true">↗</span>
-          </button>
-          <div class="gallery-card-caption"><div><h3>{{ item.title }}</h3><small>{{ item.subtitle }}</small></div><button type="button" class="favorite" :aria-label="favoriteLabel(item)" :aria-pressed="favorites.has(item.id)" @click="toggleFavorite(item, $event)">{{ favorites.has(item.id) ? '♥' : '♡' }}</button></div>
+        <article v-for="item in visibleImages" :key="item.id" class="gallery-card" :data-category="item.category"
+          :data-frame="frameShape(item)" :data-mat="hasMat(item)" :style="{ '--frame-ratio': frameRatio(item) }">
+          <div class="gallery-mount">
+            <button type="button" class="gallery-image-button" :data-photo-id="item.id" :aria-label="`放大图片：${item.title}`" @click="openImage(item, $event)">
+              <img :src="asset(item.thumbnail || item.src)" :alt="item.alt" :class="{ 'is-small-image': isSmallImage(item) }"
+                :crossorigin="item.cloudManaged && !framesWithoutCors.has(item.id) ? 'anonymous' : undefined"
+                :style="imageStyle(item)" loading="lazy" decoding="async" :width="item.width || 600" :height="item.height || 620"
+                @load="measureFrame(item, $event)" @error="retryFrameWithoutCors(item)">
+            </button>
+          </div>
+          <div class="gallery-card-caption">
+            <div><h3>{{ item.title }}</h3><small>{{ item.creator || item.credit || item.subtitle }}</small></div>
+            <button type="button" class="favorite" :aria-label="favoriteLabel(item)" :aria-pressed="favorites.has(item.id)" @click="toggleFavorite(item, $event)">{{ favorites.has(item.id) ? '♥' : '♡' }}</button>
+          </div>
         </article>
       </TransitionGroup></div>
       <div v-else key="flow" class="gallery-flow-view" :data-playing="flowing">
@@ -387,3 +434,98 @@ onBeforeUnmount(() => {
     </Teleport>
   </section>
 </template>
+
+<style scoped>
+.gallery-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(18px, 2.2vw, 32px);
+  padding: 11px 3px 18px;
+  align-items: start;
+}
+.gallery-section .gallery-card {
+  --frame-border: #8a685e;
+  --frame-paper: #fff8ea;
+  --frame-padding: 12px;
+  justify-self: start;
+  width: 100%;
+  background: none;
+  border: 0;
+  padding: 0;
+  box-shadow: none;
+  transform: none;
+}
+.gallery-section .gallery-card::before { display: none; }
+.gallery-section .gallery-card[data-frame="landscape"] { grid-column: span 2; --frame-border: #634550; }
+.gallery-section .gallery-card[data-frame="portrait"] {
+  --frame-border: #815c53;
+  --frame-padding: 9px;
+  width: min(100%, calc(var(--frame-ratio) * 490px + 2 * var(--frame-padding)));
+}
+.gallery-mount { position: relative; width: 100%; }
+.gallery-mount::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: -6px auto auto 23%;
+  width: clamp(40px, 19%, 66px);
+  height: 14px;
+  background: #d4b583c9;
+  border-inline: 2px dashed #f4e7ca9e;
+  rotate: -4deg;
+  pointer-events: none;
+}
+.gallery-section .gallery-card .gallery-image-button {
+  display: grid;
+  place-items: center;
+  aspect-ratio: auto;
+  height: auto;
+  padding: var(--frame-padding);
+  background: var(--frame-paper);
+  border: 1px solid var(--frame-border);
+  border-radius: 1px;
+  box-shadow: 3px 4px #80605140, 0 7px 15px #79584923;
+}
+.gallery-section .gallery-card[data-mat="true"] {
+  --frame-padding: 16px;
+  --frame-paper: #e9dbcb;
+  --frame-border: #947167;
+}
+.gallery-section .gallery-card .gallery-image-button img {
+  display: block;
+  height: auto;
+  max-width: 100%;
+  aspect-ratio: var(--frame-ratio);
+  object-position: center;
+  object-fit: contain;
+  background: transparent;
+  transition: none;
+}
+.gallery-section .gallery-card .gallery-image-button:hover img { transform: none; }
+.gallery-image-button:hover { box-shadow: 3px 4px #80605161, 0 7px 16px #7958493f; }
+.gallery-section .gallery-card-caption {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 6px;
+  width: min(100%, 276px);
+  margin: 9px 0 0;
+  padding: 5px 4px 5px 9px;
+  color: #563841;
+  background: #fdf4e3;
+  border: 1px solid #caae95;
+  border-inline-start: 3px solid #a87a6e;
+}
+.gallery-section .gallery-card h3 { font-size: .94rem; font-weight: 750; line-height: 1.44; overflow-wrap: anywhere; }
+.gallery-section .gallery-card small { font: .75rem/1.45 var(--font); color: #6c514a; margin-top: 3px; overflow-wrap: anywhere; }
+.gallery-section .gallery-card .favorite { width: 44px; min-width: 44px; min-height: 44px; color: #82516f; }
+.gallery-section .gallery-card .favorite[aria-pressed="true"] { color: #9c2851; }
+@media (max-width: 760px) {
+  .gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 11px; }
+  .gallery-section .gallery-card,
+  .gallery-section .gallery-card[data-frame="portrait"] { --frame-padding: 8px; grid-column: auto; width: 100%; }
+  .gallery-section .gallery-card[data-frame="landscape"] { grid-column: 1 / -1; }
+  .gallery-section .gallery-card[data-mat="true"] { --frame-padding: 10px; }
+  .gallery-section .gallery-card h3 { font-size: .87rem; }
+  .gallery-section .gallery-card-caption { padding: 6px 2px 5px 6px; gap: 2px; }
+}
+</style>

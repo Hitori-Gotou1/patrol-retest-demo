@@ -103,7 +103,7 @@ function moveBeat(event, beat) {
 .aftershow-stage-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(254px,285px);align-items:start;gap:24px}
 .aftershow-stage-figure{margin:0;min-width:0}
 .aftershow-stage-frame{position:relative;overflow:hidden;background:#221b2c;border:1px solid var(--stage-edge);box-shadow:0 12px 30px #0906104d}
-.aftershow-camera{position:absolute;left:4.3%;top:7%;right:4.3%;display:flex;justify-content:space-between;align-items:start;gap:8px;pointer-events:none;font:600 clamp(.61rem,1.2vw,.75rem)/1.35 var(--mono,monospace);color:#ffdfc9;letter-spacing:.08em}
+.aftershow-camera{position:absolute;left:2.3%;top:4%;right:2.3%;display:flex;justify-content:space-between;align-items:start;gap:8px;pointer-events:none;font:600 clamp(.61rem,1.2vw,.75rem)/1.35 var(--mono,monospace);color:#ffdfc9;letter-spacing:.08em}
 .aftershow-camera span{display:flex;gap:6px;align-items:center;background:#171321d9;padding:4px 7px;border:1px solid #855e75}
 .aftershow-camera i{width:6px;height:6px;border-radius:50%;background:var(--position-color);box-shadow:0 0 8px var(--position-color)}
 .aftershow-frame-caption{display:grid;align-items:start;min-height:58px;grid-template-columns:auto 1fr;gap:12px;padding:13px 11px 10px;border-bottom:1px solid #72576a;color:#dec7cc;font-size:.84rem;line-height:1.55}
@@ -140,7 +140,7 @@ function moveBeat(event, beat) {
  .aftershow-frame-caption{gap:6px 10px;padding:8px 5px;min-height:62px;grid-template-columns:1fr;font-size:.77rem;line-height:1.39}
  .aftershow-frame-caption strong{font-size:.83rem}
  .aftershow-stage-intro p{font-size:.76rem;margin-block-start:3px}
- .aftershow-camera{top:6%}
+ .aftershow-camera{top:4%}
  .aftershow-camera span{padding:3px 5px}
 }
 </style>

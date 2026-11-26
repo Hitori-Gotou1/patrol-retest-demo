@@ -97,10 +97,11 @@ try:
         go(page, 'photobooth'); page.locator('#photo-caption').fill('第二版纪念合影'); save(page)
         go(page, 'works')
         cards=page.locator('.work-card'); expect(cards).to_have_count(2)
-        card=cards.first; card.get_by_role('button', name='整理', exact=True).click()
+        card=cards.first; card.locator('.work-menu summary').click(); card.get_by_role('button', name='整理', exact=True).click()
         card.get_by_label('作品名称', exact=True).fill('周末的四个人')
         card.get_by_label('标签（逗号分隔，最多8个）', exact=True).fill('周末，合影')
         card.get_by_role('button', name='保存整理', exact=True).click()
+        card.locator('.work-menu summary').click()
         card.get_by_role('button', name='置顶', exact=True).click()
         expect(cards.first).to_have_class('work-card is-pinned')
         page.get_by_placeholder('搜索作品名称或标签', exact=True).fill('周末');expect(cards).to_have_count(1)
@@ -183,7 +184,7 @@ try:
         expect(page.locator('html')).to_have_attribute('data-contrast','high')
         page.get_by_role('button',name='关闭搜索与设置',exact=True).click()
         go(page,'notes/four-songs-one-evening')
-        assert page.locator('.room-prose').evaluate('e=>parseFloat(getComputedStyle(e).fontSize)')>=19
+        assert page.locator('.journal-text').first.evaluate('e=>parseFloat(getComputedStyle(e).fontSize)')>=19
         page.reload(wait_until='networkidle');assert stored(page,'preferences')['font']==1.3
         REPORT['passed'].append('global aliases/private works search, live motion/contrast/font preferences persist')
 

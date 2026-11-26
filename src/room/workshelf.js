@@ -3,7 +3,7 @@ import { validateComic, validateGraffiti, validateLightShow } from './creativeTo
 import { validatePattern } from './pattern.js';
 import {validateProject} from './projects.js';
 import {countEvent} from '../services/analytics.js';
-import { validateTone } from './effects.js';
+import { effectNames, validateTone } from './effects.js';
 
 export const worksKey = 'hitori-room:workshelf:v1';
 export const maxWorks = 24;
@@ -36,9 +36,13 @@ function validateEntry(value) {
   if (!type || typeof value.id !== 'string' || !/^[\w-]{1,100}$/.test(value.id) || !Number.isFinite(value.at) || value.at <= 0 || value.at > 8640000000000000) throw new Error('作品记录无法读取。');
   const snapshot = type.validate(value.snapshot);
   if (bytes(JSON.stringify(snapshot)) > 700000) throw new Error('这份作品内容较大，请使用原页面导出备份。');
-  if (typeof value.preview !== 'string' || value.preview.length > 180000 || (value.preview && !/^data:image\/(webp|png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(value.preview))) throw new Error('作品预览格式无法读取。');
+  const preview = value.preview ?? '';
+  if (typeof preview !== 'string' || preview.length > 180000 || (preview && !/^data:image\/(webp|png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(preview))) throw new Error('作品预览格式无法读取。');
   if(value.tags!=null&&(!Array.isArray(value.tags)||value.tags.length>8||value.tags.some(t=>typeof t!=='string'||t.length>24)))throw new Error('作品标签格式不正确。');
-  return {tags:[...new Set((value.tags||[]).map(t=>t.trim()).filter(Boolean))],pinned:value.pinned===true, id: value.id, kind: value.kind, at: value.at, title: String(value.title || type.title(snapshot) || type.label).slice(0, 90), snapshot, preview: value.preview };
+  const legacyCover = value.kind === 'effects' && (value.legacyCover === true
+    || !Array.isArray(value.snapshot.order) || value.snapshot.order.join(',') !== snapshot.order.join(',')
+    || snapshot.order.some(effect => typeof value.snapshot.enabled?.[effect] !== 'boolean'));
+  return { ...(legacyCover ? { legacyCover: true } : {}), tags:[...new Set((value.tags||[]).map(t=>t.trim()).filter(Boolean))],pinned:value.pinned===true, id: value.id, kind: value.kind, at: value.at, title: String(value.title || type.title(snapshot) || type.label).slice(0, 90), snapshot, preview };
 }
 function loadShelf(storage, strict = false) {
   try {
@@ -117,8 +121,22 @@ export function importWorks(text, storage) {
 export function updateWork(id,patch,storage){const works=loadShelf(storage,true),index=works.findIndex(w=>w.id===id);if(index<0)throw new Error('作品已被移走，请刷新。');if(patch.title!=null&&(typeof patch.title!=='string'||!patch.title.trim()||patch.title.trim().length>90))throw new Error('请填写90字以内的作品名称。');const next=validateEntry({...works[index],title:patch.title?.trim()||works[index].title,tags:patch.tags??works[index].tags,pinned:patch.pinned??works[index].pinned});works[index]=next;writeShelf(works,storage);return next;}
 export function compareWorks(left,right){if(left.kind!==right.kind)throw new Error('请选择同一类型的两个版本。');const result=[];const walk=(a,b,path='')=>{if(result.length>=40||JSON.stringify(a)===JSON.stringify(b))return;if(Array.isArray(a)&&Array.isArray(b)&&a.length!==b.length)result.push({path:path+'数量',before:a.length,after:b.length});if(a&&b&&typeof a==='object'&&typeof b==='object'){for(const key of new Set([...Object.keys(a),...Object.keys(b)])){if(key==='key')continue;walk(a[key],b[key],path+(Array.isArray(a)?`[${Number(key)+1}]`:(path?'.':'')+key));}}else result.push({path,before:a,after:b});};walk(left.snapshot,right.snapshot);return result;}
 const fieldLabels={caption:'相片文案',theme:'背景主题',objects:'元素',size:'大小',rotation:'角度',x:'横向位置',y:'纵向位置',panels:'画格',dialogue:'对白',scene:'场景',title:'标题',name:'名称',layout:'版式',bpm:'速度',masks:'轨道节拍',cues:'灯光时间轴',color:'颜色',intensity:'亮度',fade:'渐变',layers:'图层',strokes:'笔迹',points:'轨迹点',light:'灯光',current:'当前氛围',levels:'声音音量',pattern:'编曲',lights:'灯光',poster:'海报',backdrop:'舞台背景',cycles:'循环次数'};
-export const comparisonLabel=path=>path.replace(/[a-zA-Z]+/g,word=>fieldLabels[word]||word);
-export function comparisonValue(value){if(value==null)return '无';if(typeof value==='boolean')return value?'是':'否';if(typeof value==='string'&&value.startsWith('data:image/'))return '保存的画面';return String(value).slice(0,100);}
+const pedalFields = {
+  drive: '失真 · 增益', delayTime: '延迟 · 时间', feedback: '延迟 · 回授',
+  delayMix: '延迟 · 混合量', reverbMix: '混响 · 混合量'
+};
+export function comparisonLabel(path) {
+  const position = /^order\[(\d+)\]$/.exec(path);
+  if (position) return `接线第 ${position[1]} 块踏板`;
+  if (path.startsWith('enabled.')) return `${effectNames[path.slice(8)] || path.slice(8)} · 开关`;
+  return pedalFields[path] || path.replace(/[a-zA-Z]+/g, word => fieldLabels[word] || word);
+}
+export function comparisonValue(value, path = '') {
+  if (path.startsWith('order[') && effectNames[value]) return effectNames[value];
+  if (path.startsWith('enabled.') && typeof value === 'boolean') return value ? '接通' : '旁通';
+  if (path === 'delayTime' && Number.isFinite(value)) return `${Math.round(value * 1000)} ms`;
+  if (Object.hasOwn(pedalFields, path) && Number.isFinite(value)) return `${Math.round(value * 100)}%`;
+  if(value==null)return '无';if(typeof value==='boolean')return value?'是':'否';if(typeof value==='string'&&value.startsWith('data:image/'))return '保存的画面';return String(value).slice(0,100);}
 
 // Shared validation for revision-based synchronization; does not deduplicate distinct saved IDs.
 export { validateEntry as validateWorkEntry };

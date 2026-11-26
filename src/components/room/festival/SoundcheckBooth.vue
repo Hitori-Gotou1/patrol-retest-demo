@@ -7,7 +7,7 @@ import { useSoundPreferences } from '../../../composables/useSoundPreferences.js
 import { reducedMotion } from '../../../room/preferences.js';
 import { editionLabel, snapshot, useFestivalDraft, useFestivalEditions } from '../../../room/festival/drafts.js';
 import { createDrumPlayer } from '../../../room/festival/drumAudio.js';
-import { initialRoom, initialSoundDraft, mapPoint, milliseconds, percentage, placePoint, pointAlongRoute, readings, roomArt, roomBox, roomDepthLimits, seatName, seats, soundReportArt, soundTasks, taskResults, timeRulerArt } from '../../../room/festival/soundcheck.js';
+import { initialRoom, initialSoundDraft, mapPoint, milliseconds, percentage, placePoint, pointAlongRoute, readings, roomArt, roomBox, roomDepthLimits, routes, routeSwatch, seatName, seats, soundReportArt, soundTasks, taskResults, timeRulerArt } from '../../../room/festival/soundcheck.js';
 import FestivalArt from './FestivalArt.vue';
 import FestivalExport from './FestivalExport.vue';
 import FestivalStorage from './FestivalStorage.vue';
@@ -25,6 +25,15 @@ const notice = ref('');
 const audioNotice = ref('');
 const pulse = ref(false);
 const positionPreview = ref(null);
+const hoveredPath = ref('');
+const focusedPath = ref('');
+const pinnedPath = ref('');
+const highlighted = computed(() => hoveredPath.value || focusedPath.value || pinnedPath.value);
+const swatches = Object.fromEntries(Object.keys(routes).map(id => [id, routeSwatch(id)]));
+
+function choosePath(id) {
+  pinnedPath.value = pinnedPath.value === id ? '' : id;
+}
 let drag, wave, pulseTimer, strikeSequence = 0;
 
 const comparing = computed(() => state.value.comparison === 'before' && state.value.baseline);
@@ -36,8 +45,8 @@ const paths = computed(() => readings(room.value));
 const report = computed(() => ({ before: state.value.baseline || initialRoom(), after: state.value.current, task: state.value.task }));
 const objectives = computed(() => taskResults(state.value.task, state.value.current));
 const currentRoom = computed(() => state.value.current);
-const map = computed(() => roomArt(room.value, paths.value));
-const ruler = computed(() => timeRulerArt(paths.value));
+const map = computed(() => roomArt(room.value, paths.value, { highlighted: highlighted.value }));
+const ruler = computed(() => timeRulerArt(paths.value, highlighted.value));
 
 function changeRoom(updateRoom) {
   edit(draft => {
@@ -190,18 +199,38 @@ onScopeDispose(() => {
     </div>
     <div class="fest-workbench">
       <section class="fest-surface fest-sound-surface" aria-label="座席图与时间尺">
-        <div class="fest-surface-label"><span>STARRY / FLOOR PLAN</span><span>{{ comparing ? '调整前' : '当前' }} · {{ seatName(room) }}</span></div>
-        <div ref="board" class="fest-overlay fest-room-map">
-          <FestivalArt :picture="map" label="直达声、左墙反射、后墙反射的座席线路图" />
-          <svg ref="moving" class="fest-sound-pulse" :viewBox="`0 0 ${roomBox.width} ${roomBox.height}`" aria-hidden="true">
-            <circle v-for="path in paths" :key="path.id" r="6" :fill="path.color" opacity="0" />
-          </svg>
-          <button v-for="handle in [{ key: 'source', label: '声源', short: '鼓' }, { key: 'listener', label: '听者', short: '听' }]" :key="handle.key"
-            class="fest-map-handle" :class="`fest-map-${handle.key}`" type="button" :style="pointStyle(room[handle.key])" :disabled="!!comparing"
-            :aria-label="`拖动${handle.label}或用方向键移动`"
-            @pointerdown="startMove($event, handle.key)" @pointermove="previewMove" @pointerup="finishMove(true)" @pointercancel="finishMove(false)"
-            @keydown.left.prevent="nudgePoint(handle.key, -.5, 0)" @keydown.right.prevent="nudgePoint(handle.key, .5, 0)"
-            @keydown.up.prevent="nudgePoint(handle.key, 0, -.5)" @keydown.down.prevent="nudgePoint(handle.key, 0, .5)">{{ handle.short }}</button>
+        <div class="fest-surface-label"><span>现场座席图</span><span>{{ comparing ? '调整前' : '当前' }} · {{ seatName(room) }}</span></div>
+        <div class="fest-sound-board">
+          <div ref="board" class="fest-overlay fest-room-map">
+            <FestivalArt :picture="map" label="直达声、左墙反射、后墙反射的座席线路图" />
+            <svg ref="moving" class="fest-sound-pulse" :viewBox="`0 0 ${roomBox.width} ${roomBox.height}`" aria-hidden="true">
+              <circle v-for="path in paths" :key="path.id" r="6" :fill="path.color" opacity="0" />
+            </svg>
+            <button v-for="handle in [{ key: 'source', label: '声源', short: '鼓' }, { key: 'listener', label: '听者', short: '听' }]" :key="handle.key"
+              class="fest-map-handle" :class="`fest-map-${handle.key}`" type="button" :style="pointStyle(room[handle.key])" :disabled="!!comparing"
+              :aria-label="`拖动${handle.label}或用方向键移动`"
+              @pointerdown="startMove($event, handle.key)" @pointermove="previewMove" @pointerup="finishMove(true)" @pointercancel="finishMove(false)"
+              @keydown.left.prevent="nudgePoint(handle.key, -.5, 0)" @keydown.right.prevent="nudgePoint(handle.key, .5, 0)"
+              @keydown.up.prevent="nudgePoint(handle.key, 0, -.5)" @keydown.down.prevent="nudgePoint(handle.key, 0, .5)">{{ handle.short }}</button>
+          </div>
+          <table class="fest-readings">
+            <caption class="visually-hidden">{{ comparing ? '调整前' : '当前' }}试声读数</caption>
+            <thead><tr><th scope="col">声音</th><th scope="col">抵达</th><th scope="col">强度</th></tr></thead>
+            <tbody>
+              <tr v-for="path in paths" :key="path.id" :data-reading="path.id" :data-highlighted="highlighted === path.id"
+                @pointerenter="$event.pointerType === 'mouse' && (hoveredPath = path.id)" @pointerleave="hoveredPath = ''"
+                @click="choosePath(path.id)">
+                <th scope="row">
+                  <button type="button" :aria-pressed="pinnedPath === path.id"
+                    @focus="focusedPath = $event.target.matches(':focus-visible') ? path.id : ''" @blur="focusedPath = ''">
+                    <FestivalArt :picture="swatches[path.id]" />{{ path.name }}
+                  </button>
+                </th>
+                <td>{{ milliseconds(path.ms) }}</td><td>{{ percentage(path.relative) }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <FestivalArt class="fest-time-ruler" :picture="ruler" label="时间尺，三条线路的抵达刻度。毫秒读数见表。" />
         </div>
         <div class="fest-button-row fest-surface-buttons">
           <button type="button" class="fest-primary" :class="{ 'fest-struck': pulse }" @click="strike">敲鼓试声</button>
@@ -209,12 +238,6 @@ onScopeDispose(() => {
           <button type="button" :aria-pressed="state.slow" @click="edit(draft => { draft.slow = !draft.slow; })">慢放路径</button>
         </div>
         <p v-if="audioNotice" class="fest-surface-note" role="status">{{ audioNotice }}</p>
-        <FestivalArt :picture="ruler" label="以实际毫秒标注三个抵达时间的刻度" />
-        <table class="fest-readings">
-          <caption class="visually-hidden">{{ comparing ? '调整前' : '当前' }}试声读数</caption>
-          <thead><tr><th scope="col">声音</th><th scope="col">抵达</th><th scope="col">相对强度</th></tr></thead>
-          <tbody><tr v-for="path in paths" :key="path.id" :data-reading="path.id"><th scope="row"><i :style="{ background: path.color }" aria-hidden="true"></i>{{ path.name }}</th><td>{{ milliseconds(path.ms) }}</td><td>{{ percentage(path.relative) }}</td></tr></tbody>
-        </table>
       </section>
       <div class="fest-controls">
         <section class="fest-panel">

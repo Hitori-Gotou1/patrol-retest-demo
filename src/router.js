@@ -1,4 +1,5 @@
 import { settledSceneAnchor } from './services/sceneAnchor.js';
+import { festivalPath } from './data/festival.js';
 import {motionPreference as createMotionQuery} from './room/preferences.js';
 import { createRouter, createWebHashHistory } from 'vue-router';
 // 兼容迁移前分享过的 #gallery 等锚点，不额外产生一条历史记录。
@@ -7,7 +8,8 @@ if (legacyScenes.has(location.hash)) {
   history.replaceState(history.state, '', `${location.pathname}${location.search}#/${location.hash}`);
 }
 let scrollGeneration = 0;
-export default createRouter({
+let festivalDeskScroll = 0;
+const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', component: () => import('./views/HomeView.vue') },
@@ -76,6 +78,13 @@ export default createRouter({
     if (to.path === '/' && to.hash) await settledSceneAnchor(to.hash);
     if (generation !== scrollGeneration) return false;
     if (to.hash) return { el: to.hash, behavior: from.path === to.path && from.matched.length && !createMotionQuery().matches ? 'smooth' : 'instant' };
+    if (to.path === festivalPath && from.path.startsWith(festivalPath + '/')) return { top: festivalDeskScroll, behavior: 'instant' };
     return { top: 0, behavior: 'instant' };
   }
 });
+
+router.beforeEach((to, from) => {
+  if (from.path === festivalPath && to.path.startsWith(festivalPath + '/')) festivalDeskScroll = window.scrollY;
+});
+
+export default router;

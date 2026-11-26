@@ -72,7 +72,7 @@ try:
         page.locator('#save-to-works').click();expect(page.locator('.work-save-bar [role=status]')).to_contain_text('已放进作品架');assert len(shelf(page))==1
         page.locator('#photo-caption').fill('尚未入架的第二版')
         page.locator('.room-shelf-link').click();expect(page.locator('#works-title')).to_be_visible()
-        assert page.locator('.work-preview img').first.evaluate('e=>e.complete&&e.naturalWidth>0')
+        assert page.locator('.work-cover img').first.evaluate('e=>e.complete&&e.naturalWidth>0')
         page.locator('.work-card').first.get_by_role('button',name='继续编辑 →',exact=True).click()
         expect(page.locator('#photo-caption')).to_have_value('今天的第一张合影')
         assert len(shelf(page))==2 and any(work['snapshot']['caption']=='尚未入架的第二版' for work in shelf(page))
@@ -81,14 +81,17 @@ try:
         with page.expect_download() as download:page.get_by_role('button',name='导出作品架备份 ↓',exact=True).click()
         saved_path=OUT/'works-backup.json';download.value.save_as(saved_path)
         payload=saved_path.read_bytes();assert len(json.loads(payload)['works'])==2
+        page.locator('.work-card').first.locator('.work-menu summary').click()
         page.locator('.work-card').first.get_by_role('button',name='移出作品架',exact=True).click();expect(page.locator('.work-card')).to_have_count(1)
         page.get_by_role('button',name='撤销移出',exact=True).click();expect(page.locator('.work-card')).to_have_count(2)
         go(page,'room/play');expect(page.locator('.room-resume')).to_contain_text('结束乐队拍贴机')
         go(page,'room/notes');expect(page.locator('.journal-list article')).to_have_count(13)
         page.locator('#journal-category').select_option('角色小记');expect(page.locator('.journal-list article')).to_have_count(4)
-        go(page,'room/notes/four-songs-one-evening');expect(page.locator('.journal-sources a')).to_have_count(1)
+        go(page,'room/notes/four-songs-one-evening')
+        references=page.locator('.journal-reference').filter(has=page.get_by_role('heading',name='参考资料',exact=True))
+        expect(references.locator('a')).to_have_count(1)
         assert '四首歌' in page.title()
-        assert page.locator('.room-prose').inner_text().count('青春コンプレックス')>=1
+        assert page.locator('.journal-reading').inner_text().count('青春コンプレックス')>=1
         page.screenshot(path=str(OUT/'article-mobile.png'))
         go(page,'');page.locator('#video').scroll_into_view_if_needed();expect(page.locator('#listening-title')).to_be_visible()
         expect(page.locator('.listening-grid article')).to_have_count(4)

@@ -90,14 +90,19 @@ export function removeStitch(piece, id) {
   }
 }
 
-function thread(stitch, { back = false, latest = false } = {}) {
+function thread(stitch, { back = false, latest = false, crossing = false } = {}) {
   const color = threadColors[stitch.color];
-  const soft = 'stroke-linecap="round"';
+  const width = back ? 4.2 : 6.5;
+  const shifted = (point, x, y) => ({ x: point.x + x, y: point.y + y });
+  const cap = crossing ? 'stroke-linecap="butt"' : 'stroke-linecap="round"';
+  const shadow = line(shifted(stitch.a, .9, 1.8), shifted(stitch.b, .9, 1.8),
+    '#31241f', width + (crossing ? 1.8 : 1.1), `${cap} opacity="${crossing ? .52 : .24}"`);
   return `<g data-stitch="${xml(stitch.id)}" ${latest ? 'data-latest-thread=""' : ''}>`
-    + line({ x: stitch.a.x + 1, y: stitch.a.y + 2 }, { x: stitch.b.x + 1, y: stitch.b.y + 2 }, '#332320', back ? 5 : 8.5, `${soft} opacity=".28"`)
-    + line(stitch.a, stitch.b, color.shade, back ? 4.5 : 7, soft)
-    + line(stitch.a, stitch.b, color.body, back ? 3.2 : 5.6, soft)
-    + line(stitch.a, stitch.b, color.shine, back ? 1.1 : 2, `${soft} stroke-dasharray="1 3" opacity=".72"`)
+    + shadow
+    + line(stitch.a, stitch.b, color.shade, width, cap)
+    + line(stitch.a, stitch.b, color.body, width - 1.2, cap)
+    + line(shifted(stitch.a, -.45, -.9), shifted(stitch.b, -.45, -.9), color.shine, back ? .9 : 1.35,
+      `${cap} opacity=".92"`)
     + '</g>';
 }
 
@@ -108,15 +113,15 @@ function crossover(item, crossings) {
   const half = Math.min(nearest * .45, 8, Math.hypot(point.x - top.a.x, point.y - top.a.y), Math.hypot(point.x - top.b.x, point.y - top.b.y));
   const dx = (top.b.x - top.a.x) / length * half, dy = (top.b.y - top.a.y) / length * half;
   const span = { ...top, a: { x: point.x - dx, y: point.y - dy }, b: { x: point.x + dx, y: point.y + dy } };
-  return `<g data-crossing="${xml(id)}" data-over="${top.color}">${thread(span)}</g>`;
+  return `<g data-crossing="${xml(id)}" data-over="${top.color}">${thread(span, { crossing: true })}</g>`;
 }
 
 let maskNumber = 0;
 
-export function patchArt(piece, { side = 'front', guide = false, latest, showCrossings = false } = {}) {
+export function patchArt(piece, { side = 'front', guide = false, latest, showCrossings = false, shadow = true } = {}) {
   const isBack = side === 'back';
   const path = edges[piece.edge].path;
-  const mask = `fest-weft-${++maskNumber}`;
+  const clothId = `fest-weft-${++maskNumber}`;
   const { front, back } = needlePaths(piece);
   const crossings = stitchCrossings(piece, front);
   const pinShadows = templates[piece.template].pins.map(pin => circle(pin.x, pin.y, 2.3, '#896d5d', 'opacity=".65"')).join('');
@@ -126,30 +131,45 @@ export function patchArt(piece, { side = 'front', guide = false, latest, showCro
   const crossingLabels = showCrossings && !isBack ? crossings.map(({ point }, index) =>
     circle(point.x + 9, point.y - 10, 7, '#2b2430', 'stroke="#f7efe0" stroke-width="1"') + text(point.x + 9, point.y - 7.5, index + 1, 8, cream, 'text-anchor="middle"')
   ).join('') : '';
+  const lit = isBack ? '#e5c7a3' : '#f2d6b0';
+  const edge = isBack ? '#b58768' : '#ba8c66';
   return art(300, 307,
-    `<path d="${path}" transform="translate(2 6)" fill="#2a2726" opacity=".32"/>
-    <path d="${path}" fill="${isBack ? '#d0aa8a' : '#edc9a0'}" stroke="#613e34" stroke-width="5"/>
-    <mask id="${mask}"><path d="${path}" fill="white"/></mask>
-    <g mask="url(#${mask})">${weft(300, 300, '#755343', 3)}</g>
-    <path d="${path}" fill="none" stroke="#997354" stroke-width="10"/>
-    <path d="${path}" fill="none" stroke="${isBack ? '#eee0b1' : '#f5ddad'}" stroke-width="8" stroke-dasharray="1.5 ${piece.spacing}"/>
-    ${guide ? `<path d="${templates[piece.template].outline}" stroke="#6a514d" stroke-width="1.3" opacity=".63" stroke-dasharray="4 4" fill="none"/>` : ''}
+    `<defs>
+      <radialGradient id="${clothId}-light" gradientUnits="userSpaceOnUse" cx="124" cy="110" r="185">
+        <stop offset=".49" stop-color="${lit}"/><stop offset=".84" stop-color="${isBack ? '#d4aa8a' : '#e6bb91'}"/><stop offset="1" stop-color="${edge}"/>
+      </radialGradient>
+      <radialGradient id="${clothId}-weft" gradientUnits="userSpaceOnUse" cx="124" cy="110" r="185">
+        <stop offset=".51" stop-color="black"/><stop offset=".73" stop-color="#a4a4a4"/><stop offset=".91" stop-color="#d4d4d4"/><stop offset="1" stop-color="#494949"/>
+      </radialGradient>
+      <clipPath id="${clothId}-edge"><path d="${path}"/></clipPath>
+      <mask id="${clothId}-band" maskUnits="userSpaceOnUse" x="0" y="0" width="300" height="300">
+        <rect width="300" height="300" fill="url(#${clothId}-weft)"/>
+      </mask>
+    </defs>
+    ${shadow ? `<path d="${path}" transform="translate(2 4)" fill="#261d1e" opacity=".47"/>` : ''}
+    <path d="${path}" fill="url(#${clothId}-light)" stroke="#54382f" stroke-width="4"/>
+    <g clip-path="url(#${clothId}-edge)" mask="url(#${clothId}-band)">${weft(300, 300, '#6f5243', 3)}</g>
+    <path d="${path}" fill="none" stroke="#886144" stroke-width="10"/>
+    <path d="${path}" fill="none" stroke="#fbe3ae" stroke-width="7.2" stroke-dasharray="1.5 ${piece.spacing}"/>
+    ${guide ? `<path d="${templates[piece.template].outline}" stroke="#70554e" stroke-width="1.45" stroke-dasharray="4 4" fill="none"/>` : ''}
     ${strands}${crossingLabels}`);
 }
 
 export const hoopBox = { width: 460, height: 366, x: 80, y: 31 };
 
-export function hoopArt(piece, options) {
+export function hoopArt(piece, options = {}) {
   const { width, height, x, y } = hoopBox;
-  return art(width, height, rect(0, 0, width, height, '#302426')
+  const backing = options.onDesk ? '' : rect(0, 0, width, height, '#302426')
     + weft(width, height, '#9a7062', 4)
-    + circle(231, 185, 154, '#151119', 'opacity=".65"')
-    + circle(230, 174, 151, '#8f5d42', 'stroke="#cf9d71" stroke-width="5"')
-    + circle(230, 179, 141, '#bd8d65', 'stroke="#6e4434" stroke-width="4"')
+    + registration(29, height - 30, '#c49168') + registration(width - 29, 30, '#c49168');
+  return art(width, height, backing + circle(231, 185, 154, '#151119', 'opacity=".45"')
+    + circle(230, 176, 154, '#80523d', 'stroke="#542e28" stroke-width="3"')
+    + circle(230, 173, 151, '#b27c56', 'stroke="#e2b385" stroke-width="5"')
+    + circle(230, 177, 143, '#bd8d65', 'stroke="#684331" stroke-width="4"')
     + inset(patchArt(piece, options), x, y, 300, 307)
     + rect(217, 10, 26, 15, '#705545', 'rx="4"')
     + rect(228, 4, 43, 6, '#d7aa66', 'rx="3"')
-    + registration(29, height - 30, '#c49168') + registration(width - 29, 30, '#c49168'));
+    + '<path data-hoop-orientation="" d="M223 24H237L230 34Z" fill="#ffeeaf" stroke="#59382c" stroke-width="1.4" />');
 }
 
 export const caseBox = { width: 620, height: 360 };
@@ -157,6 +177,11 @@ const sewingPointOffsets = {
   round: [[-77, -81], [77, -81], [77, 81], [-77, 81]],
   ticket: [[-103, -97], [103, -97], [103, 97], [-103, 97]],
   crest: [[-86, -94], [86, -94], [52, 68], [-52, 68]]
+};
+const sewingAngles = {
+  round: [-14, 74, -14, 74],
+  ticket: [30, 30, 30, 30],
+  crest: [30, 30, -8, 68]
 };
 export const sewingPoints = edge => sewingPointOffsets[edge].map(([x, y]) => ({ x, y }));
 
@@ -179,15 +204,18 @@ export function caseArt(piece, { peeled = false, editor = false } = {}) {
   const attachment = sewingPoints(piece.edge).map((point, index) => {
     if (!pins.includes(index)) return editor ? circle(point.x, point.y, 6, '#9a6d5d', 'stroke="#fff0c9" stroke-width="2"') : '';
     const a = { x: point.x - 7, y: point.y + 4 }, b = { x: point.x + 7, y: point.y - 4 };
-    return circle(a.x, a.y, 3, '#735348') + circle(b.x, b.y, 3, '#735348')
-      + line(a, b, '#97662e', 5, 'stroke-linecap="round"')
-      + line(a, b, '#f4c672', 3, 'stroke-linecap="round"');
+    return `<g data-case-stitch="${index + 1}" transform="rotate(${sewingAngles[piece.edge][index]} ${point.x} ${point.y})">`
+      + circle(a.x, a.y, 3.4, '#4e372f') + circle(b.x, b.y, 3.4, '#4e372f')
+      + line(a, b, '#774923', 5.5, 'stroke-linecap="round"')
+      + line(a, b, '#f5ce79', 3.1, 'stroke-linecap="round"') + '</g>';
   }).join('');
   const cloth = peeled
     ? `<path d="M-133 24Q-93 82 8 129Q-30 112-62 90Q-105 75-133 24Z" fill="#9b644f" stroke="#593829" stroke-width="3"/>
       <path d="M-128 29Q-93 83-14 116Q-32 96-62 79Q-101 71-128 29Z" fill="#f5dfb9" stroke="#856347" stroke-width="2"/>`
     : '';
-  const face = inset(patchArt(piece), -150, -150, 300, 307);
+  const edge = edges[piece.edge].path;
+  const face = `<path d="${edge}" transform="translate(-149 -146)" fill="#100f17" opacity=".88" stroke="#100f17" stroke-width="8"/>`
+    + inset(patchArt(piece, { shadow: false }), -150, -150, 300, 307);
   const patch = peeled ? `<mask id="${peelMask}" maskUnits="userSpaceOnUse" x="-150" y="-150" width="300" height="307">
     <rect x="-150" y="-150" width="300" height="307" fill="white"/>
     <path d="M-149 12Q-95 84 8 131L12 157H-149Z" fill="black"/>

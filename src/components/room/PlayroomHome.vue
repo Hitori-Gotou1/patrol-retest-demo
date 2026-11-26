@@ -36,10 +36,11 @@ const editorial = journalNotes.filter(note=>note.category!=='小屋更新').slic
           <p class="aftershow-entry-duration">互动专题 · 约 2–3 分钟</p>
           <h3 id="aftershow-entry-title"><span>STARRY</span> 散场以后</h3>
           <p id="aftershow-entry-description">选一拍，亲手印成四色海报，再带着它坐上末班车。</p>
-          <span class="aftershow-entry-cta" aria-hidden="true">走进舞台 <span>↗</span></span>
+          <span class="aftershow-entry-cta" aria-hidden="true">走进舞台</span>
         </div>
       </RouterLink>
     </div>
+    <div v-if="recent.length" class="room-resume"><span>继续上次</span><RouterLink v-for="card in recent" :key="card.id" :to="card.path">{{card.title}}</RouterLink><RouterLink to="/room/works">{{works.length?`${works.length} 件作品在等你`:'打开作品架'}}</RouterLink></div>
     <div class="discovery-intro"><p>拍张合影，写个小故事，或者只是听一会儿雨。</p><span>从这三个角落开始</span></div>
     <div class="featured-activities" data-arrive="1">
       <RouterLink v-for="(card,index) in featuredActivities" :key="card.id" :to="card.path" class="featured-activity" :style="{'--feature-color':card.color}">
@@ -47,7 +48,7 @@ const editorial = journalNotes.filter(note=>note.category!=='小屋更新').slic
         <div class="featured-copy"><span>{{card.eyebrow}}</span><h3>{{card.title}} <span aria-hidden="true">↗</span></h3><p>{{card.note}}</p></div>
       </RouterLink>
     </div>
-    <div v-if="recent.length" class="room-resume"><span>接着上次的小灵感</span><RouterLink v-for="card in recent" :key="card.id" :to="card.path">{{card.title}} →</RouterLink><RouterLink to="/room/works">{{works.length?`${works.length} 件作品在等你`:'打开作品架'}} ↗</RouterLink></div>
+
     <section class="favorite-activities" :class="{'is-empty':!favoriteCards.length}" aria-labelledby="favorite-title"><div class="discovery-section-heading"><div><p class="room-kicker">自己的快捷入口</p><h2 id="favorite-title">我的常用活动</h2></div></div><p v-if="!favoriteCards.length" class="room-hint">在下面的活动卡片点「加入常用」，喜欢的角落就会留在这里。不需要登录。</p><div v-else class="favorite-activity-list"><article v-for="(card,index) in favoriteCards" :key="card.id"><RouterLink :to="card.path">{{card.icon}} {{card.title}} ↗</RouterLink><div><button type="button" :disabled="index===0" :aria-label="`将${card.title}前移`" @click="move(card.id,-1)">↑</button><button type="button" :disabled="index===favoriteCards.length-1" :aria-label="`将${card.title}后移`" @click="move(card.id,1)">↓</button><button type="button" :aria-label="`取消常用${card.title}`" @click="toggle(card.id)">取消常用</button></div></article></div><p v-if="notice" class="room-hint" role="status">{{notice}}</p></section>
     <section class="room-topics" aria-labelledby="room-topics-title"><div class="discovery-section-heading"><div><p class="room-kicker">把灵感接成一段旅程</p><h2 id="room-topics-title">小屋的几个大专题</h2></div></div><div class="room-topic-grid"><RouterLink v-for="item in siteSections.filter(s=>['project','calendar','pilgrimage'].includes(s.id))" :key="item.id" :to="item.path"><TopicSketch :kind="item.id"/><small>{{({project:'创作 · 排一场演出',calendar:'阅读 · 记住特别的一天',pilgrimage:'探索 · 从小屋走出去'})[item.id]}}</small><h3>{{item.title}} ↗</h3><p>{{item.description}}</p></RouterLink></div></section>
     <div v-if="!tourDone" class="room-links-card"><p>第一次来？一起做一张合影，学会保存自己的作品。</p><RouterLink class="room-button" to="/room/photobooth" @click="startTour">带我做第一件作品 →</RouterLink></div>
@@ -65,32 +66,38 @@ const editorial = journalNotes.filter(note=>note.category!=='小屋更新').slic
 <style scoped>
 .room-featured-topics {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin: 16px 0;
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(12px, 2vw, 26px);
+  margin: 12px 0 20px;
 }
 .room-featured-topics > a { margin: 0; }
 .aftershow-entry {
+  --ticket-edge: #19151d;
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1fr) minmax(0, .95fr);
+  position: relative;
   min-width: 0;
-  margin: 24px 0 30px;
+  min-height: 194px;
   color: #fbecdf;
-  background: #1b1c2c;
-  border: 1px solid #64546d;
+  background: #29202e;
+  border: 1px solid #916f7d;
   text-decoration: none;
-  box-shadow: 3px 5px 0 #120f19;
+  box-shadow: 3px 5px 0 #100d15;
 }
-
+.aftershow-entry::after {
+  content: "";
+  position: absolute;
+  inset: 0 -1px 0 auto;
+  width: 8px;
+  background: radial-gradient(circle at right center, var(--ticket-edge) 0 3px, transparent 3.5px) 0 0 / 8px 15px repeat-y;
+  pointer-events: none;
+}
 .aftershow-entry-art {
   position: relative;
-  min-height: 178px;
   overflow: hidden;
-  isolation: isolate;
-  background: #211e31;
+  background: #221b2b;
 }
-
 .aftershow-entry-art img {
   display: block;
   width: 100%;
@@ -98,65 +105,49 @@ const editorial = journalNotes.filter(note=>note.category!=='小屋更新').slic
   position: absolute;
   inset: 0;
   object-fit: cover;
-  object-position: 50% 52%;
-  transition: transform .45s var(--ease-room, ease);
+  object-position: 48% 48%;
+  transition: transform .25s ease;
 }
-
 .aftershow-entry-copy {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 10px;
-  padding: clamp(14px, 1.9vw, 25px);
-  border-inline-start: 1px solid #64546d;
-  background: linear-gradient(135deg, #252237, #1a1a2a 80%);
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 8px;
+  padding: clamp(12px, 1.7vw, 22px);
+  border-inline-start: 1px dashed #916f7d;
 }
-
 .aftershow-entry-copy h3 {
-  font-size: clamp(21px, 2.15vw, 31px);
-  line-height: 1.23;
+  font-size: clamp(1.18rem, 2.15vw, 1.8rem);
+  line-height: 1.15;
   letter-spacing: -.04em;
   margin: 0;
-  text-wrap: balance;
 }
-
-.aftershow-entry-copy h3 span { color: #ffcf98; }
-.aftershow-entry-copy p { margin: 0; line-height: 1.7; }
-.aftershow-entry-duration { color: #e6b7d3; font-size: 12px; }
-#aftershow-entry-description { color: #ead3df; font-size: clamp(12px, 1.25vw, 14px); }
-
+.aftershow-entry-copy h3 span { color: #ffcf98; display: block; }
+.aftershow-entry-copy p { margin: 0; line-height: 1.55; }
+.aftershow-entry-duration { color: #e6b7d3; font-size: .75rem; }
+#aftershow-entry-description { color: #ead3df; font-size: .84rem; }
 .aftershow-entry-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 18px;
-  margin-top: 4px;
-  color: #ffdab1;
-  font-size: 13px;
+  color: #ffe2b9;
+  font-size: .87rem;
   font-weight: 700;
-  border-bottom: 1px solid #927866;
-  padding-bottom: 4px;
+  border-bottom: 1px solid #ae9280;
+  padding-bottom: 3px;
 }
-
 .aftershow-entry:focus-visible { outline: 2px solid #ffcf98; outline-offset: 4px; }
-
 @media (hover: hover) {
-  .aftershow-entry:hover { border-color: #bb91aa; }
-  .aftershow-entry:hover img { transform: scale(1.025); }
+  .aftershow-entry:hover { border-color: #eab7cb; }
+  .aftershow-entry:hover img { transform: scale(1.035); }
 }
-
 @media (max-width: 820px) {
-  .room-featured-topics { grid-template-columns: minmax(0, 1fr); gap: 11px; }
-  .aftershow-entry { grid-template-columns: 36% minmax(0, 1fr); min-height: 142px; }
-  .aftershow-entry-art { min-height: 0; }
-  .aftershow-entry-copy { padding: 10px 12px; gap: 5px; }
-  .aftershow-entry-copy h3 { font-size: clamp(19px, 4.8vw, 24px); }
-  .aftershow-entry-cta { margin-top: 0; }
+  .room-featured-topics { grid-template-columns: minmax(0, 1fr); gap: 13px; margin-bottom: 15px; }
+  .aftershow-entry { grid-template-columns: 39% minmax(0, 1fr); min-height: 140px; }
+  .aftershow-entry-art img { object-position: 52% 42%; }
+  .aftershow-entry-copy { gap: 4px; padding: 11px 14px; }
+  .aftershow-entry-copy h3 { font-size: clamp(1.08rem, 4.8vw, 1.4rem); }
+  .aftershow-entry-copy h3 span { display: inline; }
 }
-
 @media (prefers-reduced-motion: reduce) {
   .aftershow-entry:hover img { transform: none; }
 }
-
 :global(html[data-motion='reduce'] .aftershow-entry:hover img) { transform: none; }
 </style>

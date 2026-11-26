@@ -112,12 +112,24 @@ async function goTo(phase) {
   pause();
   settlePress();
   notice.value = '';
+  const shot = '.aftershow-stage-frame, .press-paper, .aftershow-train-paper-frame';
+  const origin = !reduced.value ? panel.value?.querySelector(shot)?.getBoundingClientRect() : null;
   state.value.phase = phase;
   persist();
   await nextTick();
   if (disposed || state.value.phase !== phase) return;
   panel.value?.focus({ preventScroll: true });
   experience.value?.scrollIntoView({ block: 'start', behavior: 'instant' });
+  const destination = panel.value?.querySelector(shot);
+  if (!origin || !destination?.animate || origin.bottom < 0 || origin.top > innerHeight) return;
+  const target = destination.getBoundingClientRect();
+  const dx = origin.left + origin.width / 2 - target.left - target.width / 2;
+  const dy = origin.top + origin.height / 2 - target.top - target.height / 2;
+  const scale = Math.max(.72, Math.min(1.34, origin.width / target.width));
+  destination.animate(
+    [{ translate: `${dx}px ${dy}px`, scale, opacity: .58 }, { translate: '0px 0px', scale: 1, opacity: 1 }],
+    { duration: 350, easing: 'cubic-bezier(.22,.74,.32,1)' }
+  );
 }
 
 function showConfirmation(action) {

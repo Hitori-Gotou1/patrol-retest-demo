@@ -10,7 +10,7 @@ import InstrumentPanel from './InstrumentPanel.vue';
 import '../styles/character-enhancements.css';
 
 const scene = ref(null);
-useSceneMotion(scene);
+useSceneMotion(scene, { entrance: false });
 const baseLayer = ref(null);
 const revealLayer = ref(null);
 const content = ref(null);
@@ -90,13 +90,23 @@ watch(selectedIndex, () => { reaction.value = ''; reactionIndex = 0; });
     <div ref="revealLayer" class="cast-background cast-background-reveal" aria-hidden="true"></div>
     <div class="cast-paper-texture" aria-hidden="true"></div>
     <div id="character-showcase" class="cast-stage" :data-member="member.id">
-      <header class="cast-topline" data-arrive="0"><span><i aria-hidden="true"></i> 02 / KESSOKU BAND</span><h2 id="about-title">四种颜色，同一支乐队。</h2><span class="cast-file-label">MEMBER FILE — {{ String(selectedIndex + 1).padStart(2, '0') }}</span></header>
-      <div id="character-panel" ref="content" class="cast-content" data-arrive="1" role="tabpanel" :aria-labelledby="`tab-${member.id}`" :aria-busy="busy" tabindex="0">
+      <header class="cast-topline"><h2 id="about-title">四种颜色，同一支乐队。</h2><span>结束乐队 · KESSOKU BAND</span></header>
+      <div class="cast-selector">
+
+        <div id="character-tabs" class="cast-tabs" role="tablist" aria-label="结束乐队成员">
+          <button v-for="(person, index) in members" :id="`tab-${person.id}`" :key="person.id" type="button" role="tab" :data-member="person.id" :data-pending="busy && index === requestedIndex" :style="{ '--tab-color': person.theme.primary, '--tab-ink': person.theme.ink }" aria-controls="character-panel" :aria-selected="index === selectedIndex" :tabindex="index === requestedIndex ? 0 : -1" @click="choose(index)" @keydown="onTabKey">
+            <span class="cast-tab-portrait" aria-hidden="true"><img :src="asset(person.thumbnail || person.portrait)" :style="{ objectPosition: person.portraitLayout.thumbnailPosition, transform: `scale(${person.portraitLayout.thumbnailScale})`, transformOrigin: person.portraitLayout.thumbnailOrigin }" :width="(person.thumbnailSize || person.portraitSize)?.width" :height="(person.thumbnailSize || person.portraitSize)?.height" alt="" loading="lazy" decoding="async"></span><span class="cast-tab-copy"><strong>{{ person.name }}</strong><small>{{ person.shortRole }}</small></span><span class="cast-tab-indicator" aria-hidden="true">↗</span>
+          </button>
+        </div>
+        <div class="cast-controls"><span id="character-counter">{{ counter }}</span><button id="character-prev" type="button" aria-label="上一位成员" @click="choose(requestedIndex - 1)">←</button><button id="character-next" type="button" aria-label="下一位成员" @click="choose(requestedIndex + 1)">→</button></div>
+      </div>
+      <div id="character-panel" ref="content" class="cast-content" role="tabpanel" :aria-labelledby="`tab-${member.id}`" :aria-busy="busy" tabindex="0">
         <article class="character-view cast-view" :data-character="member.id">
+          <header class="cast-identity">
+            <div class="cast-name-row"><h3>{{ member.name }}</h3><p lang="ja">{{ member.nameJa }}</p></div>
+            <div class="cast-role-row"><span class="cast-role">{{ member.role }}</span><span class="cast-cv">CV. {{ member.cv }}</span></div>
+          </header>
           <div class="cast-details">
-            <p class="cast-english-name cast-reveal-item" :aria-label="member.romanizedName"><span v-for="line in member.nameLines" :key="line">{{ line }}</span></p>
-            <div class="cast-name-row cast-reveal-item"><h3>{{ member.name }}</h3><p lang="ja">{{ member.nameJa }}</p></div>
-            <div class="cast-role-row cast-reveal-item"><span class="cast-role">{{ member.role }}</span><span class="cast-cv">CV. {{ member.cv }}</span></div>
             <ul class="cast-personality cast-reveal-item" aria-label="性格关键词"><li v-for="trait in member.personality" :key="trait">{{ trait }}</li></ul>
             <p class="cast-description cast-reveal-item">{{ member.description }}</p>
             <blockquote class="cast-quote cast-reveal-item"><span>{{ member.lineKind }}</span><p aria-live="polite">{{ reaction || member.originalLine }}</p></blockquote>
@@ -105,10 +115,35 @@ watch(selectedIndex, () => { reaction.value = ''; reactionIndex = 0; });
           </div>
           <div class="cast-art" @pointerdown="startSwipe" @pointerup="finishSwipe" @pointercancel="pointerStart = null">
             <div class="cast-decorations" :data-kind="member.decoration" aria-hidden="true">
-              <span class="cast-giant-lettering">{{ member.lettering }}</span><div class="cast-orbit cast-orbit-one"></div><div class="cast-orbit cast-orbit-two"></div><div class="cast-orbit cast-orbit-three"></div>
-              <span class="cast-mark cast-mark-one">{{ member.decoration === 'stars' ? '✦' : member.decoration === 'sun' ? '✳' : member.decoration === 'lines' ? '＋' : '♪' }}</span><span class="cast-mark cast-mark-two">{{ member.decoration === 'stars' ? '✧' : member.decoration === 'sun' ? '＋' : member.decoration === 'lines' ? '＝' : '♩' }}</span><span class="cast-rhythm"></span>
+              <svg class="cast-score" viewBox="0 0 800 560" preserveAspectRatio="xMidYMid slice">
+                <g v-if="member.id === 'hitori'" fill="none" stroke="currentColor">
+                  <path d="M811 28L422 248M811 38L424 252M811 48L426 256M811 58L428 260M811 68L430 264M811 78L432 268" opacity=".48" stroke-width="2"/>
+                  <path d="M0 555L411 273M0 530L410 266M0 505L409 259" opacity=".23" stroke-width="2"/>
+                  <path d="M805 361L616 408M805 367L616 411M805 373L617 414M805 379L618 417M805 385L618 420M805 391L619 423" opacity=".7" stroke-width="1.6"/>
+                </g>
+                <g v-else-if="member.id === 'nijika'" fill="none" stroke="currentColor">
+                  <circle cx="413" cy="132" r="174" stroke-width="22" opacity=".19"/>
+                  <circle cx="413" cy="132" r="151" stroke-width="3" opacity=".56"/>
+                  <circle cx="413" cy="132" r="191" stroke-width="7" stroke-dasharray="2 24" opacity=".8"/>
+                  <ellipse cx="651" cy="424" rx="146" ry="24" stroke-width="3" opacity=".4" transform="rotate(-8 651 424)"/>
+                  <path d="M67 477H274" stroke-width="2" opacity=".38"/>
+                </g>
+                <g v-else-if="member.id === 'ryo'" fill="none" stroke="currentColor" opacity=".68">
+                  <path d="M-4 269H805" stroke-width="3"/>
+                  <path d="M-4 296H805" stroke-width="6"/>
+                  <path d="M-4 328H805" stroke-width="9"/>
+                  <path d="M-4 365H805" stroke-width="12"/>
+                  <path d="M141 249V387M680 249V387" stroke-width="1.5" opacity=".6"/>
+                </g>
+                <g v-else>
+                  <path d="M836 -50H656L102 560H490Z" fill="#fff4df" opacity=".68"/>
+                  <path d="M830 -15H742L377 560H562Z" fill="#fff4df" opacity=".56"/>
+                  <path d="M588 0L164 560H6L552 0Z" fill="currentColor" opacity=".19"/>
+                  <path d="M794 13L519 540" fill="none" stroke="#fff4df" stroke-width="3" opacity=".72"/>
+                </g>
+              </svg>
+              <p class="cast-english-name"><span v-for="line in member.nameLines" :key="line">{{ line }}</span></p>
             </div>
-            <span class="cast-instrument cast-peripheral" aria-hidden="true">{{ member.instrument }}</span>
             <div class="cast-portrait-motion"><div class="cast-portrait-parallax"><div class="cast-portrait-float">
               <CharacterEasterEgg ref="easterEgg" :member="member" :blocked="interactionBlocked" @message="reaction = $event">
                 <button class="cast-portrait-trigger" type="button" :aria-label="`轻点${member.name}，查看原创角色印象`" @click="portraitReaction">
@@ -124,15 +159,6 @@ watch(selectedIndex, () => { reaction.value = ''; reactionIndex = 0; });
           </div>
         </article>
       </div>
-      <footer class="cast-selector" data-arrive="2">
-        <div class="cast-selector-label"><span>CHOOSE YOUR COLOR</span><small>选一种颜色，听一种心跳。</small></div>
-        <div id="character-tabs" class="cast-tabs" role="tablist" aria-label="结束乐队成员">
-          <button v-for="(person, index) in members" :id="`tab-${person.id}`" :key="person.id" type="button" role="tab" :data-member="person.id" :data-pending="busy && index === requestedIndex" :style="{ '--tab-color': person.theme.primary, '--tab-ink': person.theme.ink }" aria-controls="character-panel" :aria-selected="index === selectedIndex" :tabindex="index === requestedIndex ? 0 : -1" @click="choose(index)" @keydown="onTabKey">
-            <span class="cast-tab-portrait" aria-hidden="true"><img :src="asset(person.thumbnail || person.portrait)" :style="{ objectPosition: person.portraitLayout.thumbnailPosition, transform: `scale(${person.portraitLayout.thumbnailScale})`, transformOrigin: person.portraitLayout.thumbnailOrigin }" :width="(person.thumbnailSize || person.portraitSize)?.width" :height="(person.thumbnailSize || person.portraitSize)?.height" alt="" loading="lazy" decoding="async"></span><span class="cast-tab-copy"><strong>{{ person.name }}</strong><small>{{ person.shortRole }}</small></span><span class="cast-tab-indicator" aria-hidden="true">↗</span>
-          </button>
-        </div>
-        <div class="cast-controls"><span id="character-counter">{{ counter }}</span><button id="character-prev" type="button" aria-label="上一位成员" @click="choose(requestedIndex - 1)">←</button><button id="character-next" type="button" aria-label="下一位成员" @click="choose(requestedIndex + 1)">→</button></div>
-      </footer>
       <p id="character-status" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">{{ member.name }}，{{ member.role }}</p>
     </div>
   </section>

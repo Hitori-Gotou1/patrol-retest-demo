@@ -1,5 +1,11 @@
 <script setup>
-defineProps({ kind: String, lit: Boolean });
+defineProps({ kind: String, lit: Boolean, edge: String });
+const edgePaths = {
+  guitar: 'M-8-63h16v70q15-10 24-6', amp: 'M-50-39h100m-97 2v63',
+  box: 'M-56-17h112m-111 2v56', poster: 'M-40-57h80',
+  plant: 'M-21 17h42', lamp: 'M-23-68h46l16 40',
+  photo: 'M-58-42h116', chair: 'M-29-42h58m-64 47h70'
+};
 </script>
 <template>
   <g stroke="#574252" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
@@ -11,5 +17,6 @@ defineProps({ kind: String, lit: Boolean });
     <g v-else-if="kind === 'lamp'"><path d="M0-35v100m-28 0h56" fill="none" stroke-width="5"/><path d="m-24-70-18 45h84L24-70Z" :fill="lit ? '#ffe8a6' : '#f0d3ae'"/><path d="m-30-14-29 64H59L30-14" fill="#ffe1a4" opacity=".2" stroke="none"/></g>
     <g v-else-if="kind === 'photo'"><rect x="-60" y="-44" width="120" height="88" fill="#fff4df"/><rect x="-51" y="-35" width="102" height="61" fill="#c8c7d6"/><g v-for="(color,i) in ['#e5a1bc','#e8cb80','#8cbbd5','#d77f7c']" :key="color" :transform="`translate(${-36+i*24},-8)`"><circle r="10" :fill="color"/><path d="M-10 10h20v20h-20" :fill="color" stroke="none"/></g><path d="M-10 34h20" stroke="#ae8b83"/></g>
     <g v-else-if="kind === 'chair'"><path d="M-31-45h62v48h-62z" fill="#a0aabb"/><path d="M-37 3h74v18h-74z" fill="#d3b59c"/><path d="m-27 22-5 30m59-30 5 30M-23-44v-9h46v9" fill="none" stroke-width="5"/></g>
+    <path v-if="edge" :d="edgePaths[kind]" :stroke="edge" stroke-width="1.8" opacity=".75" fill="none" pointer-events="none"/>
   </g>
 </template>

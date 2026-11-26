@@ -1,5 +1,6 @@
 <script setup>
 import { computed, defineComponent, h, useId } from 'vue';
+import AftershowStageArt from './AftershowStageArt.vue';
 import { aftershowArtwork, aftershowArtViews, aftershowInkColors, aftershowPaperGrain } from '../../../room/aftershowArt.js';
 
 const props = defineProps({
@@ -76,6 +77,9 @@ const InkGeometry = defineComponent({
       <circle v-for="(ink, index) in inks" :key="ink" :cx="389 + index * 17" cy="596" r="4" :fill="printedInks.has(ink) ? aftershowInkColors[ink] : 'none'" :stroke="aftershowInkColors[ink]" />
     </g>
 
+    <g v-if="guides && !printedInks.size" data-editor-only="" data-contact-print="" opacity=".32">
+      <AftershowStageArt :view="poster.view" :beat="poster.beat" x="36" y="165" width="408" height="323" aria-hidden="true" embedded />
+    </g>
     <g :clip-path="`url(#${clip})`">
       <g
         v-for="layer in layers"

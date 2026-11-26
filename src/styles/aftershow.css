@@ -67,3 +67,6 @@
   .aftershow-steps button { font-size: .76rem; }
   body:has(.aftershow-page) .room-companion { display: none; }
 }
+
+.aftershow-experience { --aftershow-paper-angle: -3deg; }
+body:has(.aftershow-page) .room-companion { display: none; }
