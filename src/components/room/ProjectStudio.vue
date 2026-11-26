@@ -1,6 +1,6 @@
 <script setup>
 import { useMediaFocus } from '../../composables/useMediaFocus.js';
-import {computed,onBeforeUnmount,ref,watch} from 'vue';
+import { computed, onBeforeUnmount, ref, shallowRef, watch, watchEffect } from 'vue';
 import {defaultProject,validateProject,parseProject,projectPosition} from '../../room/projects.js';
 import {useLocalDraft} from '../../composables/useLocalDraft.js';
 import {readWorks,readDrafts,workTypes} from '../../room/workshelf.js';
@@ -10,6 +10,7 @@ import {lightFrame} from '../../room/creativeTools.js';
 import {patternBars} from '../../room/pattern.js';
 import {createArrangementPlayer,arrangementDuration,renderArrangement,audioBufferWav,downloadAudioBlob} from '../../audio/arrangementEngine.js';
 import {exportConcertVideo,videoFormat} from '../../audio/concertVideo.js';
+import { concertDimensions, loadConcertImages, paintConcertFrame } from '../../room/concertFrame.js';
 import {useSoundPreferences} from '../../composables/useSoundPreferences.js';
 import {useInteractionAudio} from '../../composables/useInteractionAudio.js';
 
@@ -25,7 +26,36 @@ const engine=createArrangementPlayer({createContext:()=>{const A=window.AudioCon
 const sounds=useSoundPreferences(),exporting=ref(false),exportProgress=ref(0),videoOrientation=ref('landscape'),videoQuality=ref('standard'),videoLength=ref(30),format=videoFormat();
 let exportController;
 const projectSeconds=computed(()=>{try{return arrangementDuration(state.value.pattern,state.value.cycles)+2.4;}catch{return 0;}});
-let frame,origin,previous=-1,generation=0,alive=true;
+const viewfinder = ref(null);
+const previewImages = shallowRef(null);
+const previewError = ref('');
+const previewTime = ref(0);
+const videoSize = computed(() => concertDimensions(videoOrientation.value, videoQuality.value));
+const previewEnd = computed(() => Math.min(projectSeconds.value, videoLength.value));
+const elapsedFrame = computed(() => Math.min(previewEnd.value, previewTime.value));
+watch(() => [state.value.backdrop, state.value.poster], async (_selection, _last, cleanup) => {
+  const request = new AbortController();
+  cleanup(() => request.abort());
+  previewError.value = '';
+  previewImages.value = null;
+  try {
+    const loaded = await loadConcertImages(state.value, request.signal);
+    if (!request.signal.aborted) previewImages.value = loaded;
+  } catch (error) {
+    if (!request.signal.aborted) previewError.value = error.message;
+  }
+}, { immediate:true });
+watchEffect(() => {
+  const canvas = viewfinder.value;
+  const images = previewImages.value;
+  const { width, height } = videoSize.value;
+  if (!canvas || !images || !Number.isFinite(state.value.pattern.bpm) || state.value.pattern.bpm < 1) return;
+  if (canvas.width !== width) canvas.width = width;
+  if (canvas.height !== height) canvas.height = height;
+  const paint = canvas.getContext('2d');
+  if (paint) paintConcertFrame(paint, state.value, elapsedFrame.value, images, width, height);
+}, { flush:'post' });
+let frame,generation=0,alive=true;
 const lights=computed(()=>lightFrame(state.value.lights,position.value.step,position.value.fraction));
 const artwork=computed(()=>works.value.filter(w=>w.preview));
 const selection=(kind)=>works.value.filter(w=>w.kind===kind);
@@ -34,9 +64,9 @@ function usePart(kind){try{const value=choices.value[kind];const source=value===
 function useImage(slot){const selected=works.value.find(w=>w.id===choices.value[slot]);state.value[slot]=selected?.preview||'';}
 function useStageBackdrop(){try{const value=localStorage.getItem('hitori-room:stage-background:v1');if(!rasterData(value,1500000))throw new Error();state.value.backdrop=value;message.value='已收好涂鸦墙的舞台背景。';}catch{message.value='先在涂鸦墙保存一张舞台背景。';}}
 function stop(){generation++;playing.value=false;starting.value=false;cancelAnimationFrame(frame);audio.stop();engine.stop();}
-function tick(){if(!playing.value)return;const elapsed=engine.elapsed(),pos=projectPosition(elapsed,state.value);if(elapsed>=projectSeconds.value*1000){stop();message.value='这场演出完成了，可以保存项目，或再演一遍。';recordActivity('project',state.value.name,JSON.stringify(state.value));return;}if(!pos.done)position.value=pos;frame=requestAnimationFrame(tick);}
+function tick(){if(!playing.value)return;const elapsed=engine.elapsed(),pos=projectPosition(elapsed,state.value);previewTime.value=elapsed/1000;if(elapsed>=projectSeconds.value*1000){stop();message.value='这场演出完成了，可以保存项目，或再演一遍。';recordActivity('project',state.value.name,JSON.stringify(state.value));return;}if(!pos.done)position.value=pos;frame=requestAnimationFrame(tick);}
 async function play(){stop();const token=++generation;starting.value=true;try{validateProject(state.value);const enabling=audio.setEnabled(true),beginning=engine.play(state.value.pattern,{cycles:state.value.cycles,tone:state.value.tone,useTone:state.value.useTone,volume:sounds.effective('effects').value*2});const [enabled,ready]=await Promise.all([enabling,beginning]);if(!alive||token!==generation)return;if(document.hidden||!enabled||!ready)throw new Error(sounds.preferences.muted?'请先关闭总静音，再开始演出。':'音效暂未准备好，请再点一次播放。');claimMedia();starting.value=false;playing.value=true;message.value='灯光与编曲正在按同一个音频时钟演出。';frame=requestAnimationFrame(tick);}catch(e){stop();message.value=e.message;}}
-async function video(){if(exporting.value)return;stop();exportController=new AbortController();exporting.value=true;exportProgress.value=0;try{const result=await exportConcertVideo(state.value,{orientation:videoOrientation.value,quality:videoQuality.value,maxSeconds:videoLength.value,signal:exportController.signal,onProgress:p=>exportProgress.value=p});if(!alive)return;downloadAudioBlob(result.blob,`hitori-live-${videoOrientation.value}.${result.extension}`);message.value=`演出视频已生成：${result.width}×${result.height}，${result.duration.toFixed(1)}秒，${result.extension.toUpperCase()}。`;}catch(e){if(alive)message.value=e.name==='AbortError'?'已取消视频导出，项目仍保留。':e.message;}finally{if(alive)exporting.value=false;}}
+async function video(){if(exporting.value)return;stop();exportController=new AbortController();exporting.value=true;exportProgress.value=0;previewTime.value=0;try{const result=await exportConcertVideo(state.value,{orientation:videoOrientation.value,quality:videoQuality.value,maxSeconds:videoLength.value,signal:exportController.signal,onProgress:p=>exportProgress.value=p,onFrame:elapsed=>previewTime.value=elapsed});if(!alive)return;downloadAudioBlob(result.blob,`hitori-live-${videoOrientation.value}.${result.extension}`);message.value=`演出视频已生成：${result.width}×${result.height}，${result.duration.toFixed(1)}秒，${result.extension.toUpperCase()}。`;}catch(e){if(alive)message.value=e.name==='AbortError'?'已取消视频导出，项目仍保留。':e.message;}finally{if(alive)exporting.value=false;}}
 async function wav(){if(exporting.value)return;stop();exportController=new AbortController();exporting.value=true;exportProgress.value=0;try{const result=await renderArrangement(state.value.pattern,{cycles:state.value.cycles,tone:state.value.tone,useTone:state.value.useTone,signal:exportController.signal,onProgress:p=>exportProgress.value=p});if(alive){downloadAudioBlob(audioBufferWav(result.buffer),'hitori-live-arrangement.wav');message.value=`演出音频已生成：${result.duration.toFixed(1)}秒。`;}}catch(e){if(alive)message.value=e.name==='AbortError'?'已取消导出。':e.message;}finally{if(alive)exporting.value=false;}}
 async function importFile(e){const f=e.target.files?.[0];if(!f)return;try{if(f.size>2200000)throw new Error('项目文件不能超过2.2MB。');const next=parseProject(await f.text());if(!alive)return;stop();state.value=next;message.value='已载入完整项目，包括编曲、灯光、音色与画面。';}catch(error){message.value=error.message;}finally{e.target.value='';}}
 function exportProject(){try{persist();downloadJson(validateProject(state.value),'hitori-live-project.json');message.value='整场演出已打包，导入项目即可继续播放与编辑。';}catch(e){message.value=e.message;}}
@@ -46,8 +76,72 @@ watch(()=>JSON.stringify(state.value),stop);watch(audio.enabled,v=>{if(!v)stop()
 window.addEventListener('hitori:works-changed',refresh);document.addEventListener('visibilitychange',hidden);
 onBeforeUnmount(()=>{alive=false;exportController?.abort();stop();engine.dispose();window.removeEventListener('hitori:works-changed',refresh);document.removeEventListener('visibilitychange',hidden);});
 </script>
-<template><section class="room-panel" aria-labelledby="project-title"><p class="play-eyebrow">从第一拍，到最后一束光</p><h2 id="project-title">把今晚，排成一场完整演出。</h2><p class="room-intro">编曲与灯光共享节拍。挑选的作品会作为副本保存在项目里，之后整理或移走原作品也不会让演出缺页。</p><div class="room-fields"><label class="room-field">演出名称<input v-model="state.name" maxlength="60"></label><label class="room-field">速度 BPM<input v-model.number="state.pattern.bpm" type="number" min="60" max="180"></label><label class="room-field">循环次数<select aria-label="循环次数" v-model.number="state.cycles"><option v-for="n in [1,2,4,8,16]" :key="n" :value="n">{{n}}轮</option></select></label></div>
+<template><section class="room-panel project-room" aria-labelledby="project-title">
+ <header class="activity-title">
+   <p class="play-eyebrow">STARRY 演出取景台</p>
+   <h2 id="project-title">把今晚，排成一场完整演出。</h2>
+   <p class="room-intro">编曲与灯光共享节拍，舞台画面和作品作为副本保存在项目里。</p>
+ </header><div class="room-fields"><label class="room-field">演出名称<input v-model="state.name" maxlength="60"></label><label class="room-field">速度 BPM<input v-model.number="state.pattern.bpm" type="number" min="60" max="180"></label><label class="room-field">循环次数<select aria-label="循环次数" v-model.number="state.cycles"><option v-for="n in [1,2,4,8,16]" :key="n" :value="n">{{n}}轮</option></select></label></div>
  <svg ref="stage" viewBox="0 0 900 520" class="project-stage" role="img" aria-label="完整演出舞台"><defs><linearGradient v-for="(light,i) in lights" :id="`project-light-${i}`" :key="i" x2="0" y2="1"><stop :stop-color="light.color" stop-opacity=".65"/><stop offset="1" :stop-color="light.color" stop-opacity=".06"/></linearGradient></defs><rect width="900" height="520" fill="#292334"/><image v-if="state.backdrop" :href="state.backdrop" width="900" height="450" preserveAspectRatio="xMidYMid slice" opacity=".65"/><path d="M0 55Q150 150 300 55Q450 150 600 55Q750 150 900 55V0H0Z" fill="#59415c"/><rect y="430" width="900" height="90" fill="#654c64"/><g v-for="(l,i) in lights" :key="i" :opacity="l.intensity"><path :d="`M${150+i*300} 35L${l.x-160} 445L${l.x+160} 445Z`" :fill="`url(#project-light-${i})`"/><ellipse :cx="l.x" cy="435" rx="155" ry="20" :fill="l.color" opacity=".5"/></g><image v-if="state.poster" :href="state.poster" x="28" y="170" width="130" height="175" preserveAspectRatio="xMidYMid meet"/><image v-for="(m,i) in cast" :key="m.id" :href="assetUrl(m.image)" :x="190+i*155" y="260" width="110" height="175"/><text x="450" y="485" text-anchor="middle" fill="#f4dfe7" font-size="24">{{state.name}}</text></svg>
  <div class="timeline-steps" aria-label="当前演出步数"><span v-for="n in 16" :key="n" :class="{on:position.step===n-1}"></span></div><p class="room-hint">第{{position.cycle}}轮 / {{state.cycles}}轮 · 第{{(position.bar||0)+1}} / {{patternBars(state.pattern).length}} 小节 · 第{{position.step+1}}步</p><div class="room-actions"><button v-if="!playing" id="project-play" class="primary" type="button" :disabled="starting||exporting" @click="play">{{starting?'准备中…':'开始完整演出'}}</button><button v-else type="button" @click="stop">停止演出</button><button type="button" @click="photo">保存演出画面 PNG</button><button type="button" @click="exportProject">导出完整项目 JSON</button><button type="button" @click="file.click()">导入完整项目</button><input ref="file" hidden type="file" accept=".json,application/json" aria-label="选择演出项目" @change="importFile"></div>
- <section class="project-video" aria-labelledby="project-video-title"><h3 id="project-video-title">把这一场演出带走</h3><p class="room-hint">完整项目长 {{projectSeconds.toFixed(1)}} 秒（含尾音）。视频按所选上限截取；保持页面可见。声音与灯光使用同一个音频时钟，导出无需麦克风。</p><div class="room-fields"><label class="room-field">视频方向<select aria-label="视频方向" v-model="videoOrientation"><option value="landscape">横版 16:9</option><option value="portrait">竖版 9:16 · 舞台票根</option></select></label><label class="room-field">清晰度<select aria-label="视频清晰度" v-model="videoQuality"><option value="standard">流畅 · 长边 960</option><option value="high">清晰 · 长边 1280</option></select></label><label class="room-field">视频长度上限<select aria-label="视频长度上限" v-model.number="videoLength"><option v-for="n in [10,20,30,60]" :key="n" :value="n">{{n}} 秒</option></select></label></div><p class="room-hint">{{format?`此浏览器会生成真正的 ${format.extension.toUpperCase()} 视频。`:'此浏览器不支持视频编码，可保存 PNG、WAV 和完整项目 JSON，换浏览器继续。'}} 导出不受试听音量或总静音影响。</p><div class="room-actions"><button id="project-video-export" type="button" class="primary" :disabled="exporting||!format" @click="video">导出演出视频 {{format?.extension.toUpperCase()||''}}</button><button type="button" :disabled="exporting" @click="wav">导出演出音频 WAV</button><button v-if="exporting" type="button" @click="exportController?.abort()">取消导出</button></div><progress v-if="exporting" :value="exportProgress" max="1" aria-label="演出导出进度"></progress></section>
+ <section class="project-video" aria-labelledby="project-video-title">
+  <h3 id="project-video-title">把这一场演出带走</h3>
+  <div class="project-viewfinder">
+    <div class="project-monitor" :class="{ 'is-portrait': videoOrientation === 'portrait' }">
+      <label class="project-format">视频方向
+        <select aria-label="视频方向" v-model="videoOrientation" :disabled="exporting">
+          <option value="landscape">横版 16:9</option><option value="portrait">竖版 9:16 · 舞台票根</option>
+        </select>
+      </label>
+      <figure class="project-picture">
+        <canvas ref="viewfinder" data-editor-only :width="videoSize.width" :height="videoSize.height"
+          :data-elapsed="elapsedFrame.toFixed(3)" :data-ready="!!previewImages" role="img"
+          :aria-label="videoOrientation === 'portrait' ? '竖版票根与舞台窗口' : '横版完整舞台和标题'"></canvas>
+        <figcaption>{{ videoSize.width }} × {{ videoSize.height }} · {{ videoOrientation === 'portrait' ? '舞台票根' : '完整舞台' }}</figcaption>
+        <p v-if="previewError" role="status">{{ previewError }}</p>
+      </figure>
+      <label class="project-scrub">预览位置 <strong>{{ elapsedFrame.toFixed(2) }} 秒</strong>
+        <input type="range" min="0" :max="previewEnd" step=".05" :value="elapsedFrame" :disabled="playing || exporting" @input="previewTime = $event.target.valueAsNumber">
+      </label>
+    </div>
+    <div class="project-export-options">
+      <p class="room-hint">整场 {{ projectSeconds.toFixed(1) }} 秒（含尾音）。视频按所选上限截取，导出期间保持页面可见。</p>
+      <div class="room-fields">
+        <label class="room-field">清晰度<select aria-label="视频清晰度" v-model="videoQuality" :disabled="exporting"><option value="standard">流畅 · 长边 960</option><option value="high">清晰 · 长边 1280</option></select></label>
+        <label class="room-field">视频长度上限<select aria-label="视频长度上限" v-model.number="videoLength" :disabled="exporting"><option v-for="n in [10,20,30,60]" :key="n" :value="n">{{ n }} 秒</option></select></label>
+      </div>
+      <p class="room-hint">{{ format ? `此浏览器会生成 ${format.extension.toUpperCase()} 视频，导出音轨沿用作品设置。` : '此浏览器不支持视频编码，可保存 PNG、WAV 和完整项目 JSON。' }}</p>
+      <div class="room-actions">
+        <button id="project-video-export" type="button" class="primary" :disabled="exporting || !format" @click="video">导出演出视频 {{ format?.extension.toUpperCase() || '' }}</button>
+        <button type="button" :disabled="exporting" @click="wav">导出演出音频 WAV</button>
+        <button v-if="exporting" type="button" @click="exportController?.abort()">取消导出</button>
+      </div>
+      <progress v-if="exporting" :value="exportProgress" max="1" aria-label="演出导出进度"></progress>
+    </div>
+  </div>
+ </section>
  <div class="project-parts"><div v-for="(label,kind) in {studio:'编曲',lights:'灯光',effects:'吉他音色'}" :key="kind"><label class="room-field">从作品架装入{{label}}<select v-model="choices[kind]"><option value="">选择一个版本</option><option value="draft">当前本机草稿</option><option v-for="w in selection(kind)" :key="w.id" :value="w.id">{{w.title}}</option></select></label><div class="room-actions"><button type="button" @click="usePart(kind)">装入{{label}}</button><RouterLink :to="`/room/${kind}`">去编辑 ↗</RouterLink></div></div><div v-for="(label,slot) in {backdrop:'舞台背景',poster:'海报或合影'}" :key="slot"><label class="room-field">{{label}}<select v-model="choices[slot]" @change="useImage(slot)"><option value="">不放画面</option><option v-for="w in artwork" :key="w.id" :value="w.id">{{w.title}}</option></select></label></div></div><div class="room-actions"><button type="button" @click="useStageBackdrop">装入涂鸦墙舞台背景</button><label class="room-check"><input v-model="state.useTone" type="checkbox">使用项目内的吉他音色</label></div><p role="status" class="room-status">{{message}}</p><p class="room-hint">{{saved?'项目草稿已保存在本机。':'本机暂不能保存，请导出项目备份。'}} 上方“存入作品架”可以保留多个完整演出版本。离开页面或切到后台会停止播放。</p></section></template>
+
+<style scoped>
+.project-room .project-video { background:#f3e2d5; border:1px solid #bc9c9f; margin:19px 0; padding:clamp(10px,2vw,23px); }
+.project-room .project-video h3 { color:#4a3449; margin:0 0 10px; }
+.project-viewfinder { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(230px,1fr); gap:clamp(12px,3vw,30px); align-items:start; min-width:0; }
+.project-monitor { background:#282231; color:#fbe8d9; border:1px solid #825c76; padding:12px; min-width:0; }
+.project-room .project-monitor label { color:#f3d9dc; }
+.project-format { display:flex; align-items:center; gap:9px; }
+.project-format select { flex:1; }
+.project-picture { display:grid; justify-items:center; margin:12px 0 5px; }
+.project-picture canvas { display:block; width:100%; height:auto; background:#211b29; outline:1px solid #a7849d; outline-offset:3px; }
+.is-portrait .project-picture canvas { width:min(100%,241px); }
+.project-picture figcaption { color:#f2dbc9; font:12px var(--mono,monospace); margin-top:8px; }
+.project-scrub { display:grid; grid-template-columns:1fr auto; align-items:center; }
+.project-scrub input { grid-column:1/-1; accent-color:#efb7c9; }
+.project-export-options .room-fields { grid-template-columns:1fr; margin-block:12px; gap:9px; }
+.project-export-options progress { width:100%; }
+@media(max-width:760px) {
+  .project-viewfinder { grid-template-columns:minmax(0,1fr); }
+  .project-monitor { padding:9px; }
+  .is-portrait .project-picture canvas { width:min(100%,208px); }
+  .project-export-options .room-fields { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+</style>

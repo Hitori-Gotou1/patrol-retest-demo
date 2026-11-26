@@ -26,7 +26,7 @@ const route = useRoute(), directoryOpen = ref(false);
 const isFestival = computed(() => route.path === festivalPath || route.path.startsWith(festivalPath + '/'));
 const isAftershow = computed(() => route.name === 'aftershow' || route.path === '/room/aftershow');
 const active = computed(() => findActivity(route.path)||siteSections.find(s=>s.path===route.path));
-const redesignedRoutes = new Set(['walk', 'pilgrimage', 'calendar', 'notes', 'effects', 'lights', 'mix', 'ambient', 'photobooth', 'decorate', 'works', 'guestbook']);
+const redesignedRoutes = new Set(['walk', 'pilgrimage', 'calendar', 'notes', 'effects', 'lights', 'mix', 'ambient', 'photobooth', 'decorate', 'works', 'guestbook', 'project', 'studio', 'shop', 'concert', 'pinball', 'maze', 'platform', 'cards', 'comic', 'graffiti', 'relay', 'jigsaw']);
 const redesigned = computed(() => redesignedRoutes.has(route.path.split('/')[2]));
 const suggestions = computed(() => (nextActivities[active.value?.id] || []).map(id => activityCatalog.find(card => card.id === id)));
 watch(() => route.path, async path => {

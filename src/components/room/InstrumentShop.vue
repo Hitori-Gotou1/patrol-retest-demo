@@ -7,6 +7,8 @@ import {newShop,shopOrder,deliverOrder,buyDecoration,shopTimeout,validateShop} f
 import {useLocalDraft} from '../../composables/useLocalDraft.js';
 import {useInteractionAudio} from '../../composables/useInteractionAudio.js';
 import {recordActivity} from '../../room/activityLog.js';
+import ShopGoods from './ShopGoods.vue';
+import ShopTuner from './ShopTuner.vue';
 import RoomProp from './RoomProp.vue';
 const {state,saved}=useLocalDraft('hitori-room:shop:v1',newShop(),validateShop),audio=useInteractionAudio('shop');
 const order=computed(()=>shopOrder(state.value.seed+state.value.day*17,state.value.index));
@@ -22,11 +24,74 @@ function nextDay(){state.value={...state.value,day:state.value.day+1,index:0,mis
 async function tone(reference){if(!audio.enabled.value&&!await audio.setEnabled(true))return;const frequencies=[82.41,110,146.83,196,246.94,329.63];const hz=frequencies[['E₂','A₂','D₃','G₃','B₃','E₄'].indexOf(order.value.note)];await audio.play('guitar',hz*2**((reference?0:cents.value)/1200));}
 document.addEventListener('visibilitychange',hidden);onBeforeRouteLeave(pause);onBeforeUnmount(()=>{clearInterval(timer);pause();document.removeEventListener('visibilitychange',hidden);});
 </script>
-<template><section class="room-panel" aria-labelledby="shop-title"><div class="pg-heading"><div><p class="pg-kicker">AFTER SCHOOL SHIFT / 今日も営業中</p><h2 id="shop-title">欢迎光临，今天想听什么声音？</h2><p class="room-intro">配货、选踏板、校准琴弦。三位客人是一班，赚到的虚拟店币可以布置柜台。</p></div><span class="pg-number">15</span></div>
+<template><section class="room-panel shop-room" aria-labelledby="shop-title"><header class="activity-title"><p class="pg-kicker">街角乐器店 · 配货柜台</p><h2 id="shop-title">欢迎光临，今天想听什么声音？</h2><p class="room-intro">按客人的单子挑货，拧准一根测试弦。</p></header>
 <dl class="room-stats"><div><dt>营业日</dt><dd>{{state.day}}</dd></div><div><dt>已接待</dt><dd>{{Math.min(3,state.index)}} / 3</dd></div><div><dt>虚拟店币</dt><dd id="shop-coins">{{state.coins}}</dd></div><div><dt>累计完成</dt><dd>{{state.completed}}</dd></div></dl>
 <div class="pg-toolbar"><label class="pg-small"><input v-model="state.timed" type="checkbox" :disabled="state.phase==='serving'"> 忙碌模式 · 每单 45 秒</label><button v-if="['ready','paused'].includes(state.phase)" id="shop-open" class="primary" @click="open">{{state.phase==='paused'?'继续营业':'挂上营业牌'}}</button><button v-if="state.phase==='serving'" @click="pause">暂停一下</button><span v-if="state.timed" class="pg-small">剩余 {{Math.max(0,45-Math.floor(state.elapsed))}} 秒</span></div>
-<div v-if="state.phase!=='closed'" class="pg-split"><div class="pg-surface shop-order"><img :src="asset(member.image)" alt="" width="120" height="140"><p class="pg-kicker">ORDER {{state.index+1}} / {{member.name}}</p><h3>「想要 {{shopProducts.find(p=>p.id===order.product).label}}，<br>还有{{shopEffects.find(p=>p.id===order.effect).request}}。」</h3><p>帮忙把测试弦调到 {{order.note}} 吧。<br>误差在 ±3 音分以内就好。</p><span class="pg-small">本单核对 {{state.mistakes}} / 4 次</span></div>
-<fieldset class="pg-settings" :disabled="state.phase!=='serving'"><legend>柜台配货</legend><label>货品<select v-model="product" id="shop-product"><option v-for="p in shopProducts" :key="p.id" :value="p.id">{{p.label}}</option></select></label><label>音色踏板<select v-model="effect" id="shop-effect"><option v-for="p in shopEffects" :key="p.id" :value="p.id">{{p.label}}</option></select></label><label>调音旋钮 · {{cents>0?'+':''}}{{cents}} 音分<input id="shop-tune" v-model.number="cents" type="range" min="-30" max="30" step="1"></label><meter min="-30" max="30" low="-3" high="3" optimum="0" :value="cents" aria-label="音准偏差"></meter><div class="pg-toolbar"><button @click="tone(true)">听标准音</button><button @click="tone(false)">听当前音</button></div><button id="shop-deliver" class="primary" @click="deliver">核对并交给客人 →</button></fieldset></div>
-<div v-else class="pg-result"><h3>今天的小牌翻到「休息中」。</h3><p>累计完成 {{state.completed}} 单。慢一点，也能照顾好每一种声音。</p><button class="primary" @click="nextDay">准备下一天</button></div><p class="pg-status" role="status">{{message}}</p>
+<div v-if="state.phase !== 'closed'" class="shop-desk">
+  <fieldset class="shop-stock" :disabled="state.phase !== 'serving'">
+    <legend>柜台配货</legend>
+    <div class="shop-trays" aria-label="货品格">
+      <button v-for="item in shopProducts" :key="item.id" type="button" :data-product="item.id" :aria-pressed="product === item.id" @click="product = item.id">
+        <ShopGoods :kind="item.id"/><span>{{ item.label }}</span>
+      </button>
+    </div>
+    <div class="shop-pedals" aria-label="音色踏板">
+      <button v-for="item in shopEffects" :key="item.id" type="button" :data-pedal="item.id" :aria-pressed="effect === item.id" @click="effect = item.id">
+        <ShopGoods :kind="item.id"/><span>{{ item.label }}</span>
+      </button>
+    </div>
+  </fieldset>
+  <div class="shop-order">
+    <div class="shop-slip">
+      <div><p class="pg-kicker">{{ member.name }} · 第 {{ state.index + 1 }} 单</p>
+        <h3>「想要 {{ shopProducts.find(p => p.id === order.product).label }}，还有{{ shopEffects.find(p => p.id === order.effect).request }}。」</h3>
+      </div>
+      <img :src="asset(member.image)" alt="" width="65" height="76">
+    </div>
+    <div class="shop-samples"><ShopGoods :kind="product"/><ShopGoods :kind="effect"/><span>当前配货 · {{ shopProducts.find(p => p.id === product).label }} / {{ shopEffects.find(p => p.id === effect).label }}</span></div>
+    <ShopTuner :cents="cents" :note="order.note" :phase="state.phase"/>
+    <fieldset class="shop-adjust" :disabled="state.phase !== 'serving'">
+      <legend>本单核对 {{ state.mistakes }} / 4 次</legend>
+      <label class="room-field">调音旋钮<input id="shop-tune" v-model.number="cents" type="range" min="-30" max="30" step="1"></label>
+      <div class="pg-toolbar"><button type="button" @click="tone(true)">听标准音</button><button type="button" @click="tone(false)">听当前音</button></div>
+      <button id="shop-deliver" class="primary" type="button" @click="deliver">核对并交给客人 →</button>
+    </fieldset>
+  </div>
+</div>
+<div v-else class="pg-result shop-closed">
+  <ShopTuner :cents="cents" phase="closed"/>
+  <h3>今天的小牌翻到「休息中」。</h3><p>累计完成 {{ state.completed }} 单。</p><button class="primary" @click="nextDay">准备下一天</button>
+</div><p class="pg-status" role="status">{{message}}</p>
 <h3>给小店添一点温度</h3><svg class="shop-counter" viewBox="0 0 700 230" role="img" aria-label="用店币布置的乐器店柜台"><rect width="700" height="230" fill="#e6d5cf"/><rect x="0" y="170" width="700" height="60" fill="#ad8d9d"/><path d="M140 160H560V220H140Z" fill="#74596b"/><text x="350" y="198" text-anchor="middle" fill="#eddbc6" font-size="18" letter-spacing="4">AFTER SCHOOL MUSIC</text><g transform="translate(95,125)"><RoomProp kind="guitar"/></g><g v-if="state.decorations.includes('plant')" transform="translate(200,120)"><RoomProp kind="plant"/></g><g v-if="state.decorations.includes('poster')" transform="translate(360,80)"><RoomProp kind="poster"/></g><g v-if="state.decorations.includes('lamp')" transform="translate(615,105)"><RoomProp kind="lamp" lit/></g></svg><div class="pg-grid"><article v-for="d in shopDecorations" :key="d.id" class="shop-decoration"><span aria-hidden="true">{{{plant:'♧',poster:'▤',lamp:'☼'}[d.id]}}</span><h4>{{d.label}}</h4><button :disabled="state.coins<d.cost||state.decorations.includes(d.id)" @click="state=buyDecoration(state,d.id)">{{state.decorations.includes(d.id)?'已摆好':`${d.cost} 枚店币 · 添置`}}</button></article></div><p class="pg-small">{{saved?'营业进度与装饰自动保存在本机。':'本机存档暂不可用。'}} 店币仅用于本站玩法。试听会开启互动音效，可用小屋的声音控制关闭。</p></section></template>
-<style scoped>.shop-counter{display:block;width:100%;max-height:230px;margin:18px 0;}.shop-order{margin:0;min-height:320px;text-align:center}.shop-order img{object-fit:contain}.shop-order h3{font-size:17px;line-height:1.9}.shop-order p{font-size:12px;line-height:1.9}.shop-decoration{border:1px solid #c9aebd;padding:20px;text-align:center}.shop-decoration>span{font-size:36px;color:#9a7a8f}.shop-decoration h4{font-size:14px}.shop-decoration button{font-size:11px}fieldset{min-width:0;border:1px solid #c9aebd;padding:20px}legend{font-size:12px}meter{width:100%}</style>
+<style scoped>
+.shop-desk { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(280px,1fr); gap:clamp(10px,3vw,28px); align-items:start; }
+.shop-counter { display:block; width:100%; max-height:230px; margin:18px 0; }
+.shop-stock,.shop-adjust { margin:0; min-width:0; padding:12px; border:1px solid #af9383; }
+.shop-stock { background:#dfc4a1; }
+.shop-stock legend,.shop-adjust legend { font-size:12px; font-weight:700; }
+.shop-trays { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.shop-pedals { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin-top:11px; }
+.shop-stock button { display:grid; justify-items:center; gap:4px; padding:7px 3px; min-height:44px; color:#563a4d; background:#faebd0; border:1px solid #b19376; box-shadow:inset 0 3px 6px #8d6a4b44; }
+.shop-stock button[aria-pressed=true] { box-shadow:inset 0 0 0 2px #8f546c; background:#f7dcc5; }
+.shop-stock button svg { width:min(100%,111px); height:auto; }
+.shop-pedals button svg { width:min(100%,70px); }
+.shop-order { background:#fff7e7; border:1px solid #bda087; padding:12px 15px; }
+.shop-slip { display:flex; align-items:start; justify-content:space-between; gap:5px; }
+.shop-slip h3 { margin:0; font-size:17px; line-height:1.5; }
+.shop-slip img { width:62px; height:74px; object-fit:contain; }
+.shop-samples { display:grid; grid-template-columns:48px 48px minmax(0,1fr); gap:4px 6px; align-items:center; background:#f0e3cf; padding:5px; margin:7px 0; font-size:11px; }
+.shop-samples svg { width:47px; height:auto; }
+.shop-adjust { padding:5px 0 0; border:0; }
+.shop-adjust .pg-toolbar { margin:4px 0; }
+.shop-adjust #shop-deliver { width:100%; }
+.shop-closed .shop-meter { max-width:270px; margin-inline:auto; }
+.shop-decoration { border:1px solid #c9aebd; padding:15px; text-align:center; }
+.shop-decoration>span { font-size:29px; color:#815a70; }
+.shop-decoration h4 { font-size:14px; }
+@media(max-width:760px) {
+  .shop-desk { grid-template-columns:minmax(0,1fr); }
+  .shop-stock { grid-row:2; padding:8px; }
+  .shop-order { padding:8px 10px; }
+  .shop-room>.room-stats { gap:7px 15px; }
+}
+</style>

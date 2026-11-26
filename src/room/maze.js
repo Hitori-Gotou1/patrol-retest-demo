@@ -8,8 +8,9 @@ const isBox=(state,x,y)=>state.boxes.some(b=>b.x===x&&b.y===y);
 function blocked(state,x,y){const tile=tileAt(state.level,x,y);return tile==='#'||(tile==='D'&&!state.hasKey);}
 export function mazeHazards(state){
   const level=mazeLevels[state.level],cells=new Set();
-  for(const lamp of level.lights){
-    const index=(Math.floor(state.turn/3)+lamp.phase)%4,[dx,dy]=[[1,0],[0,1],[-1,0],[0,-1]][index];
+  const lamps = level.lights.map(lamp => ({ ...lamp, heading:(Math.floor(state.turn / 3) + lamp.phase) % 4 }));
+  for (const lamp of lamps) {
+    const [dx,dy] = [[1,0],[0,1],[-1,0],[0,-1]][lamp.heading];
     cells.add(point(lamp.x,lamp.y));
     for(let distance=1;distance<=4;distance++){
       const x=lamp.x+dx*distance,y=lamp.y+dy*distance;
@@ -19,7 +20,7 @@ export function mazeHazards(state){
     }
   }
   const crowds=level.crowds.map(path=>path[state.turn%path.length]);
-  return {light:cells,crowds};
+  return {light:cells,crowds,lamps};
 }
 export function canHide(state){return state.boxes.some(b=>Math.abs(b.x-state.x)+Math.abs(b.y-state.y)<=1);}
 export function moveMaze(input,action){
