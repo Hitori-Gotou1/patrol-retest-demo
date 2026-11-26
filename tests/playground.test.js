@@ -7,6 +7,7 @@ import {newShop,shopOrder,deliverOrder,buyDecoration,shopTimeout,validateShop} f
 import {newPlatform,stepPlatform,platformRects,validatePlatform} from '../src/room/platformGame.js';
 import {newPinball,launchPinball,stepPinball,validatePinball} from '../src/room/pinballGame.js';
 import {newComic,validateComic,wrapComicText,newLightShow,validateLightShow,lightFrame,newGraffiti,validateGraffiti,validateMix,mixScore} from '../src/room/creativeTools.js';
+import {comicDialogue} from '../src/room/comicDialogue.js';
 import {synthesizeStems,createMixEngine} from '../src/audio/mixEngine.js';
 import {relayIssueBody,relayFromIssue,relaySubmissionUrl,validateRelayLedger,buildRelayWall,validateRelayWall,relayCommunity} from '../src/room/relayStory.js';
 import {moderateRelay,moderateCommunity} from '../scripts/moderate-relay.mjs';
@@ -53,6 +54,22 @@ test('mix engine cancels late audio activation on route change',async()=>{
 const repo={owner:'Hitori-Gotou1',repo:'patrol-retest-demo'},date=new Date('2026-11-10T10:00:00Z');
 const draft=(chapter=1,parentIssue=0,line='下一句，会去哪里呢？')=>({storyId:relaySeeds[0].id,chapter,parentIssue,nickname:'访客',line});
 const reviewed=(issue,chapter,parentIssue,line)=>({...draft(chapter,parentIssue,line),issue,approvedBy:repo.owner,approvedAt:date.toISOString()});
+test('long comic dialogue can still point to a raised or enlarged speaker', () => {
+  const panel = newComic().panels[0];
+  const speaker = panel.objects[0];
+  panel.speaker = speaker.key;
+  panel.dialogue = '好'.repeat(60);
+  speaker.y = 190;
+  for (const x of [35, 300, 565]) {
+    for (const scale of [.6, 1, 1.5]) {
+      Object.assign(speaker, { x, scale });
+      const { y, lines, tail } = comicDialogue(panel);
+      assert.equal(lines.join(''), panel.dialogue);
+      assert.ok(y > 36 && tail?.y > 36, 'Keep the bubble and tail below the caption.');
+      assert.ok(Math.abs(tail.x - x) <= 73, 'Aim at the selected instance.');
+    }
+  }
+});
 test('relay reveals only the last line until six, preserves a published branch and drops revoked descendants',()=>{
  let ledger={version:1,reviewed:[reviewed(10,1,0,'第一句')]},wall=buildRelayWall(ledger);assert.equal(wall.stories[0].lastLine,'第一句');assert.deepEqual(wall.stories[0].parts,[]);
  ledger.reviewed.push(reviewed(5,1,0,'另一条迟到的分支'));wall=buildRelayWall(ledger,wall);assert.equal(wall.stories[0].lastIssue,10);

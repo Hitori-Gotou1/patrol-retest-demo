@@ -26,8 +26,9 @@ function findTail(bubble, object, faces) {
   const face = faceBox(object);
   const options = [
     { x:object.x, y:face.top - 9 },
-    { x:face.left - 8, y:face.top + object.scale * 15 },
-    { x:face.right + 8, y:face.top + object.scale * 15 }
+    { x:face.left - 8, y:(face.top + face.bottom) / 2 },
+    { x:face.right + 8, y:(face.top + face.bottom) / 2 },
+    { x:object.x, y:face.bottom + 9 }
   ];
   let best;
   for (const tip of options) {
@@ -42,10 +43,10 @@ function findTail(bubble, object, faces) {
     if (!best || score < best.score) best = { base, tip, score };
   }
   if (!best) return null;
-  const { base, tip } = best;
+  const { base, tip, score } = best;
   const dx = base.vertical ? 0 : 10, dy = base.vertical ? 8 : 0;
   const start = `${base.x - dx} ${base.y - dy}`, end = `${base.x + dx} ${base.y + dy}`;
-  return { path:`M${start}L${tip.x} ${tip.y}L${end}`, x:tip.x, y:tip.y };
+  return { path:`M${start}L${tip.x} ${tip.y}L${end}`, x:tip.x, y:tip.y, score };
 }
 
 export function comicDialogue(panel) {
@@ -55,11 +56,25 @@ export function comicDialogue(panel) {
   const height = 22 + lines.length * 23;
   const speaker = panel.objects.find(object => panel.speaker === object.key);
   const faces = panel.objects.map(faceBox);
-  const preferred = clamp((speaker?.x || 300) - width / 2, 16, 584 - width);
-  const bubble = [preferred, 16, 584 - width, 300 - width / 2].reduce((best, x) => {
-    const candidate = { x, y:47, width, height };
-    const score = faces.reduce((sum, face) => sum + intersection(candidate, face), 0) + Math.abs(x - preferred);
-    return score < (best?.score ?? Infinity) ? { ...candidate, score } : best;
-  }, null);
-  return { ...bubble, lines, tail: speaker ? findTail(bubble, speaker, faces) : null };
+  const margin = 16, firstRow = 47, lastRow = 348 - height;
+  const preferred = clamp((speaker?.x || 300) - width / 2, margin, 584 - width);
+  const columns = new Set([preferred, margin, 584 - width, 300 - width / 2]);
+  const rows = new Set([firstRow, lastRow]);
+  if (speaker) {
+    const face = faceBox(speaker);
+    rows.add(clamp(face.top - height - 20, firstRow, lastRow));
+    rows.add(clamp(face.bottom + 20, firstRow, lastRow));
+  }
+  let best;
+  for (const y of rows) {
+    for (const x of columns) {
+      const bubble = { x, y, width, height };
+      const tail = speaker ? findTail(bubble, speaker, faces) : null;
+      if (speaker && !tail) continue;
+      const faceOverlap = faces.reduce((sum, face) => sum + intersection(bubble, face), 0);
+      const score = faceOverlap * 2 + Math.abs(x - preferred) * .5 + (y - firstRow) * .65 + (tail?.score ?? 0);
+      if (!best || score < best.score) best = { ...bubble, tail, score };
+    }
+  }
+  return { ...best, lines };
 }
