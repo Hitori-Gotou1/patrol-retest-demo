@@ -38,7 +38,7 @@ export async function downloadStage(svg, filename, options) {
 export async function captureWorkPreview(root) {
   const surface = root?.querySelector('.editor-workspace-canvas') || root;
   const svg = surface?.querySelector('svg[viewBox]');
-  const source = surface?.querySelector('canvas') || (svg ? await renderStage(svg, { scale: Math.min(1, 360 / svg.viewBox.baseVal.width) }) : null);
+  const source = surface?.querySelector('canvas:not([data-editor-only])') || (svg ? await renderStage(svg, { scale: Math.min(1, 360 / svg.viewBox.baseVal.width) }) : null);
   if (!source) return '';
   const canvas = document.createElement('canvas'), scale = Math.min(360 / source.width, 420 / source.height, 1);
   canvas.width = Math.max(1, Math.round(source.width * scale)); canvas.height = Math.max(1, Math.round(source.height * scale));

@@ -1,18 +1,199 @@
 <script setup>
-import {computed,ref,onMounted,onBeforeUnmount} from 'vue';
-import {relaySeeds} from '../../data/playground.js';
-import {relayCommunity,validateRelayWall,validateRelayDraft,relaySubmissionUrl} from '../../room/relayStory.js';
-import {useLocalDraft} from '../../composables/useLocalDraft.js';
-import {recordActivity} from '../../room/activityLog.js';
-const validate=v=>{if(!v||v.version!==1)throw new Error();return {version:1,nickname:String(v.nickname||'').slice(0,40),line:String(v.line||'').slice(0,100),local:relaySeeds.map(s=>(Array.isArray(v.local?.[relaySeeds.indexOf(s)])?v.local[relaySeeds.indexOf(s)]:[]).filter(t=>typeof t==='string'&&t.trim()&&t.length<=100).slice(0,6))};};
-const {state,saved}=useLocalDraft('hitori-room:relay:v1',{version:1,nickname:'',line:'',local:[[],[],[]]},validate),mode=ref('public'),index=ref(0),wall=ref(null),ready=ref(false),loading=ref(false),consent=ref(false),message=ref('正在读取已审核的接龙…');
-const seed=computed(()=>relaySeeds[index.value]),publicStory=computed(()=>wall.value?.stories.find(s=>s.id===seed.value.id)),local=computed(()=>state.value.local[index.value]),count=computed(()=>mode.value==='local'?local.value.length:publicStory.value?.count||0),last=computed(()=>mode.value==='local'?local.value.at(-1)||seed.value.opening:publicStory.value?.lastLine||seed.value.opening);
-const url=computed(()=>{if(!ready.value||!consent.value||count.value>=6||mode.value!=='public')return '';try{return relaySubmissionUrl(validateRelayDraft({storyId:seed.value.id,chapter:count.value+1,parentIssue:publicStory.value.lastIssue,nickname:state.value.nickname,line:state.value.line}));}catch{return '';}});
-let controller,timeout;
-async function refresh(){controller?.abort();controller=new AbortController();clearTimeout(timeout);timeout=setTimeout(()=>controller.abort(),8000);loading.value=true;ready.value=false;try{const response=await fetch(`${import.meta.env.BASE_URL}community/relay-stories.json?t=${Date.now()}`,{signal:controller.signal,cache:'no-store'});if(!response.ok)throw new Error();wall.value=validateRelayWall(await response.json());ready.value=true;message.value='已读取审核后的故事。投稿前可以再刷新一次接续位置。';}catch{message.value='公开接龙暂时无法读取。稍后可刷新，也可以先玩本机练习。';}finally{loading.value=false;clearTimeout(timeout);}}
-function practice(){try{const draft=validateRelayDraft({storyId:seed.value.id,chapter:local.value.length+1,parentIssue:local.value.length?local.value.length:0,nickname:state.value.nickname,line:state.value.line});local.value.push(draft.line);state.value.line='';if(local.value.length===6)recordActivity('relay',`本机练习完成 · ${seed.value.title}`,local.value.join('|'));message.value='纸条折好了。下一句只会看见刚才的这一句。';}catch(e){message.value=e.message;}}
-onMounted(refresh);onBeforeUnmount(()=>{controller?.abort();clearTimeout(timeout);});
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue';
+import { relaySeeds } from '../../data/playground.js';
+import { relayCommunity, validateRelayWall, validateRelayDraft, relaySubmissionUrl } from '../../room/relayStory.js';
+import { useLocalDraft } from '../../composables/useLocalDraft.js';
+import { recordActivity } from '../../room/activityLog.js';
+
+function validate(value) {
+  if (!value || value.version !== 1) throw new Error('无法读取接龙草稿。');
+  const groups = relaySeeds.map((_, i) => {
+    const entries = Array.isArray(value.local?.[i]) ? value.local[i] : [];
+    return entries.flatMap((line, index) => typeof line === 'string' && line.trim() && line.length <= 100
+      ? [{ line, nickname:typeof value.bylines?.[i]?.[index] === 'string' ? value.bylines[i][index].slice(0,40) : '' }]
+      : []).slice(0,6);
+  });
+  return {
+    version:1, nickname:String(value.nickname || '').slice(0,40), line:String(value.line || '').slice(0,100),
+    local:groups.map(parts => parts.map(part => part.line)), bylines:groups.map(parts => parts.map(part => part.nickname)),
+    mode:value.mode === 'local' ? 'local' : 'public',
+    index:Number.isInteger(value.index) && relaySeeds[value.index] ? value.index : 0
+  };
+}
+const empty = validate({ version:1 });
+const { state, saved } = useLocalDraft('hitori-room:relay:v1', empty, validate);
+const wall = ref(null), ready = ref(false), loading = ref(false), consent = ref(false);
+const message = ref(''), fetchMessage = ref('');
+const unfurl = ref(false);
+const seed = computed(() => relaySeeds[state.value.index]);
+const localMode = computed(() => state.value.mode === 'local');
+const publicStory = computed(() => wall.value?.stories.find(story => story.id === seed.value.id));
+const local = computed(() => state.value.local[state.value.index]);
+const bylines = computed(() => state.value.bylines[state.value.index]);
+const count = computed(() => localMode.value ? local.value.length : publicStory.value?.count || 0);
+const last = computed(() => localMode.value ? local.value.at(-1) || seed.value.opening : publicStory.value?.lastLine || seed.value.opening);
+const lastByline = computed(() => localMode.value ? bylines.value[count.value-1] : '');
+const parts = computed(() => {
+  if (count.value !== 6) return [];
+  return localMode.value ? local.value.map((line, i) => ({ line, nickname:bylines.value[i] || '' })) : publicStory.value.parts;
+});
+const url = computed(() => {
+  if (!ready.value || !consent.value || count.value >= 6 || localMode.value) return '';
+  try {
+    return relaySubmissionUrl(validateRelayDraft({
+      storyId:seed.value.id, chapter:count.value+1, parentIssue:publicStory.value.lastIssue,
+      nickname:state.value.nickname, line:state.value.line
+    }));
+  } catch { return ''; }
+});
+
+let controller, timeout;
+async function refresh() {
+  if (loading.value) return;
+  const request = new AbortController();
+  controller = request;
+  timeout = setTimeout(() => request.abort(),8000);
+  loading.value = true;
+  ready.value = false;
+  fetchMessage.value = '正在读取已审核的接龙…';
+  try {
+    const response = await fetch(`${import.meta.env.BASE_URL}community/relay-stories.json?t=${Date.now()}`, { signal:request.signal, cache:'no-store' });
+    if (!response.ok) throw new Error();
+    wall.value = validateRelayWall(await response.json());
+    ready.value = true;
+    fetchMessage.value = '已读取审核后的故事。';
+  } catch {
+    fetchMessage.value = '公开接龙暂时无法读取。稍后可刷新，也可以先玩本机练习。';
+  } finally {
+    loading.value = false;
+    clearTimeout(timeout);
+  }
+}
+function chooseView(mode, index = state.value.index) {
+  state.value.mode = mode;
+  state.value.index = index;
+  consent.value = false;
+  unfurl.value = false;
+  message.value = '';
+}
+function practice() {
+  try {
+    const draft = validateRelayDraft({
+      storyId:seed.value.id, chapter:local.value.length+1, parentIssue:local.value.length,
+      nickname:state.value.nickname, line:state.value.line
+    });
+    local.value.push(draft.line);
+    bylines.value.push(draft.nickname);
+    state.value.line = '';
+    if (local.value.length === 6) {
+      unfurl.value = true;
+      recordActivity('relay',`本机练习完成 · ${seed.value.title}`,local.value.join('|'));
+      message.value = '六句写好了，整张故事纸已展开。';
+    } else {
+      message.value = `第 ${count.value} 句已折好，下一位可以接着写。`;
+    }
+  } catch (error) { message.value = error.message; }
+}
+function reset() {
+  state.value.local[state.value.index] = [];
+  state.value.bylines[state.value.index] = [];
+  state.value.line = '';
+  unfurl.value = false;
+  message.value = '';
+}
+onMounted(refresh);
+onBeforeUnmount(() => { controller?.abort(); clearTimeout(timeout); });
 </script>
-<template><section class="room-panel" aria-labelledby="relay-title"><div class="pg-heading"><div><p class="pg-kicker">PASS THE NEXT LINE / 物語のバトン</p><h2 id="relay-title">上一句之后，会发生什么？</h2><p class="room-intro">只读最后一句，再接一句。六句集齐时，大家一起展开整张故事纸。</p></div><span class="pg-number">21</span></div><div class="pg-toolbar"><button :aria-pressed="mode==='public'" @click="mode='public';consent=false">公开接龙 · 站主审核</button><button :aria-pressed="mode==='local'" @click="mode='local';consent=false">本机练习</button><button :disabled="loading" @click="refresh">{{loading?'读取中…':'刷新公开接续'}}</button></div><div class="pg-toolbar"><button v-for="(s,i) in relaySeeds" :key="s.id" :aria-pressed="index===i" @click="index=i;consent=false">{{s.title}}</button></div><p v-if="mode==='local'" class="pg-alert">本机练习只存在当前浏览器，适合把手机轮流传给朋友。练习内容不会投稿，也不会显示为访客作品。</p><article class="relay-paper"><p class="pg-kicker">{{mode==='local'?'LOCAL PRACTICE':'REVIEWED VISITOR STORY'}} / {{count}} OF 6</p><h3>{{seed.title}}</h3><blockquote>{{last}}</blockquote><p v-if="count<6" class="pg-small">现在只展开上一句。等第六句接好，故事就完整了。</p><div v-if="count===6" class="relay-complete"><p class="pg-small">开场 / {{seed.opening}}</p><ol><li v-for="(p,i) in mode==='local'?local:publicStory.parts" :key="i"><p>{{typeof p==='string'?p:p.line}}</p><small>{{typeof p==='string'?`本机纸条 ${i+1}`:p.nickname}}</small><a v-if="typeof p!=='string'" :href="`https://github.com/${relayCommunity.repository}/issues/${p.issue}`" target="_blank" rel="noopener noreferrer">原投稿 ↗</a></li></ol></div></article>
-<form v-if="count<6" class="pg-settings relay-form" @submit.prevent="mode==='local'?practice():null"><label>你的昵称（可不填）<input v-model="state.nickname" maxlength="40"></label><label>第 {{count+1}} 句 · {{state.line.length}} / 100 字<textarea v-model="state.line" maxlength="100" rows="3" placeholder="接过上一句，写一个小小的转折。"></textarea></label><template v-if="mode==='public'"><p class="pg-small">投稿会在 GitHub 公开，需要 GitHub 登录并在新页面确认提交。站主添加审核标签后，才会进入网站；多人同时接同一句时，已发布的接续优先，未接上的句子需要刷新后重新投稿。</p><label class="relay-consent"><input v-model="consent" type="checkbox"> 我知道内容会公开，且需要站主审核。</label><a v-if="url" id="relay-submit" class="room-button primary" :href="url" target="_blank" rel="noopener noreferrer">打开 GitHub，核对并提交 →</a><button v-else type="button" disabled>{{!ready?'先读取公开接续':'填写一句并确认公开说明'}}</button></template><button v-else id="relay-practice" type="submit" class="primary">折好纸条，交给下一位 →</button></form><button v-if="mode==='local'&&count===6" @click="state.local[index]=[];state.line=''">开始新的本机接龙</button><p class="pg-status" role="status">{{message}}</p><p class="pg-small">{{saved?'未提交的草稿与本机练习自动保存。':'本机存档暂不可用。'}} 公开故事的完整内容以审核后的六句为准；GitHub 原投稿始终公开可见。</p></section></template>
-<style scoped>.relay-paper{background:#f5e9d7;border:1px solid #b99fa7;padding:30px;margin:22px 0;box-shadow:4px 5px 0 #d6c2c7}.relay-paper h3{font-size:23px}.relay-paper blockquote{font-size:21px;line-height:2;margin:24px 0;border-left:3px solid #ae8095;padding-left:20px;color:#735267}.relay-form{max-width:680px}.relay-consent{display:flex!important;gap:10px!important;align-items:center;font-size:12px}.relay-complete ol{padding-left:22px}.relay-complete li{padding:12px 0;border-bottom:1px dashed #c7acb7}.relay-complete li p{line-height:1.9}.relay-complete small,.relay-complete a{font-size:10px;color:#917387}.relay-complete a{margin-left:12px}@media(max-width:600px){.relay-paper{padding:20px}.relay-paper blockquote{font-size:18px}}</style>
+
+<template>
+  <section class="room-panel relay-room" aria-labelledby="relay-title">
+    <header class="activity-title">
+      <p class="pg-kicker">创作室 · 六折接龙</p>
+      <h2 id="relay-title">上一句之后，会发生什么？</h2>
+      <p class="room-intro">接着眼前这一句写。第六句落笔后，整张故事纸一起展开。</p>
+    </header>
+    <div class="pg-toolbar">
+      <button :aria-pressed="!localMode" @click="chooseView('public')">公开接龙 · 站主审核</button>
+      <button :aria-pressed="localMode" @click="chooseView('local')">本机练习</button>
+      <button :disabled="loading" @click="refresh">{{ loading ? '读取中…' : '刷新公开接续' }}</button>
+    </div>
+    <div class="pg-toolbar relay-seeds">
+      <button v-for="(item,i) in relaySeeds" :key="item.id" :aria-pressed="state.index === i" @click="chooseView(state.mode,i)">{{ item.title }}</button>
+    </div>
+    <p v-if="!localMode && !ready" class="relay-notice" role="status">{{ fetchMessage }}</p>
+    <article class="relay-paper" :class="{ 'is-local':localMode, 'is-printed':!localMode }" :data-fold-count="count">
+      <header><h3>{{ seed.title }}</h3><span>{{ localMode ? '本机练习' : '公开审核稿' }} · {{ count }} / 6</span></header>
+      <div v-if="count < 6" class="relay-pocket">
+        <span v-for="fold in Math.max(0,count-1)" :key="fold" class="relay-closed-fold" aria-hidden="true"></span>
+        <div class="relay-current-fold" aria-live="polite">
+          <small>{{ count ? '第 ' + count + ' 句' : '故事种子' }}</small>
+          <blockquote>{{ last }}</blockquote>
+          <p v-if="lastByline" class="relay-signature">{{ lastByline }}</p>
+        </div>
+      </div>
+      <div v-else class="relay-complete" :class="{ 'relay-unfurl':unfurl }" @animationend="unfurl = false">
+        <p class="relay-opening">{{ seed.opening }}</p>
+        <ol class="relay-open-folds">
+          <li v-for="(part,i) in parts" :key="i">
+            <p class="relay-fold-number">第 {{ i+1 }} 句</p>
+            <p class="relay-fold-text">{{ part.line }}</p>
+            <small v-if="part.nickname" class="relay-signature">{{ part.nickname }}</small>
+            <a v-if="part.issue" :href="`https://github.com/${relayCommunity.repository}/issues/${part.issue}`" target="_blank" rel="noopener noreferrer">原投稿 ↗</a>
+          </li>
+        </ol>
+      </div>
+    </article>
+    <form v-if="count < 6" class="pg-settings relay-form" @submit.prevent="localMode ? practice() : null">
+      <label>你的昵称（可不填）<input v-model="state.nickname" maxlength="40"></label>
+      <label>第 {{ count+1 }} 句 · {{ state.line.length }} / 100 字<textarea v-model="state.line" maxlength="100" rows="3" placeholder="接过上一句，写一个小小的转折。"></textarea></label>
+      <template v-if="!localMode">
+        <p class="pg-small">投稿需要登录 GitHub 并确认公开提交，站主审核后才会展示。多人同时接同一句时，请刷新后核对接续位置。</p>
+        <label class="relay-consent"><input v-model="consent" type="checkbox"> 我知道内容会公开，且需要站主审核。</label>
+        <a v-if="url" id="relay-submit" class="room-button primary" :href="url" target="_blank" rel="noopener noreferrer">打开 GitHub，核对并提交 →</a>
+        <button v-else type="button" disabled>{{ !ready ? '先读取公开接续' : '填写一句并确认公开说明' }}</button>
+      </template>
+      <button v-else id="relay-practice" type="submit" class="primary">折好纸条，交给下一位 →</button>
+    </form>
+    <button v-if="localMode && count === 6" type="button" @click="reset">开始新的本机接龙</button>
+    <p class="pg-status" role="status">{{ message }}</p>
+    <p class="pg-small">{{ saved ? '本机练习和未投稿的草稿保存在当前浏览器。' : '本机存档暂不可用。' }}</p>
+  </section>
+</template>
+
+<style scoped>
+.relay-room .pg-toolbar button { min-height:44px; }
+.relay-paper { --fold-edge:#9f8a7d; --fold-face:#fff7e5; background:#eedec6; border:1px solid #b69d87; padding:clamp(9px,2.1vw,24px); margin:13px 0 21px; box-shadow:3px 5px 0 #cdb59e; }
+.relay-paper.is-local { --fold-edge:#997781; --fold-face:#fffaed; }
+.relay-paper.is-printed { --fold-edge:#8a5e72; --fold-face:#fbedd9; }
+.relay-paper>header { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:5px 12px; border-bottom:1px solid #c4aa90; margin:0 0 11px; padding-bottom:7px; }
+.relay-paper>header h3 { margin:0; font-size:clamp(16px,3vw,24px); color:#503449; }
+.relay-paper>header span { color:#6c4d53; font-size:12px; }
+.relay-notice { background:#efd7ce; color:#694153; border-left:3px solid #a86b79; padding:6px 10px; font-size:12px; }
+.relay-pocket { display:flex; align-items:stretch; min-height:150px; margin:2px 0 7px; }
+.relay-closed-fold { background:linear-gradient(93deg,#b39a85,#eddcc3 35%,#b39a85 95%); flex:0 0 clamp(8px,1.3vw,18px); border-block:1px solid #b89c82; }
+.relay-closed-fold:nth-child(2n) { background:linear-gradient(91deg,#e6cdb4,#b29a82); }
+.relay-current-fold { flex:1; min-width:0; padding:clamp(10px,2.7vw,25px); border:1px solid var(--fold-edge); background:var(--fold-face); }
+.is-local .relay-current-fold,.is-local .relay-open-folds li { border-left:2px dashed var(--fold-edge); }
+.is-printed .relay-current-fold,.is-printed .relay-open-folds li { border-left:3px double var(--fold-edge); }
+.relay-current-fold small,.relay-fold-number { color:#785459; font-size:12px; font-weight:700; }
+.relay-current-fold blockquote { font-size:clamp(16px,2.7vw,22px); line-height:1.9; color:#50364a; margin:8px 0 0; overflow-wrap:anywhere; }
+.relay-signature { display:block; text-align:right; color:#684655; font-size:12px; margin:5px 0 0; }
+.relay-opening { color:#61464d; font-size:14px; margin:0 0 8px; }
+.relay-open-folds { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); list-style:none; padding:0; margin:0; gap:2px; }
+.relay-open-folds li { padding:9px; background:var(--fold-face); border:1px solid var(--fold-edge); box-shadow:inset -4px 0 #aa816511; min-width:0; overflow-wrap:anywhere; }
+.relay-open-folds li:nth-child(even) { background:#f3e3cc; }
+.relay-fold-number { margin:0 0 5px; }
+.relay-fold-text { color:#4e3b47; font-size:14px; margin:0; }
+.relay-open-folds a { display:inline-flex; align-items:center; min-height:44px; font-size:12px; text-underline-offset:4px; color:#71435e; }
+.relay-form { max-width:680px; }
+.relay-consent { display:flex!important; gap:10px!important; align-items:center; font-size:12px; }
+.relay-unfurl { animation:relay-unfold .34s ease-out both; transform-origin:top left; }
+@keyframes relay-unfold { from { transform:scale(.985); opacity:.65; } to { transform:scale(1); opacity:1; } }
+@media(max-width:1000px) { .relay-open-folds { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media(max-width:600px) {
+  .relay-open-folds { grid-template-columns:minmax(0,1fr); }
+  .relay-open-folds li { min-height:92px; }
+  .relay-pocket { min-height:128px; }
+}
+@media(prefers-reduced-motion:reduce) { .relay-unfurl { animation:none; } }
+</style>

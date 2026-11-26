@@ -60,7 +60,7 @@ try:
       page.locator('.editor-save-work').click();expect(page.locator('.editor-workspace-notice')).to_contain_text('已存入作品架')
      if route=='comic':page.locator('.editor-workspace-tools textarea').fill('这句对白来自手机。')
      if route=='graffiti':
-      b=page.locator('canvas').bounding_box();page.touchscreen.tap(b['x']+b['width']/2,b['y']+b['height']/2)
+      b=page.locator('.graffiti-canvas canvas').bounding_box();page.touchscreen.tap(b['x']+b['width']/2,b['y']+b['height']/2)
      if route=='decorate':page.get_by_role('button',name='添加落地灯',exact=True).click()
      with page.expect_download(timeout=25000) as pending:page.locator('.editor-save').click()
      file=OUT/f'{route}-mobile.png';pending.value.save_as(file);data=file.read_bytes();assert data[:8]==b'\x89PNG\r\n\x1a\n' and len(data)>1000

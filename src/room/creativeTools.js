@@ -8,7 +8,33 @@ export function lightFrame(show,step,fraction){return show.cues.map(row=>{const 
 export const comicScenes=[{id:'room',label:'放学后的房间',background:'#e7cdd8',floor:'#b695ab'},{id:'stage',label:'小小舞台',background:'#3d354d',floor:'#6e586f'},{id:'street',label:'晴天的街角',background:'#c6d9d2',floor:'#a0b6a6'}];
 const ids=['hitori','nijika','ryo','kita'];
 export function newComic(){return {version:1,title:'今天，也一起。',layout:'grid',panels:Array.from({length:4},(_,i)=>({scene:comicScenes[i%3].id,caption:['放学以后','排练之前','稍微有点紧张','不过，大家都在'][i],dialogue:['今、今天要练哪一段？','从第一小节开始吧。','我来数拍子。','一、二、三、四！'][i],objects:[{key:`a${i}`,id:ids[i],x:190,y:265,scale:1},{key:`b${i}`,id:ids[(i+1)%4],x:410,y:265,scale:1}]}))};}
-export function validateComic(v){if(!v||v.version!==1||typeof v.title!=='string'||!Array.isArray(v.panels)||v.panels.length!==4)throw new Error('漫画需要四个画面。');return {version:1,title:v.title.slice(0,40),layout:v.layout==='vertical'?'vertical':'grid',panels:v.panels.map((p,i)=>{if(!p||!Array.isArray(p.objects)||p.objects.length>4)throw new Error('角色数据无效。');return {scene:comicScenes.some(s=>s.id===p.scene)?p.scene:'room',caption:String(p.caption||'').slice(0,40),dialogue:String(p.dialogue||'').slice(0,60),objects:p.objects.filter(o=>ids.includes(o.id)).map((o,j)=>({key:`${i}-${j}`,id:o.id,x:number(o.x,35,565,190),y:number(o.y,190,325,265),scale:number(o.scale,.6,1.5,1)}))};})};}
+function validateComicPanel(panel, index) {
+  if (!panel || !Array.isArray(panel.objects) || panel.objects.length > 4) throw new Error('角色数据无效。');
+  const keys = new Set();
+  let speaker = '';
+  const objects = panel.objects.filter(object => ids.includes(object?.id)).map((object, position) => {
+    let key = typeof object.key === 'string' && /^[\w-]{1,80}$/.test(object.key) ? object.key : `${index}-${position}`;
+    if (keys.has(key)) {
+      key = `panel-${index}-${position}`;
+      while (keys.has(key)) key += '-';
+    }
+    keys.add(key);
+    if (!speaker && panel.speaker && panel.speaker === object.key) speaker = key;
+    return { key, id:object.id, x:number(object.x,35,565,190), y:number(object.y,190,325,265), scale:number(object.scale,.6,1.5,1) };
+  });
+  return {
+    scene:comicScenes.some(scene => scene.id === panel.scene) ? panel.scene : 'room',
+    caption:String(panel.caption || '').slice(0,40),
+    dialogue:String(panel.dialogue || '').slice(0,60),
+    ...(speaker ? { speaker } : {}), objects
+  };
+}
+export function validateComic(value) {
+  if (!value || value.version !== 1 || typeof value.title !== 'string' || !Array.isArray(value.panels) || value.panels.length !== 4) {
+    throw new Error('漫画需要四个画面。');
+  }
+  return { version:1, title:value.title.slice(0,40), layout:value.layout === 'vertical' ? 'vertical' : 'grid', panels:value.panels.map(validateComicPanel) };
+}
 export function wrapComicText(text,width=19){const chars=Array.from(String(text).replace(/\s+/g,' '));return Array.from({length:Math.ceil(chars.length/width)},(_,i)=>chars.slice(i*width,(i+1)*width).join('')).slice(0,4);}
 export function newGraffiti(){return {version:1,format:'wall',paper:'#f4e8da',layers:Array.from({length:3},(_,i)=>({name:`图层 ${i+1}`,visible:true,strokes:[]}))};}
 export function validateGraffiti(v){if(!v||v.version!==1||!Array.isArray(v.layers)||v.layers.length!==3||!validColor(v.paper))throw new Error('涂鸦数据无效。');let count=0;return {version:1,format:v.format==='poster'?'poster':'wall',paper:v.paper,layers:v.layers.map((l,i)=>({name:`图层 ${i+1}`,visible:l.visible!==false,strokes:(Array.isArray(l.strokes)?l.strokes:[]).slice(-300).map(s=>{if(++count>300||!['pen','eraser','stamp'].includes(s.tool)||!validColor(s.color)||!Array.isArray(s.points)||s.points.length>2000)throw new Error('涂鸦内容过多。');return {tool:s.tool,color:s.color,size:number(s.size,1,80,8),stamp:ids.includes(s.stamp)?s.stamp:['✦','♪','LIVE!','♥'].includes(s.stamp)?s.stamp:'✦',points:s.points.map(p=>{if(!Array.isArray(p)||p.length!==2||!p.every(Number.isFinite))throw new Error('无效的笔迹。');return p.map(n=>clamp(n,0,1));})};})}))};}

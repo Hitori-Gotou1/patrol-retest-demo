@@ -9,6 +9,7 @@ import { loadLocal, downloadJson } from '../../room/storage.js';
 import { createArrangementPlayer, renderArrangement, audioBufferWav, downloadAudioBlob, arrangementDuration } from '../../audio/arrangementEngine.js';
 import { defaultTone, validateTone, guitarToneKey } from '../../room/effects.js';
 import { recordActivity } from '../../room/activityLog.js';
+import StudioBarStrip from './StudioBarStrip.vue';
 import EditorWorkspace from '../tools/EditorWorkspace.vue';
 import TemplateLibrary from '../tools/TemplateLibrary.vue';
 import { createDraftPersistence } from '../../services/draftPersistence.js';
@@ -74,10 +75,13 @@ onBeforeRouteLeave(() => { stop(); exportController?.abort(); });
 onBeforeUnmount(() => { alive = false; draftGuard.destroy(); importRevision++; stop(); exportController?.abort(); player.dispose(); document.removeEventListener('visibilitychange', hidden); window.removeEventListener('hitori:capture-draft', captureDraft); });
 </script>
 <template>
-<section class="room-panel" aria-labelledby="studio-title"><h2 id="studio-title">把四种声音，排成一句。</h2><p class="room-intro">一小节就能开始，也能把前奏、主歌排成完整段落。每四步是一拍，最多十六小节。</p>
+<section class="room-panel" aria-labelledby="studio-title">
+<header class="activity-title"><p class="play-eyebrow">STARRY 十六步编曲台</p><h2 id="studio-title">把四种声音，排成一句。</h2><p class="room-intro">在谱带上找小节，选四条音轨的落点。每四步是一拍。</p></header>
 <EditorWorkspace title="自己的编曲" save-label="导出编排" @save="exportPattern">
+<template #overview>
+  <StudioBarStrip :bars="bars" :range="range" :selected="selectedBar" :playing="playingBar" :step="currentStep" @select="selectedBar = $event"/>
+</template>
 <template #canvas>
-<div class="bar-tabs" role="group" aria-label="当前编辑小节"><button v-for="(bar,index) in bars" :key="bar.id" :aria-pressed="selectedBar===index" :class="{'bar-playing':playingBar===index}" @click="selectedBar=index">{{index+1}} · {{bar.name}}<span v-if="playingBar===index"> ♪ 播放中</span></button></div>
 <p class="room-hint studio-position">正在编辑第 {{selectedBar+1}} 小节<span v-if="playingBar>=0"> · 正在播放第 {{playingBar+1}} 小节，第 {{currentStep+1}} 步</span></p>
 <div class="studio-mobile-tools"><div role="group" aria-label="选择编辑轨道"><button v-for="(track,i) in studioTracks" :key="track.id" :aria-pressed="selectedTrack===i" @click="selectedTrack=i">{{track.label}}</button></div><div role="group" aria-label="选择节拍分段"><button :aria-pressed="stepPage===0" @click="stepPage=0">第 1–8 步</button><button :aria-pressed="stepPage===1" @click="stepPage=1">第 9–16 步</button></div></div><div class="studio-grid" aria-label="四轨十六步编排"><div v-for="(track,index) in studioTracks" :key="track.id" class="studio-track" :class="{'is-active-track':selectedTrack===index}"><strong>{{track.label}}</strong><div role="group" :aria-label="`${track.label}轨道`"><button v-for="step in 16" :key="step" type="button" :data-track="index" :data-step="step-1" :aria-label="`${track.label}第${step}步`" :aria-pressed="Boolean(masks[index] & (1 << (step-1)))" :class="{'is-current':playingBar===selectedBar&&currentStep===step-1,'is-beat':(step-1)%4===0,'mobile-step-hidden':Math.floor((step-1)/8)!==stepPage}" @click="toggle(index,step-1)">{{step}}</button></div></div></div>
 </template>
