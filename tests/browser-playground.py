@@ -92,7 +92,7 @@ def layouts_lifecycle(browser):
   f.close()
  f=Fixture(browser,blocked=True);p=f.page;f.goto('cards');p.locator('#card-end').click();p.wait_for_timeout(200);expect(p.locator('.pg-small').last).to_contain_text('无法保存');f.close()
  f=Fixture(browser,late=True);p=f.page;f.goto('mix');p.locator('#mix-play').click();p.wait_for_function('window.__resumeGates.length>=1');f.goto('play');p.evaluate('window.__resumeGates.forEach(r=>r())');p.wait_for_timeout(150);assert p.evaluate('window.__sourceStarts')==0;f.close()
- f=Fixture(browser);p=f.page;f.context.route('**/community/relay-stories.json*',lambda r:r.fulfill(status=503,body='offline'));f.goto('relay');expect(p.locator('.pg-status')).to_contain_text('暂时无法读取');expect(p.locator('#relay-submit')).to_have_count(0);f.close()
+ f=Fixture(browser);p=f.page;f.context.route('**/community/relay-stories.json*',lambda r:r.fulfill(status=503,body='offline'));f.goto('relay');expect(p.locator('.relay-notice')).to_contain_text('暂时无法读取');expect(p.locator('#relay-submit')).to_have_count(0);f.close()
 
 class Handler(SimpleHTTPRequestHandler):
  def translate_path(self,path):
