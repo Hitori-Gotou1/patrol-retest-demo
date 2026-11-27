@@ -63,10 +63,12 @@ test('long comic dialogue can still point to a raised or enlarged speaker', () =
   for (const x of [35, 300, 565]) {
     for (const scale of [.6, 1, 1.5]) {
       Object.assign(speaker, { x, scale });
-      const { y, lines, tail } = comicDialogue(panel);
-      assert.equal(lines.join(''), panel.dialogue);
-      assert.ok(y > 36 && tail?.y > 36, 'Keep the bubble and tail below the caption.');
-      assert.ok(Math.abs(tail.x - x) <= 73, 'Aim at the selected instance.');
+      for (const captionHeight of [36, 59]) {
+        const { y, lines, tail } = comicDialogue(panel, captionHeight);
+        assert.equal(lines.join(''), panel.dialogue);
+        assert.ok(y > captionHeight && tail?.y > captionHeight, 'Keep the bubble and tail below the caption.');
+        assert.ok(Math.abs(tail.x - x) <= 73, 'Aim at the selected instance.');
+      }
     }
   }
 });

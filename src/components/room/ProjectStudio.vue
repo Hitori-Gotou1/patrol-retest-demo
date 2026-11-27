@@ -6,6 +6,7 @@ import {useLocalDraft} from '../../composables/useLocalDraft.js';
 import {readWorks,readDrafts,workTypes} from '../../room/workshelf.js';
 import {downloadJson} from '../../room/storage.js';
 import {downloadStage} from '../../room/exportImage.js';
+import { layoutSvgLabel, svgLabelFont } from '../../room/svgLabel.js';
 import {lightFrame} from '../../room/creativeTools.js';
 import {patternBars} from '../../room/pattern.js';
 import {createArrangementPlayer,arrangementDuration,renderArrangement,audioBufferWav,downloadAudioBlob} from '../../audio/arrangementEngine.js';
@@ -20,6 +21,7 @@ import {recordActivity} from '../../room/activityLog.js';
 import {rasterData} from '../../services/safeMedia.js';
 const claimMedia=useMediaFocus('project',stop);
 const {state,saved,persist}=useLocalDraft('hitori-room:project:v1',defaultProject,validateProject,{validateOnSave:true});
+const stageTitle = computed(() => layoutSvgLabel(state.value.name, 900 - 2 * 36, 24));
 const works=ref(readWorks()),choices=ref({studio:'',lights:'',effects:'',backdrop:'',poster:''}),message=ref('先挑自己的编曲与灯光，再为舞台放一幅画。'),playing=ref(false),starting=ref(false),position=ref({step:0,cycle:1,fraction:0}),stage=ref(null),file=ref(null);
 const audio=useInteractionAudio('project-studio');
 const engine=createArrangementPlayer({createContext:()=>{const A=window.AudioContext||window.webkitAudioContext;return new A();},isHidden:()=>document.hidden});
@@ -82,7 +84,12 @@ onBeforeUnmount(()=>{alive=false;exportController?.abort();stop();engine.dispose
    <h2 id="project-title">把今晚，排成一场完整演出。</h2>
    <p class="room-intro">编曲与灯光共享节拍，舞台画面和作品作为副本保存在项目里。</p>
  </header><div class="room-fields"><label class="room-field">演出名称<input v-model="state.name" maxlength="60"></label><label class="room-field">速度 BPM<input v-model.number="state.pattern.bpm" type="number" min="60" max="180"></label><label class="room-field">循环次数<select aria-label="循环次数" v-model.number="state.cycles"><option v-for="n in [1,2,4,8,16]" :key="n" :value="n">{{n}}轮</option></select></label></div>
- <svg ref="stage" viewBox="0 0 900 520" class="project-stage" role="img" aria-label="完整演出舞台"><defs><linearGradient v-for="(light,i) in lights" :id="`project-light-${i}`" :key="i" x2="0" y2="1"><stop :stop-color="light.color" stop-opacity=".65"/><stop offset="1" :stop-color="light.color" stop-opacity=".06"/></linearGradient></defs><rect width="900" height="520" fill="#292334"/><image v-if="state.backdrop" :href="state.backdrop" width="900" height="450" preserveAspectRatio="xMidYMid slice" opacity=".65"/><path d="M0 55Q150 150 300 55Q450 150 600 55Q750 150 900 55V0H0Z" fill="#59415c"/><rect y="430" width="900" height="90" fill="#654c64"/><g v-for="(l,i) in lights" :key="i" :opacity="l.intensity"><path :d="`M${150+i*300} 35L${l.x-160} 445L${l.x+160} 445Z`" :fill="`url(#project-light-${i})`"/><ellipse :cx="l.x" cy="435" rx="155" ry="20" :fill="l.color" opacity=".5"/></g><image v-if="state.poster" :href="state.poster" x="28" y="170" width="130" height="175" preserveAspectRatio="xMidYMid meet"/><image v-for="(m,i) in cast" :key="m.id" :href="assetUrl(m.image)" :x="190+i*155" y="260" width="110" height="175"/><text x="450" y="485" text-anchor="middle" fill="#f4dfe7" font-size="24">{{state.name}}</text></svg>
+ <svg ref="stage" viewBox="0 0 900 520" class="project-stage" role="img" aria-label="完整演出舞台"><defs><linearGradient v-for="(light,i) in lights" :id="`project-light-${i}`" :key="i" x2="0" y2="1"><stop :stop-color="light.color" stop-opacity=".65"/><stop offset="1" :stop-color="light.color" stop-opacity=".06"/></linearGradient></defs><rect width="900" height="520" fill="#292334"/><image v-if="state.backdrop" :href="state.backdrop" width="900" height="450" preserveAspectRatio="xMidYMid slice" opacity=".65"/><path d="M0 55Q150 150 300 55Q450 150 600 55Q750 150 900 55V0H0Z" fill="#59415c"/><rect y="430" width="900" height="90" fill="#654c64"/><g v-for="(l,i) in lights" :key="i" :opacity="l.intensity"><path :d="`M${150+i*300} 35L${l.x-160} 445L${l.x+160} 445Z`" :fill="`url(#project-light-${i})`"/><ellipse :cx="l.x" cy="435" rx="155" ry="20" :fill="l.color" opacity=".5"/></g><image v-if="state.poster" :href="state.poster" x="28" y="170" width="130" height="175" preserveAspectRatio="xMidYMid meet"/><image v-for="(m,i) in cast" :key="m.id" :href="assetUrl(m.image)" :x="190+i*155" y="260" width="110" height="175"/>
+   <text x="450" :y="stageTitle.lines.length === 1 ? 485 : 468" text-anchor="middle" fill="#f4dfe7"
+     :font-family="svgLabelFont" :font-size="stageTitle.fontSize">
+     <tspan v-for="(line, i) in stageTitle.lines" :key="i" x="450" :dy="i ? 28 : 0">{{ line }}</tspan>
+   </text>
+ </svg>
  <div class="timeline-steps" aria-label="当前演出步数"><span v-for="n in 16" :key="n" :class="{on:position.step===n-1}"></span></div><p class="room-hint">第{{position.cycle}}轮 / {{state.cycles}}轮 · 第{{(position.bar||0)+1}} / {{patternBars(state.pattern).length}} 小节 · 第{{position.step+1}}步</p><div class="room-actions"><button v-if="!playing" id="project-play" class="primary" type="button" :disabled="starting||exporting" @click="play">{{starting?'准备中…':'开始完整演出'}}</button><button v-else type="button" @click="stop">停止演出</button><button type="button" @click="photo">保存演出画面 PNG</button><button type="button" @click="exportProject">导出完整项目 JSON</button><button type="button" @click="file.click()">导入完整项目</button><input ref="file" hidden type="file" accept=".json,application/json" aria-label="选择演出项目" @change="importFile"></div>
  <section class="project-video" aria-labelledby="project-video-title">
   <h3 id="project-video-title">把这一场演出带走</h3>
