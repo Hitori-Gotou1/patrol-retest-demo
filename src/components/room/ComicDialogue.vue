@@ -1,8 +1,11 @@
 <script setup>
 import { computed } from 'vue';
 import { comicDialogue } from '../../room/comicDialogue.js';
-const props = defineProps({ panel: { type: Object, required: true } });
-const speech = computed(() => comicDialogue(props.panel));
+const props = defineProps({
+  panel: { type: Object, required: true },
+  captionHeight: Number
+});
+const speech = computed(() => comicDialogue(props.panel, props.captionHeight));
 </script>
 
 <template>

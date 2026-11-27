@@ -22,7 +22,6 @@ export function useSceneNavigation() {
   let scrollFrame = 0;
   let rebindFrame = 0;
   let focusFrame = 0;
-  let focusToken = 0;
   let inputVersion = 0;
   let routeToken = 0;
   let temporaryFocus = null;
@@ -37,7 +36,6 @@ export function useSceneNavigation() {
 
   const topOf = section => section.getBoundingClientRect().top + window.scrollY;
   const maxScroll = () => Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-  const desiredTop = section => Math.min(maxScroll(), Math.max(0, Math.round(topOf(section))));
 
   function listen(target, type, handler, options) {
     target.addEventListener(type, handler, options);
@@ -62,7 +60,6 @@ export function useSceneNavigation() {
   }
 
   function cancelFocus() {
-    focusToken += 1;
     cancelAnimationFrame(focusFrame);
     focusFrame = 0;
   }
@@ -92,17 +89,25 @@ export function useSceneNavigation() {
 
   function focusHeadingWhenSettled(section) {
     cancelFocus();
-    const token = focusToken;
+    const location = route.fullPath;
+    const heading = section.querySelector('h1, h2') || section;
+    const header = document.querySelector('.site-navigation-header');
     const started = performance.now();
-    let settledFrames = 0;
-    const check = () => {
-      if (!mounted || token !== focusToken || !section.isConnected || document.querySelector('dialog[open]')) return;
-      if (Math.abs(window.scrollY - desiredTop(section)) < 3) settledFrames += 1;
-      else settledFrames = 0;
-      if (settledFrames >= 2) {
-        focusFrame = 0;
-        focusElement(section.querySelector('h1, h2') || section);
-      } else if (performance.now() - started < 2200) {
+    let lastY = window.scrollY;
+    let lastMove = started;
+    const check = now => {
+      focusFrame = 0;
+      if (!mounted || route.fullPath !== location || !heading.isConnected || document.querySelector('dialog[open]')) return;
+      if (window.scrollY !== lastY) {
+        lastY = window.scrollY;
+        lastMove = now;
+      }
+      // Scroll snapping and padding can leave the destination below the viewport edge.
+      const { top, bottom } = heading.getBoundingClientRect();
+      const headerBottom = header?.getBoundingClientRect().bottom ?? 0;
+      if (now - lastMove >= 100 && top < innerHeight && bottom > headerBottom) {
+        focusElement(heading);
+      } else if (now - started < 2200) {
         focusFrame = requestAnimationFrame(check);
       }
     };
@@ -130,7 +135,6 @@ export function useSceneNavigation() {
 
   async function bindScenes() {
     const token = ++routeToken;
-    cancelFocus();
     resetWheel();
     await nextTick();
     if (!mounted || token !== routeToken) return;
@@ -151,30 +155,34 @@ export function useSceneNavigation() {
   async function navigateToScene(event, id, navigate) {
     // 保留 Ctrl / Command 点击、新标签页等浏览器原生行为。
     if (!plainActivation(event)) return;
+    userInput();
     const input = inputVersion;
-    const sameLocation = isHome.value && route.hash === `#${id}`;
+    const hash = `#${id}`;
+    const sameLocation = isHome.value && route.hash === hash;
     const keyboard = event.detail === 0;
     await navigate(event);
     await nextTick();
-    if (!mounted || !isHome.value) return;
-    const section = document.getElementById(id);
-    if (!section) return;
-    if (sameLocation) scrollToSection(section);
-    if (keyboard) {
-      await settledSceneAnchor(`#${id}`);
-      if (!mounted || !isHome.value || route.hash !== `#${id}` || input !== inputVersion) return;
-      const readySection = document.getElementById(id);
-      if (readySection) focusHeadingWhenSettled(readySection);
+    if (!mounted || !isHome.value || route.hash !== hash || input !== inputVersion) return;
+    if (sameLocation) {
+      const section = document.getElementById(id);
+      if (section) scrollToSection(section);
     }
+    if (!keyboard) return;
+    await settledSceneAnchor(hash);
+    if (!mounted || !isHome.value || route.hash !== hash || input !== inputVersion) return;
+    const section = document.getElementById(id);
+    if (section) focusHeadingWhenSettled(section);
   }
 
   async function navigateToAbout(event, navigate) {
     if (!plainActivation(event)) return;
+    userInput();
+    const input = inputVersion;
     const keyboard = event.detail === 0;
     const sameLocation = !isHome.value;
     await navigate(event);
     await nextTick();
-    if (!mounted || isHome.value) return;
+    if (!mounted || route.path !== '/about' || input !== inputVersion) return;
     const main = document.getElementById('main');
     if (!main) return;
     if (sameLocation) window.scrollTo({ top: 0, behavior: reducedMotion?.matches ? 'instant' : 'smooth' });
@@ -186,7 +194,7 @@ export function useSceneNavigation() {
     const main = document.getElementById('main');
     if (!main) return;
     event.preventDefault();
-    cancelFocus();
+    userInput();
     main.focus({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
@@ -202,7 +210,7 @@ export function useSceneNavigation() {
   }
 
   function onWheel(event) {
-    cancelFocus();
+    userInput();
     if (!isHome.value || !sections.length || !desktopPaging.matches || reducedMotion.matches || event.defaultPrevented || !event.cancelable) return;
     if (event.ctrlKey || event.metaKey || event.shiftKey || Math.abs(event.deltaX) > Math.abs(event.deltaY) || !event.deltaY) return;
     const target = event.target instanceof Element ? event.target : null;
@@ -261,6 +269,7 @@ export function useSceneNavigation() {
     listen(window, 'pointerdown', userInput, { passive: true });
     listen(window, 'touchstart', userInput, { passive: true });
     listen(window, 'keydown', userInput, { capture: true });
+    listen(window, 'focusin', userInput);
     listen(reducedMotion, 'change', resetWheel);
     listen(desktopPaging, 'change', resetWheel);
     bindScenes();

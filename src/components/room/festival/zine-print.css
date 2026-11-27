@@ -1,6 +1,6 @@
 .festival-print { display: none; }
 
-@page {
+@page zine {
   size: A4 landscape;
   margin: 0;
 }
@@ -16,6 +16,7 @@
   }
   body:has(.festival-print) > :not(.festival-print) { display: none !important; }
   body > .festival-print {
+    page: zine;
     display: block !important;
     width: 297mm;
     height: 210mm;

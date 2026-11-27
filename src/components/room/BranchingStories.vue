@@ -48,7 +48,7 @@ watch(selected, () => { saved.value.lastStory = selected.value; if (!saveLocal(k
 .story-copy h3,.story-copy p { margin:0; }
 .story-copy h3 { font-size:clamp(19px,3vw,26px); line-height:1.35; }
 .story-copy .room-kicker { color:#815a6e; font-size:12px; margin-bottom:4px; }
-.story-stage .room-prose { margin-top:8px; padding-bottom:9px; font-size:1rem; }
+.story-copy > .room-prose { margin-top:8px; padding-bottom:9px; line-height:var(--reader-line, 2.1); }
 .story-choices { display:grid; align-content:end; gap:6px; }
 .story-choices button { display:flex; align-items:center; justify-content:space-between; gap:8px; text-align:left; white-space:normal; }
 .story-ending { align-self:start; color:#854467; font-weight:700; }
