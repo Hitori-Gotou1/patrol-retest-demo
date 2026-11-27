@@ -53,6 +53,7 @@ onMounted(load);onBeforeUnmount(()=>{alive=false;request++;});
 .collections-paper h1 { font-size:clamp(27px,5vw,46px); line-height:1.28; margin:5px 0 8px; }
 .collections-paper p { font-size:14px; line-height:1.75; overflow-wrap:anywhere; }
 .collections-paper a { color:inherit; }
+.collections-paper footer a { color:#fff8ee; }
 .collection-card-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; gap:16px; margin-top:20px; }
 .collection-card-grid>a { display:block; min-width:0; border:1px solid #bca3af; background:#fff8ec; padding:12px; text-decoration:none; }
 .collection-card-grid img,.collection-cover-empty { display:block; width:100%; height:clamp(159px,25vw,290px); object-fit:cover; object-position:center; background:#e6d3dc; }
