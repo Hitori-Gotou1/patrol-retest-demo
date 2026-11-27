@@ -11,7 +11,7 @@ const props = defineProps({
 });
 const emit = defineEmits(['select']);
 const ribbon = ref(null);
-const inks = ['#cc7496', '#638aa0', '#b78145', '#6a8b63'];
+const inks = ['#ac839a', '#829eac', '#ae9479', '#8e9e83'];
 function reveal(index) {
   if (index < 0) return;
   nextTick(() => {
@@ -43,16 +43,16 @@ function scoreLabel(bar) {
         :aria-pressed="selected === index" :aria-label="`第 ${index + 1} 小节 · ${bar.name}`" :aria-description="scoreLabel(bar)"
         :data-bar="bar.id" :data-loop-start="range.start === index" :data-loop-end="range.end === index"
         :class="{ 'bar-playing':playing === index }" @click="emit('select',index)">
-        <span class="studio-bar-name"><small>{{ String(index + 1).padStart(2,'0') }}</small>{{ bar.name }}</span>
+        <span class="studio-bar-name"><small>{{ String(index + 1).padStart(2,'0') }}</small><span>{{ bar.name }}</span></span>
         <svg viewBox="0 0 176 62" aria-hidden="true">
-          <path d="M7 3v56m40-56v56m40-56v56m40-56v56m40-56v56" fill="none" stroke="#775a61" stroke-width="1.5" opacity=".68"/>
+          <path d="M7 3v56m40-56v56m40-56v56m40-56v56m40-56v56" fill="none" stroke="#8b7a89" stroke-width="1.5" opacity=".68"/>
           <g v-for="(mask,row) in bar.masks" :key="row" :data-track="studioTracks[row].id" :data-mask="mask" :fill="inks[row]">
-            <path :d="`M7 ${11 + row * 13}h160`" stroke="#c7ac9a" stroke-width=".6"/>
+            <path :d="`M7 ${11 + row * 13}h160`" stroke="#796b79" stroke-width=".6"/>
             <circle v-for="n in 16" :key="n" :cx="12 + (n-1)*10" :cy="11 + row*13"
               :r="mask & (1 << (n-1)) ? 3.15 : .8" :data-beat="Boolean(mask & (1 << (n-1)))"/>
           </g>
           <rect v-if="playing === index && step >= 0" class="studio-playline" :data-step="step + 1"
-            :x="11.1 + step * 10" y="2" width="1.8" height="58" fill="#312638"/>
+            :x="11.1 + step * 10" y="2" width="1.8" height="58"/>
         </svg>
       </button>
     </div>
@@ -60,22 +60,20 @@ function scoreLabel(bar) {
 </template>
 
 <style scoped>
-.studio-ribbon { padding:10px 13px 8px; background:#eedac8; border-bottom:1px solid #bf9f9b; min-width:0; }
-.studio-ribbon-header { display:flex; align-items:center; justify-content:space-between; gap:5px 12px; flex-wrap:wrap; margin:0 0 5px; color:#583b4d; }
-.studio-ribbon-header h3 { margin:0; font-size:14px; }
-.studio-ribbon-header span { font-size:11px; }
-.studio-ribbon .bar-tabs { position:relative; display:flex; flex-wrap:nowrap; gap:6px; overflow-x:auto; margin:0; padding:4px 2px 6px; scrollbar-width:thin; }
-.studio-ribbon .studio-bar { position:relative; flex:0 0 clamp(132px,17%,180px); min-width:0; display:grid; justify-items:stretch; color:#543447; background:#fff4de; border:1px solid #b89b8e; padding:5px 7px; text-align:start; gap:1px; }
-.studio-ribbon .studio-bar[aria-pressed=true] { outline:2px solid #72405f; outline-offset:-3px; color:#473045; background:#fae4d2; }
-.studio-ribbon .studio-bar:focus-visible { outline:3px solid #4a2944; outline-offset:-1px; }
-.studio-bar-name { display:flex; align-items:baseline; gap:5px; font-weight:700; padding-inline:4px; line-height:1.28; overflow-wrap:anywhere; }
-.studio-bar-name small { font:11px var(--mono,monospace); }
+.studio-ribbon { padding: .55rem clamp(.55rem, 1.6vw, 1.15rem) .25rem; border-bottom: 1px solid var(--room-console-edge); min-width: 0; }
+.studio-ribbon-header { display: flex; align-items: baseline; justify-content: space-between; gap: .15rem .75rem; flex-wrap: wrap; color: var(--room-console-muted); }
+.studio-ribbon-header h3 { margin: 0; font-size: .875rem; }
+.studio-ribbon-header span { font-size: .75rem; }
+.studio-ribbon .bar-tabs { position: relative; display: flex; gap: .42rem; overflow-x: auto; margin: 0; padding: .3rem .15rem .42rem; scrollbar-width: thin; }
+.studio-ribbon .studio-bar { position: relative; flex: 0 0 clamp(7.5rem, 15%, 9.5rem); min-width: 0; display: grid; justify-items: stretch; color: var(--room-console-muted); background: #302a35; border: 1px solid var(--room-console-top); padding: .25rem .38rem; text-align: start; gap: 1px; }
+.studio-ribbon .studio-bar[aria-pressed='true'] { color: var(--room-console-ink); background: #4c3e4d; border-color: #ae94a9; }
+.studio-ribbon .studio-bar:focus-visible { outline-offset: -2px; }
+.studio-bar-name { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: .3rem; font-weight: 700; padding-inline: .24rem; line-height: 1.3; overflow-wrap: anywhere; }
+.studio-bar-name small { font: .6875rem var(--mono, monospace); font-variant-numeric: tabular-nums; }
 .studio-ribbon .studio-bar svg { display:block; width:100%; height:auto; }
-.studio-bar[data-loop-start=true]::before,.studio-bar[data-loop-end=true]::after { content:""; position:absolute; top:19px; bottom:5px; width:6px; border:2px solid #a16655; pointer-events:none; }
+.studio-bar[data-loop-start=true]::before,.studio-bar[data-loop-end=true]::after { content:""; position:absolute; top:19px; bottom:5px; width:6px; border:1px solid #ab91a5; pointer-events:none; }
 .studio-bar[data-loop-start=true]::before { left:3px; border-right:0; }
 .studio-bar[data-loop-end=true]::after { right:3px; border-left:0; }
-@media(max-width:760px) {
-  .studio-ribbon { padding:6px 7px 3px; }
-  .studio-ribbon .studio-bar { flex-basis:117px; padding:4px 5px; }
-}
+.studio-playline { fill: var(--room-berry-light); }
+.studio-ribbon .studio-bar.bar-playing { border-color: var(--room-berry-light); }
 </style>

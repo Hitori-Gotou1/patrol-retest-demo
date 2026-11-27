@@ -9,6 +9,8 @@ test('saved artwork rejects foreign objects, bounds coordinates, and does not mu
   assert.notEqual(photo.objects[0].key,photo.objects[1].key);assert.equal(photo.caption.length,36);assert.equal(photo.theme,'pink');
   photo.objects[0].x=100;assert.equal(defaultPhoto.objects[0].x,130);
   assert.throws(()=>validatePhoto({version:9,objects:[]}));
+  assert.equal(validatePhoto({...defaultPhoto,captionFont:'serif'}).captionFont,'serif');
+  assert.deepEqual(validatePhoto({...defaultPhoto,captionFont:'unknown'}),defaultPhoto);
   assert.deepEqual(validateRoom({version:1,light:'evil',objects:[{id:'script'}]}),{version:1,light:'warm',objects:[]});
 });
 test('walk stamps are unique and limited to the six locations',()=>{
