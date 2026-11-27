@@ -1,0 +1,23 @@
+.review-folio {
+  --folio-paper:#fbf0df;
+  --folio-ink:#453540;
+  --folio-rule:#c7ada5;
+  --folio-plum:#674659;
+  min-width:0;
+  color:var(--folio-ink);
+}
+.room-refresh .review-folio { background:var(--folio-paper); }
+.review-folio :focus-visible { outline-color:#784761; outline-offset:2px; }
+.review-folio :is(button,select) { min-height:44px; }
+.review-folio :is(h2,h3,p,li,strong) { overflow-wrap:anywhere; }
+@media(max-width:760px) {
+  .room-refresh:has(.review-folio) { padding-inline:12px; }
+  .room-refresh:has(.review-folio) .room-quick-nav :is(a,button) { min-height:44px; display:inline-flex; align-items:center; }
+  .room-refresh .review-folio.room-panel { padding-inline:12px; }
+  body:has(.review-folio, .collection-folio-page, .about-booklet-page) .room-companion {
+    position:relative!important; inset:auto!important; margin:0 14px calc(14px + env(safe-area-inset-bottom)) auto;
+  }
+  body:has(.review-folio, .collection-folio-page, .about-booklet-page) .room-companion .buddy-dialog {
+    position:fixed; top:auto!important; bottom:62px!important; right:12px;
+  }
+}

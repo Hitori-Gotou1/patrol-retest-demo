@@ -1,0 +1,27 @@
+.collection-image-grid {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:15px;
+  align-items:start;
+}
+.collection-image-grid[data-layout=front] { grid-template-columns:minmax(0,1fr); }
+.collection-image-grid[data-layout=front] .collection-leaf { width:min(100%,860px); margin-inline:auto; }
+.collection-image-grid[data-layout=spread] { grid-template-columns:repeat(2,minmax(0,1fr)); gap:2px; background:#ba9dad; border:1px solid #ba9dad; }
+.collection-leaf { margin:0; min-width:0; display:grid; background:#fff9ed; border:1px solid #c8b0ac; padding:clamp(7px,1.6vw,17px); }
+.collection-image-grid[data-layout=spread] .collection-leaf { border:0; height:100%; }
+.collection-picture { display:block; color:#573952; text-decoration:none; outline-offset:3px; position:relative; }
+.collection-picture img { display:block; width:100%; height:auto; max-height:64vh; object-fit:contain; background:#ede0d4; }
+.collection-image-grid[data-layout=spread] .collection-picture img { height:clamp(220px,34vw,400px); }
+.collection-image-grid[data-layout=index] .collection-picture img { height:clamp(135px,18vw,253px); }
+.collection-leaf figcaption { display:grid; justify-items:start; gap:5px; margin-top:10px; padding:9px 4px 2px; border-top:1px solid #cbb0b8; overflow-wrap:anywhere; color:#4f3449; }
+.collection-leaf figcaption strong { font-size:1.02rem; }
+.collection-leaf figcaption small,.collection-leaf figcaption p { margin:0; color:#6a4d60; font-size:.8rem; }
+.collection-leaf figcaption small { display:block; }
+.collection-picture :is(span,small) { display:inline-block; margin:6px 2px 0; font-size:.78rem; text-decoration:underline; text-underline-offset:3px; }
+.collection-picture :is(span,small),.collection-leaf figcaption a { min-height:44px; padding-block:9px; }
+.collection-leaf a:focus-visible { outline:3px solid #794567; }
+@media(max-width:720px) {
+  .collection-image-grid,.collection-image-grid[data-layout=spread] { grid-template-columns:minmax(0,1fr); gap:10px; background:transparent; border:0; }
+  .collection-image-grid[data-layout=spread] .collection-leaf { border:1px solid #c8b0ac; }
+  .collection-image-grid[data-layout=spread] .collection-picture img,.collection-image-grid[data-layout=index] .collection-picture img { height:auto; max-height:66dvh; }
+}

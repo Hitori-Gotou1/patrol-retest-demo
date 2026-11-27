@@ -1,4 +1,6 @@
 <script setup>
+import '../../styles/review-folio.css';
+import RhythmTimingPlot from './RhythmTimingPlot.vue';
 import {motionPreference as createMotionQuery} from '../../room/preferences.js';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { onBeforeRouteLeave } from 'vue-router';
@@ -134,7 +136,7 @@ onBeforeRouteLeave(() => { pause(false); stopCalibration(); });
 onBeforeUnmount(() => { alive = false; generation++; cancelAnimationFrame(frame); cancelAnimationFrame(calibrationFrame); audio.stop(); media?.removeEventListener('change', motion); document.removeEventListener('visibilitychange', hidden); window.removeEventListener('storage', syncPreferences); window.removeEventListener('hitori:sync-applied', syncPreferences); });
 </script>
 <template>
-  <section ref="root" class="room-panel" tabindex="-1" aria-labelledby="rhythm-title" @keydown="keydown">
+  <section ref="root" class="room-panel review-folio" tabindex="-1" aria-labelledby="rhythm-title" @keydown="keydown">
     <h2 id="rhythm-title">跟上这一拍。</h2><p class="room-intro">{{ preferences.keys.map(key => key.toUpperCase()).join(' / ') }} 或轻点四个按钮。落在线上时按下，空格暂停；切到后台会自动暂停。</p>
     <div class="room-fields"><label class="room-field" for="rhythm-level">练习难度<select id="rhythm-level" v-model="level" :disabled="phase === 'running' || phase === 'paused' || starting"><option v-for="(item,id) in rhythmLevels" :key="id" :value="id">{{ item.label }} · {{ item.bpm }} BPM</option></select></label><p class="room-hint">Perfect ±70ms / Great ±130ms / Good ±180ms。空拍会中断连击并影响准确率。</p></div>
     <button type="button" class="rhythm-setup-toggle" :aria-expanded="setupOpen" aria-controls="rhythm-setup" @click="setupOpen = !setupOpen">校准与键位 · {{ preferences.offsetMs > 0 ? '+' : '' }}{{ preferences.offsetMs }}ms</button>
@@ -144,7 +146,12 @@ onBeforeUnmount(() => { alive = false; generation++; cancelAnimationFrame(frame)
     <div class="rhythm-pads" role="group" aria-label="四个演奏按键"><button v-for="(lane,index) in rhythmLanes" :key="lane.key" type="button" :data-lane="index" :disabled="phase !== 'running'" :class="{ struck: activeLane === index }" :style="{ '--lane-color': lane.color }" @pointerdown.prevent="strike(index)" @click="event => { if (event.detail === 0) strike(index); }"><strong>{{ preferences.keys[index].toUpperCase() }}</strong><span>{{ lane.label }}</span></button></div>
     <div class="room-actions"><button v-if="phase === 'ready' || phase === 'done'" id="rhythm-start" type="button" class="primary" :disabled="starting || calibration === 'running'" @click="start">{{ starting ? '准备音效…' : phase === 'done' ? '再练一轮并开启音效' : '开始并开启互动音效' }}</button><button v-if="phase === 'running'" type="button" @click="pause">暂停</button><button v-if="phase === 'paused'" type="button" :disabled="starting" @click="resume">继续练习</button><button v-if="phase === 'paused'" type="button" @click="endRound">结束本轮</button></div>
     <p class="room-status" role="status">{{ notice || round.message }}</p><p v-if="phase === 'done'" id="rhythm-result" class="room-hint">评级 {{ result.rank }} · 准确率 {{ result.accuracy }}% · 最高连击 {{ result.maxCombo }}。未击中的音符按 Miss 计入。输入补偿 {{ preferences.offsetMs }}ms。</p>
-    <div v-if="phase === 'done'" class="rhythm-review" aria-label="本轮偏差复盘"><h3>这一轮，落点在哪里</h3><p>早按 {{ result.early }} 次 · 落点附近 {{ result.centered }} 次 · 晚按 {{ result.late }} 次<span v-if="result.meanDeviation != null"> · 平均偏差 {{ result.meanDeviation > 0 ? '+' : '' }}{{ result.meanDeviation }}ms</span></p><ul><li v-for="bucket in result.distribution" :key="bucket.label"><span>{{ bucket.label }}</span><meter min="0" :max="Math.max(1,result.deviations.length)" :value="bucket.count" :aria-label="bucket.label + '：' + bucket.count + ' 次'"></meter><strong>{{ bucket.count }}</strong></li></ul><p class="room-hint">偏差基于本轮补偿后的输入；±15ms 作为落点附近。少量晚按也可能来自设备、音频或触控延迟，可以调整校准后再比较。空拍与 Miss 没有可比较的输入偏差。</p></div>
+    <section v-if="phase === 'done'" class="rhythm-review" aria-labelledby="rhythm-review-title">
+      <h3 id="rhythm-review-title">这一轮，落点在哪里</h3>
+      <p>早按 {{ result.early }} 次 · 落点附近 {{ result.centered }} 次 · 晚按 {{ result.late }} 次<span v-if="result.meanDeviation != null"> · 平均偏差 {{ result.meanDeviation > 0 ? '+' : '' }}{{ result.meanDeviation }}ms</span></p>
+      <RhythmTimingPlot :round="round" />
+      <p class="room-hint">浅色区域是 ±15 毫秒。这里用本轮判定时的补偿值，重叠落点旁标出击打次数。</p>
+    </section>
   </section>
 </template>
 <style scoped>

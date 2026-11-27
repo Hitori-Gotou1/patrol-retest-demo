@@ -1,5 +1,6 @@
 <script setup>
 import { computed, defineAsyncComponent, ref, onMounted, onUnmounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 const MusicPlayer = defineAsyncComponent(() => import('./MusicPlayer.vue'));
 import FluidPanel from './motion/FluidPanel.vue';
 import CinemaAtmosphere from './motion/CinemaAtmosphere.vue';
@@ -35,6 +36,10 @@ function selectFile(event) {
 function pauseVideo() { video.value?.pause(); }
 function hidden() { if (document.hidden) pauseVideo(); }
 watch(mode, (value) => { if(value==='music')musicOpened.value=true; if (value !== 'video') pauseVideo(); if (value !== 'music') music.value?.pause(); });
+const route = useRoute();
+watch(() => [route.query.listen,route.hash], ([listen,hash]) => {
+  if (listen==='demo' && hash==='#video') mode.value='music';
+}, { immediate:true });
 onMounted(() => { window.addEventListener('storage', syncMood); document.addEventListener('visibilitychange', hidden); window.addEventListener('pagehide', pauseVideo); });
 onUnmounted(() => { window.removeEventListener('storage', syncMood); pauseVideo(); if (objectUrl) URL.revokeObjectURL(objectUrl); document.removeEventListener('visibilitychange', hidden); window.removeEventListener('pagehide', pauseVideo); });
 </script>
