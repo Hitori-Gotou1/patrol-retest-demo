@@ -37,8 +37,15 @@ function close(){dialog.value?.close();}
 function restoreFocus(){launcher.value?.focus();}
 function keyboard(e){if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();open();}}
 function apply(){try{prefs.value=setPreferences(prefs.value);message.value='设置已记住，并应用到当前页面。';}catch(e){message.value=e.message;}}
-watch(()=>route.fullPath,()=>dialog.value?.close());
-onMounted(()=>window.addEventListener('keydown',keyboard));onBeforeUnmount(()=>{alive=false;request?.abort();window.removeEventListener('keydown',keyboard);});
+function searchFromLink() {
+  if (typeof route.query.search!=='string' || !route.query.search.trim()) return;
+  query.value=route.query.search.slice(0,100);
+  kind.value='all';
+  open();
+}
+watch(()=>route.fullPath,()=>{ dialog.value?.close(); searchFromLink(); });
+onMounted(()=>{ window.addEventListener('keydown',keyboard); searchFromLink(); });
+onBeforeUnmount(()=>{alive=false;request?.abort();window.removeEventListener('keydown',keyboard);});
 </script>
 <template>
  <button ref="launcher" type="button" class="site-tools-button" aria-label="打开全站搜索与设置" @click="open"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></svg><span>搜索与设置</span></button>
