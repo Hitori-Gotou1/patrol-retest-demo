@@ -1,0 +1,46 @@
+:root {
+  --room-paper: #f4ecdd;
+  --room-paper-edge: #c9b9ad;
+  --room-paper-shadow: 0 3px 9px #21172526;
+  --room-ink: #382d3b;
+  --room-ink-muted: #61525d;
+  --room-console: #28232d;
+  --room-console-edge: #554a59;
+  --room-console-top: #817085;
+  --room-console-ink: #fff2e8;
+  --room-console-muted: #d9c9d6;
+  --room-berry: #89335b;
+  --room-berry-light: #edabc7;
+  --room-serif: "Noto Serif CJK SC", "Songti SC", SimSun, serif;
+}
+
+:root[data-contrast='high'] {
+  --room-paper: #fff8eb;
+  --room-paper-edge: #8d7b7c;
+  --room-ink: #251c27;
+  --room-ink-muted: #49364a;
+  --room-console: #1e1923;
+  --room-console-edge: #8d7c90;
+  --room-console-top: #ab92a7;
+  --room-console-ink: #fffaf4;
+  --room-console-muted: #f3e5ee;
+}
+
+.room-console {
+  color-scheme: dark;
+  background: var(--room-console);
+  color: var(--room-console-ink);
+  border: 1px solid var(--room-console-edge);
+  border-top-color: var(--room-console-top);
+}
+
+.room-page .room-console :focus-visible {
+  outline-color: var(--room-berry-light);
+}
+
+.room-page .room-console button.primary {
+  background: var(--room-berry-light);
+  border-color: var(--room-berry-light);
+  color: #372032;
+  font-weight: 700;
+}

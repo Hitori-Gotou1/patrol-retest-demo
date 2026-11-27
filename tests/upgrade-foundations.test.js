@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { explainLoadError } from '../src/services/appRecovery.js';
-import { renderPublicShare, publicShareUrl } from '../src/services/sharePage.js';
+import { renderFeaturedIndex, renderPublicShare, publicShareUrl } from '../src/services/sharePage.js';
 import { renderCollectionPage } from '../src/services/collectionPage.js';
 import { featuredWorks } from '../src/data/featuredWorks.js';
 import { galleryCollectionExamples } from '../src/data/galleryCollections.js';
@@ -18,6 +18,10 @@ test('public curated pages are server readable, escape metadata and never embed 
   assert.match(html,/继续创作/);assert.doesNotMatch(html,/localStorage|workshelf|sync/);
   assert.throws(()=>publicShareUrl('../private'));
   assert.throws(()=>renderPublicShare({...featuredWorks[0],target:'javascript:alert(1)'}));
+  const index=renderFeaturedIndex(featuredWorks.slice(0,1));
+  assert.equal([...index.matchAll(/<a class="featured-work"/g)].length,1);
+  assert.match(index,/<img src="\.\.\/assets\/live-ticket\.svg" alt="[^"]+" width="800" height="1000"/);
+  assert.doesNotMatch(index,/<script|pink-frequency/);
 });
 test('static collections include real existing records and keep missing records out',()=>{
   for(const collection of galleryCollectionExamples){

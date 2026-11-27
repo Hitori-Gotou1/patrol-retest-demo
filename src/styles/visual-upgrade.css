@@ -66,14 +66,6 @@
 :root .room-topic-grid small{display:block;max-width:100%}
 :root .room-topic-grid h3{font-size:21px}
 :root .room-topic-grid p{color:#725b6c;font-size:12px}
-:root .activity-card-wrap{position:relative;border-color:#70536b8c;box-shadow:0 2px 0 #0002;transition:transform .28s,box-shadow .28s}
-:root .activity-card-wrap .activity-favorite-toggle{background:#231d2b;color:#bea2b6;font-size:11px;border-top-color:#72516b66}
-:root .activity-card-wrap .activity-favorite-toggle[aria-pressed='true']{background:#e9c5d8;color:#49314a}
-:root .activity-cards .activity-card-wrap:nth-child(4n+1){border-left:3px solid #b6819d}
-:root .activity-cards .activity-card-wrap:nth-child(4n+2){border-left:3px solid #9e916c}
-:root .activity-cards .activity-card-wrap:nth-child(4n+3){border-left:3px solid #778da4}
-:root .activity-cards .activity-card-wrap:nth-child(4n){border-left:3px solid #ad7878}
-:root .activity-card-wrap .activity-card{background:#1c1823}
 :root .editorial-cards>a{transition:color .28s,transform .28s}
 :root .work-save-bar{position:relative}
 :root .work-save-bar .save-stamp{position:absolute;right:145px;top:4px;padding:6px 10px;border:2px solid #dda3bf;color:#edbfd5;font:700 12px/1.4 var(--mono);letter-spacing:1px;transform:rotate(-8deg);pointer-events:none;background:#302536;animation:stamp-arrive 1.6s var(--ease-room) both}
@@ -175,7 +167,7 @@
 @keyframes cinema-rain{to{translate:-35px 600px}}
 @keyframes spotlight-drift{to{transform:rotate(calc(var(--n)*6deg - 5deg));opacity:.6}}
 
-@media(hover:hover){:root .featured-activity:hover{transform:translateY(-5px) rotate(0);box-shadow:0 14px 30px #0003}:root .room-topic-grid>a:hover,:root .room-next>a:hover{transform:translateY(-3px);box-shadow:4px 9px 0 #0002}:root .room-topic-grid>a:hover .topic-sketch{transform:rotate(4deg) translateY(-2px)}:root .activity-card-wrap:hover{transform:translateY(-2px);box-shadow:0 6px 16px #0003}:root .editorial-cards>a:hover{transform:translateY(-3px)}}
+@media(hover:hover){:root .featured-activity:hover{transform:translateY(-5px) rotate(0);box-shadow:0 14px 30px #0003}:root .room-topic-grid>a:hover,:root .room-next>a:hover{transform:translateY(-3px);box-shadow:4px 9px 0 #0002}:root .room-topic-grid>a:hover .topic-sketch{transform:rotate(4deg) translateY(-2px)}:root .editorial-cards>a:hover{transform:translateY(-3px)}}
 @media(max-width:1000px){:root .cinema-mood-label{min-width:100%;}:root .cinema-mood-bar{gap:12px 20px}:root .cinema-dynamic-toggle{margin-left:auto}}
 @media(max-width:760px){
  :root .room-refresh .featured-activities{gap:14px}
@@ -251,7 +243,7 @@
  :root .gallery-section .gallery-note{padding-right:60px}
 }
 @media(max-width:370px){:root .room-heading-refresh h1{font-size:24px}:root .room-shelf-link{font-size:10px;padding-inline:7px}:root .cinema-mood-choices button{font-size:10px}:root .cinema-mood-choices button>span{display:none}:root .gallery-section .filter{padding-inline:7px;font-size:10px}:root .gallery-view-switch{gap:10px}:root .gallery-section.scene{padding-top:122px}:root .topic-sketch{width:105px}:root .room-topic-grid>a{padding-right:100px}}
-@media(prefers-reduced-motion:reduce){:root .page-arrive-enter-active,:root .photo-card-move,:root .photo-card-enter-active,:root .photo-card-leave-active,:root .gallery-mode-enter-active,:root .gallery-mode-leave-active,:root .cinema-mood,:root .media-tab-marker{transition:none!important}:root .page-arrive-enter-from,:root .photo-card-enter-from,:root .photo-card-leave-to,:root .gallery-mode-enter-from{transform:none!important;opacity:1!important}:root .scene-atmosphere *,:root .cinema-atmosphere *,:root .media-pane.is-current,:root .save-stamp{animation:none!important}:root .featured-activity,:root .featured-activity:hover,:root .activity-card-wrap:hover,:root .room-topic-grid>a:hover,:root .room-next>a:hover{transform:none!important}}
+@media(prefers-reduced-motion:reduce){:root .page-arrive-enter-active,:root .photo-card-move,:root .photo-card-enter-active,:root .photo-card-leave-active,:root .gallery-mode-enter-active,:root .gallery-mode-leave-active,:root .cinema-mood,:root .media-tab-marker{transition:none!important}:root .page-arrive-enter-from,:root .photo-card-enter-from,:root .photo-card-leave-to,:root .gallery-mode-enter-from{transform:none!important;opacity:1!important}:root .scene-atmosphere *,:root .cinema-atmosphere *,:root .media-pane.is-current,:root .save-stamp{animation:none!important}:root .featured-activity,:root .featured-activity:hover,:root .room-topic-grid>a:hover,:root .room-next>a:hover{transform:none!important}}
 :root[data-motion='reduce'] .page-arrive-enter-from,:root[data-motion='reduce'] .photo-card-enter-from,:root[data-motion='reduce'] .photo-card-leave-to,:root[data-motion='reduce'] .gallery-mode-enter-from{opacity:1!important;transform:none!important}
 
 :root .room-pinned-shortcuts{display:flex;align-items:center;gap:16px;overflow-x:auto;margin-bottom:14px;border-bottom:1px dashed #ad839a55;font-size:11px;scrollbar-width:thin}:root .room-pinned-shortcuts>span{color:#bd9eb0;white-space:nowrap}:root .room-pinned-shortcuts>a{min-height:44px;display:inline-flex;align-items:center;white-space:nowrap;color:#efd2df}:root .room-pinned-shortcuts~.favorite-activities{scroll-margin-top:115px}

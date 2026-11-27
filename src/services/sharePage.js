@@ -1,15 +1,119 @@
 import { publishedBase } from './articlePage.js';
+
 export const escapeHtml = value => String(value ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
-export function publicShareUrl(slug) {
+export const featuredIndexUrl = `${publishedBase}featured/`;
+
+function workPath(slug) {
   if (!/^[a-z0-9-]{1,80}$/.test(slug)) throw new Error('公开精选地址无效。');
-  return `${publishedBase}featured/${slug}/`;
+  return `featured/${slug}/`;
 }
-export function renderPublicShare(item, { url = publicShareUrl(item.slug), target = item.target } = {}) {
-  if (!item || !item.title || !item.summary || !/^assets\/[a-zA-Z0-9/_.,-]+\.(svg|png|webp|jpg|jpeg)$/.test(item.image)) throw new Error('公开精选缺少有效内容。');
+
+export function publicShareUrl(slug) {
+  return publishedBase + workPath(slug);
+}
+
+function artwork(item, root, loading = 'eager') {
+  if (!item?.title || !item.summary || !item.alt
+      || !/^assets\/[a-zA-Z0-9/_.,-]+\.(svg|png|webp|jpg|jpeg)$/.test(item.image)
+      || ![item.width, item.height].every(size => Number.isInteger(size) && size > 0)) {
+    throw new Error('公开精选缺少有效内容。');
+  }
+  const tint = /^#[\da-f]{6}$/i.test(item.mat) ? ` style="--featured-mat:${item.mat}"` : '';
+  return `<div class="featured-mat"${tint}><img src="${root}${escapeHtml(item.image)}" alt="${escapeHtml(item.alt)}" width="${item.width}" height="${item.height}" loading="${loading}"></div>`;
+}
+
+function head({ title, summary, url, type, root }) {
+  const e = escapeHtml;
+  const cover = publishedBase + 'assets/share-room.png';
+  const coverAlt = '一里小屋原创票根封面';
+  return `<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#28232d">
+  <title>${e(title)} · 一里小屋</title>
+  <meta name="description" content="${e(summary)}">
+  <link rel="canonical" href="${e(url)}">
+  <meta property="og:type" content="${type}">
+  <meta property="og:site_name" content="一里小屋 · HITORI ROOM">
+  <meta property="og:title" content="${e(title)}">
+  <meta property="og:description" content="${e(summary)}">
+  <meta property="og:url" content="${e(url)}">
+  <meta property="og:image" content="${cover}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="${coverAlt}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${e(title)}">
+  <meta name="twitter:description" content="${e(summary)}">
+  <meta name="twitter:image" content="${cover}">
+  <link rel="icon" href="${root}assets/favicon.svg">
+  <link rel="stylesheet" href="${root}featured/exhibition.css">
+</head>`;
+}
+
+function masthead(root, detail = false) {
+  return `<header class="featured-header"><div class="featured-width">
+    <a class="featured-brand" href="${root}">一里小屋 <span>HITORI ROOM</span></a>
+    ${detail ? '<a href="../">小屋公开精选</a>' : ''}
+  </div></header>`;
+}
+
+export function renderPublicShare(item, { url, target = item?.target } = {}) {
+  const root = '../../';
+  const image = artwork(item, root);
+  const canonical = url ?? publicShareUrl(item.slug);
   if (!/^\/room\/[a-zA-Z0-9/_?=&-]+$/.test(target || '')) throw new Error('公开精选入口无效。');
-  const e=escapeHtml, cover=publishedBase+'assets/share-room.png';
-  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#211829"><title>${e(item.title)} · 一里小屋</title><meta name="description" content="${e(item.summary)}"><link rel="canonical" href="${e(url)}"><meta property="og:type" content="article"><meta property="og:site_name" content="一里小屋 · HITORI ROOM"><meta property="og:title" content="${e(item.title)}"><meta property="og:description" content="${e(item.summary)}"><meta property="og:url" content="${e(url)}"><meta property="og:image" content="${cover}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="一里小屋原创票根封面"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${e(item.title)}"><meta name="twitter:description" content="${e(item.summary)}"><meta name="twitter:image" content="${cover}"><link rel="icon" href="${publishedBase}assets/favicon.svg"><style>*{box-sizing:border-box}body{margin:0;background:#1e1726;color:#f9efdf;font-family:system-ui,sans-serif}header,main,footer{width:min(900px,calc(100% - 32px));margin:auto}header,footer{padding:26px 0;color:#dab9cd}a{color:inherit;text-underline-offset:5px}article{padding:clamp(22px,5vw,48px);background:#fff6e7;color:#4c374b;border:1px solid #ab8098}h1{font-size:clamp(28px,5vw,42px);line-height:1.5}p{line-height:2}small{color:#8e5f7d}img{display:block;width:100%;max-height:65vh;object-fit:contain;background:#eadddf;margin:24px 0}.actions{display:flex;flex-wrap:wrap;gap:12px}.actions a{display:inline-flex;align-items:center;min-height:44px;padding:12px 18px;border:1px solid #aa7c99;text-decoration:none}a:focus-visible{outline:3px solid #dd8bb0;outline-offset:4px}</style></head><body><header><a href="${publishedBase}">一里小屋 · HITORI ROOM</a></header><main><article><small>小屋公开精选 · ${e(item.kind)}</small><h1>${e(item.title)}</h1><p>${e(item.summary)}</p><img src="${publishedBase+e(item.image)}" alt="${e(item.title)}"><p>${e(item.text)}</p><div class="actions"><a href="${publishedBase}#${e(target)}">到小屋继续创作 ↗</a><a href="${publishedBase}featured/">看看其他公开精选</a></div></article></main><footer>本站原创同人作品 · 非官方站点。<a href="${publishedBase}">返回小屋</a></footer></body></html>`;
+  const e = escapeHtml;
+  return `${head({ title: item.title, summary: item.summary, url: canonical, type: 'article', root })}
+<body class="featured-page">
+  ${masthead(root, true)}
+  <main class="featured-width featured-detail">
+    <article aria-labelledby="work-title">
+      ${image}
+      <div class="featured-label">
+        <p class="featured-kind">${e(item.kind)}</p>
+        <h1 id="work-title">${e(item.title)}</h1>
+        <p class="featured-summary">${e(item.summary)}</p>
+        <p>${e(item.text)}</p>
+        <div class="featured-actions">
+          <a class="featured-primary" href="${root}#${e(target)}">到小屋继续创作</a>
+          <a href="../">看看其他公开精选</a>
+        </div>
+      </div>
+    </article>
+  </main>
+  <footer class="featured-width featured-footer">本站原创同人作品 · 非官方站点</footer>
+</body></html>`;
 }
+
 export function renderFeaturedIndex(items) {
-  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>小屋公开精选 · 一里小屋</title><meta name="description" content="小屋里的原创票根与图形海报。"><meta property="og:title" content="小屋公开精选 · 一里小屋"><meta property="og:description" content="放学之后，舞台之前。翻看小屋的原创图形与票根。"><meta property="og:image" content="${publishedBase}assets/share-room.png"><meta property="og:type" content="website"><meta property="og:url" content="${publishedBase}featured/"><meta name="twitter:card" content="summary_large_image"><style>body{max-width:850px;margin:50px auto;padding:24px;background:#211829;color:#fff3df;font-family:system-ui,sans-serif}h1{line-height:1.6}a{color:#f6b8d1;display:inline-block;min-height:44px;line-height:2}li{margin:24px 0}p{line-height:1.9}</style></head><body><a href="${publishedBase}">← 返回一里小屋</a><h1>小屋公开精选</h1><p>一些已经完成的小小灵感，留在这里。</p><ul>${items.map(item=>`<li><a href="${publicShareUrl(item.slug)}">${escapeHtml(item.title)}</a><p>${escapeHtml(item.summary)}</p></li>`).join('')}</ul></body></html>`;
+  const e = escapeHtml;
+  const root = '../';
+  const title = '小屋公开精选';
+  const summary = '小屋里的原创票根与图形海报。';
+  return `${head({ title, summary, url: featuredIndexUrl, type: 'website', root })}
+<body class="featured-page featured-index-page">
+  ${masthead(root)}
+  <main class="featured-width featured-index">
+    <h1>${title}</h1>
+    <ul class="featured-works" role="list">
+      ${items.map((item, index) => {
+        const path = workPath(item.slug);
+        return `<li><a class="featured-work" href="${root}${path}" aria-labelledby="work-${item.slug}">
+          <figure>
+            ${artwork(item, root, index < 2 ? 'eager' : 'lazy')}
+            <figcaption class="featured-label">
+              <p class="featured-kind">${e(item.kind)}</p>
+              <h2 id="work-${item.slug}">${e(item.title)}</h2>
+              <p>${e(item.summary)}</p>
+            </figcaption>
+          </figure>
+        </a></li>`;
+      }).join('\n')}
+    </ul>
+  </main>
+  <footer class="featured-width featured-footer">本站原创同人作品 · 非官方站点</footer>
+</body></html>`;
 }

@@ -113,8 +113,8 @@ function turn(amount) {
 </template>
 
 <style scoped>
-.practice-trend { --ledger-ink:#513c47; --ledger-line:#c5a99e; margin:24px 0; min-width:0; border:1px solid var(--ledger-line); background:#fff5df; color:var(--ledger-ink); }
-.ledger-head { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; padding:13px 17px; border-bottom:1px solid var(--ledger-line); background:#efdeca; }
+.practice-trend { --ledger-ink:var(--room-ink); --ledger-line:var(--room-paper-edge); margin:24px 0; min-width:0; border:1px solid var(--ledger-line); background:#fff8ec; color:var(--ledger-ink); }
+.ledger-head { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; padding:13px 17px; border-bottom:1px solid var(--ledger-line); background:var(--room-paper); }
 .ledger-head h3,.ledger-detail h4 { margin:0; line-height:1.35; color:inherit; }
 .ledger-head p,.ledger-detail p { margin:4px 0 0; color:inherit; font-size:13px; }
 .ledger-controls,.ledger-controls label,.ledger-turn { display:flex; flex-wrap:wrap; align-items:center; gap:6px; font-size:12px; }
@@ -122,11 +122,11 @@ function turn(amount) {
 .ledger-turn button { min-width:44px; padding:3px 8px; }
 .ledger-content { display:grid; grid-template-columns:minmax(0,1.9fr) minmax(190px,.72fr); }
 .ledger-plot { min-width:0; padding:8px; }
-.ledger-dates { position:relative; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(37px,1fr); overflow:auto hidden; scrollbar-width:thin; padding:3px 2px 6px; }
+.ledger-dates { position:relative; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(44px,1fr); overflow:auto hidden; scrollbar-width:thin; padding:3px 2px 6px; }
 .ledger-dates.is-month { grid-auto-columns:minmax(45px,1fr); }
 .ledger-day { display:grid; grid-template-rows:21px 6px 62px 20px; align-items:center; justify-items:center; color:var(--ledger-ink); padding:5px 1px; min-width:0; min-height:108px; text-align:center; background:transparent; border:1px solid transparent; font:12px var(--mono,monospace); }
-.ledger-day[aria-pressed="true"] { background:#ead4da; border-color:#926c80; }
-.ledger-day:focus-visible { outline:2px solid #61374e; outline-offset:-2px; }
+.ledger-day[aria-pressed="true"] { background:#f3dce4; border-color:var(--room-berry); }
+.ledger-day:focus-visible { outline:2px solid var(--room-berry); outline-offset:-2px; }
 .ledger-day time { white-space:nowrap; }
 .date-tick { width:100%; height:6px; position:relative; background:linear-gradient(to bottom,transparent 4px,var(--ledger-line) 4px,var(--ledger-line) 5px,transparent 5px); }
 .date-tick:after { content:''; position:absolute; top:0; border-left:1px solid #8e7080; height:6px; }
