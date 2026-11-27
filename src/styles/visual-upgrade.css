@@ -104,7 +104,7 @@
 :root .photo-card-enter-active,:root .photo-card-leave-active{transition:opacity .24s var(--ease-room),transform .28s var(--ease-room)!important}
 :root .photo-card-enter-from{opacity:0;transform:translateY(9px) rotate(-1deg)!important}
 :root .photo-card-leave-to{opacity:0;transform:scale(.98)!important}
-:root .photo-card-leave-active{position:absolute!important;pointer-events:none;width:calc((100% - 58px)/3)}
+:root .photo-card-leave-active{position:absolute!important;pointer-events:none}
 :root .gallery-mode-enter-active{transition:opacity .25s var(--ease-room),transform .25s var(--ease-room)}
 :root .gallery-mode-enter-from{opacity:.25;transform:translateY(5px)}
 :root .gallery-mode-leave-active{position:absolute!important;inset:0;opacity:0;pointer-events:none;transition:opacity .12s}
@@ -117,8 +117,11 @@
 :root .gallery-lightbox .lightbox-toolbar,:root .gallery-lightbox .lightbox-zoom-controls{position:relative;z-index:9}
 
 /* Cinema: three complete static compositions, softly cross-faded in place. */
-:root .video-section.scene{background:#10121e;--audio-glow:0;overflow:clip}
-:root .cinema-atmosphere{position:absolute;inset:0;pointer-events:none;overflow:clip;z-index:0}
+:root .video-section.scene{background:#211b27;--audio-glow:0;overflow:clip}
+:root .cinema-atmosphere{
+  position:absolute;inset:0;pointer-events:none;overflow:clip;z-index:0;
+  mask-image:linear-gradient(90deg,#000,transparent clamp(1.5rem, 15vw, 13rem),transparent calc(100% - clamp(1.5rem, 15vw, 13rem)),#000);
+}
 :root .cinema-mood{position:absolute;inset:0;opacity:0;transition:opacity .65s ease-in-out;overflow:hidden;pointer-events:none}
 :root .cinema-mood.is-selected{opacity:1}
 :root .cinema-mood:not(.is-selected) *{animation-play-state:paused!important}
@@ -141,23 +144,6 @@
 :root .stage-standby{position:absolute;right:24px;top:380px;opacity:.14;color:#c7bbd7;font:22px/1.5 var(--mono);letter-spacing:5px;writing-mode:vertical-rl}
 :root .stage-standby small{font-size:8px;letter-spacing:2px}
 :root [data-dynamic='false'] .cinema-atmosphere *{animation-play-state:paused!important}
-:root .cinema-mood-bar{display:flex;flex-wrap:wrap;gap:16px 20px;align-items:center;padding:18px 0 22px;border-top:1px solid #d9bf992b;margin:0 0 22px}
-:root .cinema-mood-label{flex:1;min-width:220px}
-:root .cinema-mood-label>span{font:10px var(--mono);letter-spacing:1.7px;color:#ddc99e}
-:root .cinema-mood-label>p{color:#bab2bf;font-size:11px;line-height:1.8;margin:7px 0 0}
-:root .cinema-mood-choices{display:flex;gap:6px;flex-wrap:wrap}
-:root .cinema-mood-choices button{background:#171724b8;color:#c8bccb;border:1px solid #b39aad44;min-height:44px;padding:9px 12px;font-size:12px;display:flex;gap:8px;align-items:center}
-:root .cinema-mood-choices button[aria-pressed='true']{background:#e2c998;color:#292030;border-color:#e9d3a7;box-shadow:0 3px 14px #e3c68c12}
-:root [data-mood='rain'] .cinema-mood-choices button[aria-pressed='true']{background:#d3b5dd;border-color:#e3c8e9;color:#292038}
-:root [data-mood='stage'] .cinema-mood-choices button[aria-pressed='true']{background:#c9bfdc;border-color:#d6cce8}
-:root .cinema-dynamic-toggle{background:transparent;border:0;border-bottom:1px solid #a99cb25c;color:#b9afc1;font-size:10px;min-height:44px;padding:6px 0}
-:root .cinema-dynamic-toggle:disabled{opacity:.75}
-:root .cinema-mood-notice{flex-basis:100%;font-size:11px;color:#d9bdc9;margin:0}
-:root .media-tabs{position:relative;isolation:isolate;display:grid;grid-template-columns:repeat(3,1fr);gap:0;padding:3px;border:1px solid #c6ad713b;background:#17162177}
-:root .media-tabs .media-tab-marker{position:absolute;inset:3px auto 3px 3px;width:calc((100% - 6px)/3);background:#e8cf8f;transform:translateX(calc(var(--tab-index,0)*100%));transition:transform .28s var(--ease-room),background-color .65s;z-index:-1;pointer-events:none}
-:root .media-tabs button{position:relative;padding:11px 15px;white-space:nowrap;transition:color .2s}
-:root .media-tabs button[aria-pressed='true']{background:transparent;color:#251e28}
-:root [data-mood='rain'] .media-tab-marker{background:#d3b5dd}:root [data-mood='stage'] .media-tab-marker{background:#c9bfdc}
 :root .media-panel{position:relative;min-width:0}
 :root .media-pane.is-current{animation:media-arrive .28s var(--ease-room)}
 @keyframes media-arrive{from{opacity:.4;translate:0 6px}to{opacity:1;translate:0 0}}
@@ -168,7 +154,6 @@
 @keyframes spotlight-drift{to{transform:rotate(calc(var(--n)*6deg - 5deg));opacity:.6}}
 
 @media(hover:hover){:root .featured-activity:hover{transform:translateY(-5px) rotate(0);box-shadow:0 14px 30px #0003}:root .room-topic-grid>a:hover,:root .room-next>a:hover{transform:translateY(-3px);box-shadow:4px 9px 0 #0002}:root .room-topic-grid>a:hover .topic-sketch{transform:rotate(4deg) translateY(-2px)}:root .editorial-cards>a:hover{transform:translateY(-3px)}}
-@media(max-width:1000px){:root .cinema-mood-label{min-width:100%;}:root .cinema-mood-bar{gap:12px 20px}:root .cinema-dynamic-toggle{margin-left:auto}}
 @media(max-width:760px){
  :root .room-refresh .featured-activities{gap:14px}
  :root .room-refresh .featured-activity:first-child{display:block;transform:rotate(-.3deg)}
@@ -216,14 +201,6 @@
  :root .gallery-tools-panel{padding:8px 12px 14px;gap:5px 12px}
  :root .gallery-cloud-controls>span:last-child{display:none}
  :root .photo-card-leave-active{width:calc((100% - 14px)/2)}
- :root .cinema-mood-bar{padding:15px 0;margin-bottom:18px;gap:10px}
- :root .cinema-mood-label{min-width:100%}
- :root .cinema-mood-label>p{margin-top:5px;font-size:11px}
- :root .cinema-mood-choices{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
- :root .cinema-mood-choices button{padding:8px 4px;justify-content:center;font-size:11px;gap:4px}
- :root .cinema-dynamic-toggle{margin-left:0;min-height:34px;font-size:10px}
- :root .media-tabs{width:100%}
- :root .media-tabs button{font-size:12px;padding-inline:8px}
  :root .cinema-dust i:nth-child(n+4){display:none}
  :root .cinema-dust{width:23%;opacity:.35}
  :root .rain-window{width:100px;right:-12px;opacity:.65;mask-image:linear-gradient(90deg,transparent,#000 85%)}
@@ -242,8 +219,8 @@
  :root .room-companion:not(.in-room) .buddy-dialog{top:auto!important;bottom:58px!important}
  :root .gallery-section .gallery-note{padding-right:60px}
 }
-@media(max-width:370px){:root .room-heading-refresh h1{font-size:24px}:root .room-shelf-link{font-size:10px;padding-inline:7px}:root .cinema-mood-choices button{font-size:10px}:root .cinema-mood-choices button>span{display:none}:root .gallery-section .filter{padding-inline:7px;font-size:10px}:root .gallery-view-switch{gap:10px}:root .gallery-section.scene{padding-top:122px}:root .topic-sketch{width:105px}:root .room-topic-grid>a{padding-right:100px}}
-@media(prefers-reduced-motion:reduce){:root .page-arrive-enter-active,:root .photo-card-move,:root .photo-card-enter-active,:root .photo-card-leave-active,:root .gallery-mode-enter-active,:root .gallery-mode-leave-active,:root .cinema-mood,:root .media-tab-marker{transition:none!important}:root .page-arrive-enter-from,:root .photo-card-enter-from,:root .photo-card-leave-to,:root .gallery-mode-enter-from{transform:none!important;opacity:1!important}:root .scene-atmosphere *,:root .cinema-atmosphere *,:root .media-pane.is-current,:root .save-stamp{animation:none!important}:root .featured-activity,:root .featured-activity:hover,:root .room-topic-grid>a:hover,:root .room-next>a:hover{transform:none!important}}
+@media(max-width:370px){:root .room-heading-refresh h1{font-size:24px}:root .room-shelf-link{font-size:10px;padding-inline:7px}:root .gallery-section .filter{padding-inline:7px;font-size:10px}:root .gallery-view-switch{gap:10px}:root .gallery-section.scene{padding-top:122px}:root .topic-sketch{width:105px}:root .room-topic-grid>a{padding-right:100px}}
+@media(prefers-reduced-motion:reduce){:root .page-arrive-enter-active,:root .photo-card-move,:root .photo-card-enter-active,:root .photo-card-leave-active,:root .gallery-mode-enter-active,:root .gallery-mode-leave-active,:root .cinema-mood{transition:none!important}:root .page-arrive-enter-from,:root .photo-card-enter-from,:root .photo-card-leave-to,:root .gallery-mode-enter-from{transform:none!important;opacity:1!important}:root .scene-atmosphere *,:root .cinema-atmosphere *,:root .media-pane.is-current,:root .save-stamp{animation:none!important}:root .featured-activity,:root .featured-activity:hover,:root .room-topic-grid>a:hover,:root .room-next>a:hover{transform:none!important}}
 :root[data-motion='reduce'] .page-arrive-enter-from,:root[data-motion='reduce'] .photo-card-enter-from,:root[data-motion='reduce'] .photo-card-leave-to,:root[data-motion='reduce'] .gallery-mode-enter-from{opacity:1!important;transform:none!important}
 
 :root .room-pinned-shortcuts{display:flex;align-items:center;gap:16px;overflow-x:auto;margin-bottom:14px;border-bottom:1px dashed #ad839a55;font-size:11px;scrollbar-width:thin}:root .room-pinned-shortcuts>span{color:#bd9eb0;white-space:nowrap}:root .room-pinned-shortcuts>a{min-height:44px;display:inline-flex;align-items:center;white-space:nowrap;color:#efd2df}:root .room-pinned-shortcuts~.favorite-activities{scroll-margin-top:115px}

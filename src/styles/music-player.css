@@ -90,10 +90,10 @@
 .music-player {
   margin: 0;
   padding: clamp(12px, 2.2vw, 27px);
-  background: linear-gradient(132deg, var(--deck-sheen, #614653), transparent 56%), #241d2a;
-  border: 1px solid var(--deck-edge, #967169);
-  box-shadow: 0 10px 23px #0c0a12a1, inset 0 1px var(--deck-edge, #967169);
-  color: #fff2e7;
+  background: var(--room-console);
+  border: 1px solid var(--room-console-edge);
+  border-top-color: var(--room-console-top);
+  color: var(--room-console-ink);
 }
 .music-heading { align-items: center; margin-bottom: 12px; }
 .music-heading h3 { margin: 0; font-size: clamp(1.1rem, 2.2vw, 1.7rem); }
@@ -115,7 +115,7 @@
 .music-vinyl { width: 72%; right: 2%; top: 6%; border-color: var(--deck-edge, #967169); }
 .music-vinyl-label { width: 38%; height: 38%; }
 .music-console {
-  border: 1px solid var(--deck-edge, #967169);
+  border: 1px solid var(--room-console-top);
   padding: clamp(9px, 1.5vw, 16px);
   background: #17141f;
 }
