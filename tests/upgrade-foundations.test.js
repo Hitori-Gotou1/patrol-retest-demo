@@ -33,3 +33,12 @@ test('new collections and device pages are discoverable in global search',()=>{
   assert.ok(searchSite('主题合集').some(item=>item.to==='/collections'));
   assert.ok(searchSite('跨设备').some(item=>item.to==='/settings/device'));
 });
+
+test('search explains body-only and image-description hits in the original excerpt', () => {
+  const note = searchSite('恢复社交电量', { kind:'note' }).find(item => item.id==='note-another-page-of-adventures');
+  assert.equal(note.match.field,'正文');
+  assert.ok(note.match.parts.some(part => part.marked && part.text==='恢复社交电量'));
+  const photo = searchSite('昏暗的排练室', { kind:'image' }).find(item => item.id==='image-quiet-guitar');
+  assert.equal(photo.match.field,'画面');
+  assert.ok(photo.match.parts.some(part => part.marked && part.text==='昏暗的排练室'));
+});

@@ -16,7 +16,7 @@ export function makeRhythmChart(level = 'normal') {
   return Array.from({ length: config.notes }, (_, index) => ({ id: index, lane: (index * 7 + Math.floor(index / 4)) % 4, at: (4 + index * config.spacing) * beat, judgment: '' }));
 }
 export function newRhythmRound(level) {
-  return { notes: makeRhythmChart(level), score: 0, combo: 0, maxCombo: 0, stray: 0, message: '跟着节拍，让声音落在线上。' };
+  return { notes: makeRhythmChart(level), score: 0, combo: 0, maxCombo: 0, stray: 0, strayByLane: rhythmLanes.map(() => 0), message: '跟着节拍，让声音落在线上。' };
 }
 export function expireRhythmNotes(round, now) {
   let missed = false;
@@ -44,7 +44,10 @@ export function hitRhythmNote(round, lane, rawNow, offsetMs = 0) {
   const current = expireRhythmNotes(round, now);
   const candidate = current.notes.filter(note => note.lane === lane && !note.judgment && Math.abs(note.at - now) <= 180)
     .sort((a, b) => Math.abs(a.at - now) - Math.abs(b.at - now))[0];
-  if (!candidate) return { ...current, combo: 0, stray: current.stray + 1, message: '空拍 · 看准落点再按。' };
+  if (!candidate) {
+    const strayByLane = rhythmLanes.map((_,index) => (current.strayByLane?.[index] || 0) + Number(index === lane));
+    return { ...current, combo: 0, stray: current.stray + 1, strayByLane, message: '空拍 · 看准落点再按。' };
+  }
   const error = Math.abs(now - candidate.at);
   const judgment = error <= 70 ? 'Perfect' : error <= 130 ? 'Great' : 'Good';
   const combo = current.combo + 1;

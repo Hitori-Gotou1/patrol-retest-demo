@@ -1,4 +1,5 @@
 <script setup>
+import '../../styles/review-folio.css';
 import { computed,ref } from 'vue';
 import { duetQuestions,relaySymbols } from '../../data/adventures.js';
 import { duetRound,judgeDuet,relayCode } from '../../room/adventureGames.js';
@@ -17,16 +18,73 @@ function check(){if(state.value.relayInput.length!==code.value.length){message.v
 function relayNext(){if(state.value.relayRound===2){state.value.phase='relay-finished';recordActivity('duet',`三轮提示接力 · ${state.value.attempts} 次接通尝试`,`${state.value.seed}:relay`);}else{state.value.relayRound++;state.value.relayInput=[];state.value.phase='relay-brief';}}
 function reset(){const names=[...state.value.names];state.value=initial();state.value.names=names;message.value='新的一轮，可以交换角色再试试。';}
 </script>
-<template><section class="room-panel" aria-labelledby="duet-title"><div class="play-heading"><div><p class="play-eyebrow">TWO DIFFERENT HEARTBEATS / 同一个屏幕，两个人的选择</p><h2 id="duet-title">不同的答案，也能合奏。</h2><p class="room-intro">同屏或传递手机即可玩。默契问答会盖住第一位的选择；提示接力则由一人读提示，另一人操作。</p></div><span class="play-number" aria-hidden="true">12</span></div>
-  <template v-if="state.phase==='intro'"><div class="room-fields"><label v-for="(_,i) in state.names" :key="i" class="room-field">第 {{i+1}} 位朋友<input v-model="state.names[i]" maxlength="12"></label></div><div class="duet-modes"><button id="duet-quiz" type="button" @click="begin"><span>01 / SAME QUESTION</span><strong>默契问答</strong><p>各自回答五个关于小屋的问题，最后一起揭晓。</p><small>轮流操作 · 约两分钟 →</small></button><button id="duet-relay" type="button" @click="relay"><span>02 / PASS THE CLUE</span><strong>提示接力</strong><p>一人记下符号顺序，合上提示，再指导另一人接通。</p><small>三轮合作 · 可交换角色 →</small></button></div></template>
-  <div v-else-if="state.phase==='a'||state.phase==='b'" class="duet-question"><p class="adventure-kicker">{{state.phase==='a'?state.names[0]:state.names[1]}} / QUESTION {{index+1}} OF 5</p><h3>{{question.question}}</h3><p class="adventure-hint">{{state.phase==='a'?'独立选一个，先别告诉对方。':'第一位的答案仍盖着，按你自己的想法选择。'}}</p><div class="duet-options"><button v-for="(option,i) in question.options" :key="option" type="button" :data-choice="i" @click="answer(i)"><span>0{{i+1}}</span>{{option}}<span>↗</span></button></div></div>
-  <div v-else-if="state.phase==='handoff'" class="duet-cover"><span aria-hidden="true">✉</span><h3>答案，先收进信封。</h3><p>{{state.names[0]}} 已经选好了。<br>现在，请把手机交给 {{state.names[1]}}。</p><button id="duet-handoff" type="button" class="primary" @click="state.phase='b';message='轮到第二位，按自己的心情选就好。'">我是 {{state.names[1]}}，准备好了</button></div>
-  <div v-else-if="state.phase==='result'" class="duet-results"><div class="adventure-result"><span>↔</span><h3>五个问题，两种心情。</h3><strong class="adventure-score">{{result.matches}} / 5</strong><p>{{result.matches>=4?'有些想法，原来刚好走在同一拍。':'不同的选择，也可以是一段有趣的聊天开场。'}}</p></div><article v-for="(q,i) in questions" :key="q.id"><h3>{{q.question}}</h3><div><span>{{state.names[0]}}：{{q.options[state.a[i]]||'未选择'}}</span><span>{{state.names[1]}}：{{q.options[state.b[i]]||'未选择'}}</span><strong>{{state.a[i]===state.b[i]?'同一拍 ✓':'两种心情'}}</strong></div></article><div class="room-actions"><button type="button" @click="reset">换一组问题</button><button type="button" class="primary" @click="relay">再一起玩提示接力 →</button></div></div>
-  <div v-else-if="state.phase==='relay-brief'" class="duet-cover relay-card"><p class="adventure-kicker">CLUE READER / ROUND {{state.relayRound+1}} OF 3</p><h3>提示员，先看这张小卡。</h3><p>记住顺序，或一边读一边告诉操作员。<br>合上提示后，符号就会被盖住。</p><div class="relay-code"><span v-for="(symbol,i) in code" :key="i" :style="{background:relaySymbols[symbol].color}"><strong>{{relaySymbols[symbol].symbol}}</strong><small>{{relaySymbols[symbol].label}}</small></span></div><button id="relay-cover" type="button" class="primary" @click="state.phase='relay-input';state.relayInput=[];message='操作员，根据朋友的提示按顺序输入。'">合上提示，交给操作员 →</button></div>
-  <div v-else-if="state.phase==='relay-input'" class="relay-console"><p class="adventure-kicker">OPERATOR / ROUND {{state.relayRound+1}} OF 3</p><h3>把听见的提示，接到这里。</h3><div class="relay-slots" :aria-label="`已输入${state.relayInput.length}个符号`"><span v-for="(_,i) in code" :key="i">{{state.relayInput[i]!=null?relaySymbols[state.relayInput[i]].symbol:'·'}}</span></div><div class="relay-buttons" role="group" aria-label="输入接力符号"><button v-for="symbol in relaySymbols" :key="symbol.id" type="button" :data-symbol="symbol.id" :disabled="state.relayInput.length>=code.length" :style="{background:symbol.color}" @click="state.relayInput.push(symbol.id)"><strong>{{symbol.symbol}}</strong><span>{{symbol.label}}</span></button></div><div class="room-actions"><button id="relay-check" type="button" class="primary" @click="check">检查连接</button><button type="button" :disabled="!state.relayInput.length" @click="state.relayInput.pop()">退回一个</button><button type="button" @click="state.reviews++;state.phase='relay-brief'">请提示员重看一次</button></div></div>
+<template><section class="room-panel review-folio duet-room" aria-labelledby="duet-title"><div class="play-heading"><div><p class="play-eyebrow">双人挑战</p><h2 id="duet-title">不同的答案，也能合奏。</h2><p class="room-intro">同屏或传递手机即可玩。默契问答会盖住第一位的选择；提示接力则由一人读提示，另一人操作。</p></div></div>
+  <template v-if="state.phase==='intro'"><div class="room-fields"><label v-for="(_,i) in state.names" :key="i" class="room-field">第 {{i+1}} 位朋友<input v-model="state.names[i]" maxlength="12"></label></div><div class="duet-modes"><button id="duet-quiz" type="button" @click="begin"><strong>默契问答</strong><p>各自回答五个关于小屋的问题，最后一起揭晓。</p><small>轮流操作 · 约两分钟 →</small></button><button id="duet-relay" type="button" @click="relay"><strong>提示接力</strong><p>一人记下符号顺序，合上提示，再指导另一人接通。</p><small>三轮合作 · 可交换角色 →</small></button></div></template>
+  <div v-else-if="state.phase==='a'||state.phase==='b'" class="duet-question">
+    <div class="duet-papers" aria-label="两位朋友的答题纸">
+      <div v-for="(name,i) in state.names" :key="i" class="duet-paper" :class="{ writing:(state.phase==='a')===(i===0) }">
+        <strong>{{ name }}</strong><small>{{ (state.phase==='a')===(i===0) ? '正在作答' : state.phase==='b' ? '纸面朝下' : '等一等' }}</small>
+      </div>
+    </div>
+    <p class="adventure-kicker">第 {{ index + 1 }} / 5 题</p>
+    <h3>{{ question.question }}</h3>
+    <div class="duet-options">
+      <button v-for="(option,i) in question.options" :key="option" type="button" :data-choice="i" @click="answer(i)">{{ option }}</button>
+    </div>
+  </div>
+  <div v-else-if="state.phase==='handoff'" class="duet-cover">
+    <div class="duet-papers" aria-label="答题交接">
+      <div class="duet-paper" aria-label="第一位朋友的答题纸已盖住"><strong>{{ state.names[0] }}</strong><small>纸面朝下</small></div>
+      <div class="duet-paper writing"><strong>{{ state.names[1] }}</strong><small>轮到你了</small></div>
+    </div>
+    <button id="duet-handoff" type="button" class="primary" @click="state.phase='b';message='轮到第二位，按自己的心情选就好。'">我是 {{ state.names[1] }}，准备好了</button>
+  </div>
+  <div v-else-if="state.phase==='result'" class="duet-results">
+    <header class="duet-open-heading"><h3>把两张答案展开</h3><strong class="adventure-score">{{ result.matches }} / 5</strong></header>
+    <article v-for="(q,i) in questions" :key="q.id" class="duet-question-leaf" :data-match="state.a[i]===state.b[i]">
+      <h3>{{ q.question }}</h3>
+      <span class="duet-agreement">{{ state.a[i]===state.b[i] ? '同一拍 ✓' : '两种心情' }}</span>
+      <div class="duet-pair">
+        <div v-for="(name,side) in state.names" :key="side" class="duet-answer">
+          <h4>{{ name }}</h4>
+          <p>{{ q.options[(side===0 ? state.a : state.b)[i]] || '未选择' }}</p>
+        </div>
+      </div>
+    </article>
+    <div class="room-actions"><button type="button" @click="reset">换一组问题</button><button type="button" class="primary" @click="relay">再一起玩提示接力 →</button></div>
+  </div>
+  <div v-else-if="state.phase==='relay-brief'" class="duet-cover relay-card"><p class="adventure-kicker">提示员 · 第 {{state.relayRound+1}} / 3 轮</p><h3>提示员，先看这张小卡。</h3><p>记住顺序，或一边读一边告诉操作员。<br>合上提示后，符号就会被盖住。</p><div class="relay-code"><span v-for="(symbol,i) in code" :key="i" :data-clue-symbol="symbol" :style="{background:relaySymbols[symbol].color}"><strong>{{relaySymbols[symbol].symbol}}</strong><small>{{relaySymbols[symbol].label}}</small></span></div><button id="relay-cover" type="button" class="primary" @click="state.phase='relay-input';state.relayInput=[];message='操作员，根据朋友的提示按顺序输入。'">合上提示，交给操作员 →</button></div>
+  <div v-else-if="state.phase==='relay-input'" class="relay-console"><p class="adventure-kicker">操作员 · 第 {{state.relayRound+1}} / 3 轮</p><h3>把听见的提示，接到这里。</h3><div class="relay-slots" :aria-label="`已输入${state.relayInput.length}个符号`"><span v-for="(_,i) in code" :key="i">{{state.relayInput[i]!=null?relaySymbols[state.relayInput[i]].symbol:'·'}}</span></div><div class="relay-buttons" role="group" aria-label="输入接力符号"><button v-for="symbol in relaySymbols" :key="symbol.id" type="button" :data-symbol="symbol.id" :disabled="state.relayInput.length>=code.length" :style="{background:symbol.color}" @click="state.relayInput.push(symbol.id)"><strong>{{symbol.symbol}}</strong><span>{{symbol.label}}</span></button></div><div class="room-actions"><button id="relay-check" type="button" class="primary" @click="check">检查连接</button><button type="button" :disabled="!state.relayInput.length" @click="state.relayInput.pop()">退回一个</button><button type="button" @click="state.reviews++;state.phase='relay-brief'">请提示员重看一次</button></div></div>
   <div v-else-if="state.phase==='relay-result'" class="adventure-result"><span>✦</span><h3>这一串，接通了。</h3><p>换一位提示员，或者继续保持现在的搭档。</p><button id="relay-next" type="button" class="primary" @click="relayNext">{{state.relayRound===2?'看看这次合作的纪念 →':'继续下一轮 →'}}</button></div>
   <div v-else class="adventure-result"><span>✦</span><h3>三段提示，一起传到了最后。</h3><p>完成三轮接力，共检查 {{state.attempts}} 次，重看 {{state.reviews}} 次。<br>不必一遍成功，愿意认真听对方说，也是合作的一部分。</p><button type="button" class="primary" @click="reset">交换角色，再玩一次</button></div>
   <div v-if="state.phase!=='intro'" class="play-toolbar"><button type="button" @click="reset">回到双人挑战首页</button></div><p class="room-status" role="status">{{message}}</p><p class="play-footer-note">{{saved?'本轮保存在当前设备，可稍后接着玩。':'浏览器无法保存，本次仍可完成挑战。'}} 本板块为本地轮流操作，不建立网络房间。揭晓前请尊重彼此的选择，不提前看对方的屏幕。</p>
 </section></template>
 <style scoped>.duet-modes{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:25px}.duet-modes>button{display:flex;flex-direction:column;align-items:start;text-align:left;padding:28px;background:#eadce4;min-height:230px;gap:15px}.duet-modes>button:nth-child(2){background:#dfe4dc}.duet-modes>button>span{font:10px monospace;letter-spacing:2px}.duet-modes strong{font-size:27px}.duet-modes p{font-size:13px;margin:0}.duet-modes small{font-size:11px}.duet-question,.duet-cover,.relay-console{padding:30px;background:#f0e5dc;border:1px solid #cfb5c3}.duet-question h3,.duet-cover h3,.relay-console h3{font-size:26px;margin:18px 0}.duet-options{display:grid;gap:12px;margin-top:24px}.duet-options button{display:flex;justify-content:start;text-align:left;gap:20px;padding:18px}.duet-options button>span:first-child{font:11px monospace;color:#a67b94}.duet-options button>span:last-child{margin-left:auto}.duet-cover{text-align:center;min-height:300px}.duet-cover>span{font-size:50px;color:#ad7b98}.duet-cover p{font-size:14px;line-height:2}.duet-results article{padding:20px 0;border-bottom:1px solid #d6c1ca}.duet-results article h3{font-size:16px}.duet-results article>div{display:flex;gap:10px;flex-direction:column;font-size:13px}.duet-results article strong{font-size:11px;color:#a0718f}.relay-code,.relay-buttons{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin:26px 0}.relay-code>span{display:flex;flex-direction:column;min-width:80px;padding:14px 8px;align-items:center;color:#56425a}.relay-code strong{font-size:32px}.relay-code small{font-size:10px}.relay-buttons>button{display:flex;flex-direction:column;flex:1;min-width:75px;gap:10px;padding:20px 7px}.relay-buttons strong{font-size:35px}.relay-buttons span{font-size:11px}.relay-slots{display:flex;justify-content:center;gap:10px;margin:28px 0;flex-wrap:wrap}.relay-slots>span{width:45px;height:52px;background:#fff8ed;border-bottom:3px solid #c6a7b9;display:grid;place-items:center;font-size:30px}@media(max-width:600px){.duet-modes{grid-template-columns:1fr;gap:15px}.duet-modes>button{min-height:180px;padding:22px}.duet-question,.duet-cover,.relay-console{padding:19px}.duet-question h3,.duet-cover h3,.relay-console h3{font-size:22px}.relay-code>span{min-width:65px;padding:10px 6px}.relay-code{gap:7px}.relay-buttons{display:grid;grid-template-columns:1fr 1fr}.relay-slots{gap:6px}.relay-slots>span{width:35px;height:44px;font-size:25px}}
+
+.duet-room .duet-question,.duet-room .duet-cover,.duet-room .relay-console { color:#543a4d; background:#f3e2cf; padding:clamp(12px,2.5vw,22px); border:1px solid #bc9bab; }
+.duet-room .duet-papers { padding:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; max-width:635px; margin:0 auto 12px; align-items:stretch; }
+.duet-room .duet-paper { display:flex; flex-direction:column; gap:5px; min-width:0; justify-content:center; min-height:77px; padding:8px; border:1px solid #92738a; box-shadow:2px 3px #b18296; background:#e3ced8; color:#4d394f; text-align:center; }
+.duet-room .duet-paper.writing { background:#fff3db; border-color:#9f7b70; box-shadow:2px 3px #ccb39c; }
+.duet-paper small { font-size:11px; }
+.duet-room .duet-options button { text-align:left; padding:8px; min-width:0; line-height:1.55; overflow-wrap:anywhere; }
+.duet-room .duet-open-heading { display:flex; align-items:baseline; gap:10px; justify-content:space-between; border-bottom:2px solid #a27b89; background:#f2ddca; padding:9px 14px; }
+.duet-room .duet-open-heading h3 { margin:0; }
+.duet-open-heading .adventure-score { font-size:clamp(26px,5vw,42px); white-space:nowrap; }
+.duet-room .duet-results .duet-question-leaf { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:5px 8px; padding:10px 0 12px; border-bottom:1px solid #c1a4a9; }
+.duet-room .duet-question-leaf h3 { margin:0; font-size:clamp(14px,2.5vw,18px); }
+.duet-agreement { color:#6d4b60; font-size:11px; flex:none; }
+.duet-room .duet-results .duet-pair { grid-column:1/-1; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; position:relative; }
+.duet-answer { position:relative; min-width:0; padding:9px; border:1px solid #c1a4a9; background:#fff4e1; overflow-wrap:anywhere; }
+.duet-answer:nth-child(2) { background:#f1e0e4; }
+.duet-answer h4 { margin:0 0 8px; color:#75526a; font-size:11px; }
+.duet-answer p { margin:0; font-size:14px; line-height:1.6; }
+.duet-question-leaf[data-match=true] .duet-answer:first-child::after { content:''; position:absolute; width:19px; height:8px; border-bottom:2px solid #8f5275; border-radius:50%; bottom:12px; right:-19px; }
+.duet-room .relay-code>span,.duet-room .relay-slots>span { clip-path:polygon(0 0,100% 0,100% 42%,93% 50%,100% 58%,100% 100%,0 100%,0 58%,7% 50%,0 42%); border:1px solid #a48192; }
+.duet-room .relay-code>span { min-width:0; flex:0 1 84px; min-height:68px; }
+@media(max-width:600px) {
+  .duet-room .relay-code { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .duet-room .relay-code>span { padding-inline:3px; }
+  .duet-room .duet-results .duet-pair { gap:14px; }
+  .duet-question-leaf[data-match=true] .duet-answer:first-child::after { width:15px; right:-15px; }
+}
 </style>

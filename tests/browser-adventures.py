@@ -171,8 +171,10 @@ def test_duet(browser):
     f=Fixture(browser);p=f.page;f.goto('duet')
     p.locator('#duet-quiz').click()
     for choice in [0,1,2,3,0]:p.locator(f'.duet-options [data-choice="{choice}"]').click()
-    expect(p.locator('.duet-cover')).to_contain_text('答案，先收进信封')
-    assert p.locator('.duet-results').count()==0
+    expect(p.locator('.duet-cover .duet-paper')).to_have_count(2)
+    expect(p.locator('.duet-cover')).to_contain_text('纸面朝下')
+    expect(p.locator('.duet-cover')).to_contain_text('轮到你了')
+    expect(p.locator('.duet-results, .duet-options')).to_have_count(0)
     p.reload(wait_until='networkidle');p.locator('#duet-handoff').click()
     for choice in [0,1,2,3,0]:p.locator(f'.duet-options [data-choice="{choice}"]').click()
     expect(p.locator('.adventure-score')).to_have_text('5 / 5')

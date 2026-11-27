@@ -64,8 +64,10 @@ with sync_playwright() as runner:
     page.get_by_label('这一轮的心得', exact=True).fill('已经可以放松弹了')
     page.get_by_role('button', name='收好心得', exact=True).click()
     expect(page.locator('.practice-records')).to_contain_text('已经可以放松弹了')
-    page.get_by_role('combobox', name='查看', exact=True).select_option('30')
-    assert page.locator('.trend-bars [role=listitem]').count() == 30
+    page.get_by_role('combobox', name='查看', exact=True).select_option('month')
+    days_in_month = page.evaluate('() => { const now = new Date(); return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(); }')
+    expect(page.locator('.ledger-dates.is-month .ledger-day')).to_have_count(days_in_month)
+    expect(page.locator('.ledger-day[aria-pressed="true"]')).to_have_attribute('data-seconds',str(data['records'][0]['actualSeconds']))
     page.screenshot(path=str(OUT / 'practice-desktop.png'), full_page=True)
 
     # Two isolated pages in one origin share storage and Web Locks. Both see one
