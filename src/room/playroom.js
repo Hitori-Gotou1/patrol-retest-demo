@@ -1,5 +1,5 @@
 import {rasterData} from '../services/safeMedia.js';
-import { cast, stickers, roomProps, walkPlaces, searchObjects, concertOptions, concertEvents, ambientLayers } from '../data/playroom.js';
+import { cast, stickers, photoCaptionFonts, roomProps, walkPlaces, searchObjects, concertOptions, concertEvents, ambientLayers } from '../data/playroom.js';
 
 export const clamp = (value, min, max) => Math.max(min, Math.min(max, Number(value) || 0));
 const allowed = (value, options, fallback) => options.includes(value) ? value : fallback;
@@ -16,7 +16,9 @@ export function validateObjects(value, mode) {
 export const defaultPhoto = { version: 1, theme: 'pink', caption: '今天，也和大家站在一起。', objects: cast.map((c, i) => ({ key: c.id, id: c.id, x: 130 + i * 150, y: 470 + (i % 2) * 20, size: 250, rotation: 0 })) };
 export function validatePhoto(v) {
   if (!v || v.version !== 1 || !Array.isArray(v.objects)) throw new Error('invalid photo');
-  return { version: 1, theme: allowed(v.theme, ['pink', 'night', 'mint'], 'pink'), caption: String(v.caption || '').slice(0, 36), objects: validateObjects(v.objects, 'photo') };
+  const photo = { version: 1, theme: allowed(v.theme, ['pink', 'night', 'mint'], 'pink'), caption: String(v.caption || '').slice(0, 36), objects: validateObjects(v.objects, 'photo') };
+  if (v.captionFont !== photoCaptionFonts[0].id && photoCaptionFonts.some(font => font.id === v.captionFont)) photo.captionFont = v.captionFont;
+  return photo;
 }
 export const defaultRoom = { version: 1, light: 'warm', objects: [{ key: 'guitar', id: 'guitar', x: 145, y: 440, size: 1, rotation: -8 }, { key: 'amp', id: 'amp', x: 265, y: 470, size: 1, rotation: 0 }, { key: 'box', id: 'box', x: 625, y: 475, size: 1, rotation: 0 }, { key: 'poster', id: 'poster', x: 730, y: 220, size: 1, rotation: -4 }, { key: 'plant', id: 'plant', x: 840, y: 430, size: 1, rotation: 0 }] };
 export function validateRoom(v) {

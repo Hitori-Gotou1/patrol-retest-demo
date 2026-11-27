@@ -22,6 +22,7 @@ const useTone = ref(false), tone = ref(loadLocal(guitarToneKey, defaultTone, val
 const exportCycles = ref(1), exporting = ref(false), exportProgress = ref(0);
 const player = createArrangementPlayer({ createContext: () => new (window.AudioContext || window.webkitAudioContext)(), isHidden: () => document.hidden });
 const selectedTrack=ref(0),stepPage=ref(0);
+const beats = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15]];
 const bars = computed(() => patternBars(pattern.value)), masks = computed(() => bars.value[selectedBar.value]?.masks || bars.value[0].masks);
 const range = computed(() => patternRange(pattern.value));
 const exportLength = computed(() => { try { return `${arrangementDuration(pattern.value, exportCycles.value).toFixed(1)} 秒 + 2.4 秒尾音`; } catch { return ''; } });
@@ -75,30 +76,189 @@ onBeforeRouteLeave(() => { stop(); exportController?.abort(); });
 onBeforeUnmount(() => { alive = false; draftGuard.destroy(); importRevision++; stop(); exportController?.abort(); player.dispose(); document.removeEventListener('visibilitychange', hidden); window.removeEventListener('hitori:capture-draft', captureDraft); });
 </script>
 <template>
-<section class="room-panel" aria-labelledby="studio-title">
-<header class="activity-title"><p class="play-eyebrow">STARRY 十六步编曲台</p><h2 id="studio-title">把四种声音，排成一句。</h2><p class="room-intro">在谱带上找小节，选四条音轨的落点。每四步是一拍。</p></header>
-<EditorWorkspace title="自己的编曲" save-label="导出编排" @save="exportPattern">
-<template #overview>
-  <StudioBarStrip :bars="bars" :range="range" :selected="selectedBar" :playing="playingBar" :step="currentStep" @select="selectedBar = $event"/>
+  <section class="room-panel studio-room" aria-labelledby="studio-title">
+    <header class="activity-title">
+      <h2 id="studio-title">十六步编曲台</h2>
+      <p class="room-intro">在谱带上选小节，每四步是一拍。</p>
+    </header>
+    <EditorWorkspace class="studio-workspace" title="编曲编辑" save-label="导出编排" @save="exportPattern">
+      <template #canvas>
+        <section class="room-console studio-console" aria-label="编曲控制台">
+          <StudioBarStrip :bars="bars" :range="range" :selected="selectedBar" :playing="playingBar" :step="currentStep" @select="selectedBar = $event"/>
+          <div class="studio-deck">
+            <div class="studio-transport">
+              <button type="button" class="primary" :disabled="!playing && (Boolean(error) || starting || exporting)" @click="playing ? stop() : play()">
+                {{ playing ? '停止播放' : starting ? '准备音效…' : '播放并开启音效' }}
+              </button>
+              <div class="studio-range">
+                <label class="room-field">循环起点<select :value="range.start" @change="setRange('start', $event.target.value)"><option v-for="(bar, i) in bars" :key="bar.id" :value="i">{{ i + 1 }} · {{ bar.name }}</option></select></label>
+                <label class="room-field">循环终点<select :value="range.end" @change="setRange('end', $event.target.value)"><option v-for="(bar, i) in bars" :key="bar.id" :value="i">{{ i + 1 }} · {{ bar.name }}</option></select></label>
+              </div>
+            </div>
+            <p class="studio-position">
+              <span>正在编辑第 {{ selectedBar + 1 }} 小节 <strong>{{ bars[selectedBar]?.name }}</strong></span>
+              <span v-if="playingBar >= 0" class="studio-play-position">正在播放第 {{ playingBar + 1 }} 小节，第 {{ currentStep + 1 }} 步</span>
+            </p>
+            <div class="studio-mobile-tools">
+              <div role="group" aria-label="选择编辑轨道">
+                <button v-for="(track, i) in studioTracks" :key="track.id" type="button" :aria-pressed="selectedTrack === i" @click="selectedTrack = i">{{ track.label }}</button>
+              </div>
+              <div role="group" aria-label="选择节拍分段">
+                <button type="button" :aria-pressed="stepPage === 0" @click="stepPage = 0">第 1–8 步</button>
+                <button type="button" :aria-pressed="stepPage === 1" @click="stepPage = 1">第 9–16 步</button>
+              </div>
+            </div>
+            <div class="studio-grid" role="group" aria-label="四轨十六步编排">
+              <div v-for="(track, index) in studioTracks" :key="track.id" class="studio-track" :class="{ 'is-active-track': selectedTrack === index }">
+                <strong>{{ track.label }}</strong>
+                <div class="studio-steps" role="group" :aria-label="`${track.label}轨道`">
+                  <div v-for="(group, beat) in beats" :key="beat" class="studio-beat" :class="{ 'is-visible': Math.floor(beat / 2) === stepPage }">
+                    <button v-for="step in group" :key="step" type="button" :data-track="index" :data-step="step"
+                      :aria-label="`${track.label}第${step + 1}步`" :aria-pressed="Boolean(masks[index] & (1 << step))"
+                      :class="{ 'is-current': playingBar === selectedBar && currentStep === step }" @click="toggle(index, step)">{{ step + 1 }}</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-if="shared" class="room-actions studio-shared">
+              <button type="button" :disabled="Boolean(error)" @click="saveShared">保存为本机编排</button>
+              <button type="button" @click="restore">恢复本机编排</button>
+            </div>
+            <p class="room-status studio-status" role="status">{{ error || message }}</p>
+          </div>
+        </section>
+      </template>
+      <template #tools>
+        <div class="studio-settings">
+          <div class="room-fields">
+            <label class="room-field">合奏名字<input id="pattern-name" v-model="pattern.name" maxlength="60"></label>
+            <label class="room-field">速度 BPM<input id="pattern-bpm" v-model.number="pattern.bpm" type="number" min="60" max="180" step="1"></label>
+          </div>
+          <label v-if="pattern.version === 2" class="room-field">当前小节名称<input v-model="pattern.bars[selectedBar].name" maxlength="24"></label>
+          <div class="room-actions">
+            <button type="button" @click="barAction('copy', selectedBar)">复制此小节 ＋</button>
+            <button type="button" :disabled="bars.length === 1" @click="barAction('delete', selectedBar)">删除此小节</button>
+            <button type="button" :disabled="selectedBar === 0" @click="barAction('move', selectedBar, selectedBar - 1)">前移</button>
+            <button type="button" :disabled="selectedBar === bars.length - 1" @click="barAction('move', selectedBar, selectedBar + 1)">后移</button>
+          </div>
+          <div class="studio-tone">
+            <label class="room-check"><input id="studio-use-tone" v-model="useTone" type="checkbox" @change="chooseTone">使用我的吉他音色 · {{ tone.name }}</label>
+            <RouterLink to="/room/effects">去效果器台调整 ↗</RouterLink>
+          </div>
+          <TemplateLibrary tool="studio" :current="pattern" @apply="applyTemplate"/>
+        </div>
+        <div class="studio-files">
+          <h3>把声音带走</h3>
+          <label class="room-field">导出循环次数<select v-model.number="exportCycles"><option v-for="n in [1, 2, 4, 8, 16]" :key="n" :value="n">{{ n }} 遍所选范围</option></select></label>
+          <p class="room-hint">{{ exportLength }} · WAV 上限三分钟；导出不需要麦克风。</p>
+          <div class="room-actions">
+            <button type="button" :disabled="exporting || Boolean(error)" @click="exportWav">导出原创编曲 WAV</button>
+            <button v-if="exporting" type="button" @click="exportController?.abort()">取消导出</button>
+          </div>
+          <progress v-if="exporting" :value="exportProgress" max="1" aria-label="音频导出进度"></progress>
+          <div class="room-actions">
+            <button type="button" :disabled="Boolean(error)" @click="copy">分享这段合奏</button>
+            <button type="button" :disabled="Boolean(error)" @click="exportPattern">导出编排 JSON</button>
+            <button type="button" @click="fileInput.click()">导入编排</button>
+            <input ref="fileInput" type="file" hidden accept=".json,application/json" aria-label="选择编排文件" @change="importPattern">
+          </div>
+          <div v-if="shareLink" class="room-share"><label class="room-field">合奏分享链接<input id="pattern-share" ref="shareInput" :value="shareLink" readonly @focus="$event.target.select()"></label></div>
+        </div>
+      </template>
+    </EditorWorkspace>
+    <p class="room-hint">本机编排自动保存。分享与导入需确认保存。所有声音为本站原创合成示范。</p>
+  </section>
 </template>
-<template #canvas>
-<p class="room-hint studio-position">正在编辑第 {{selectedBar+1}} 小节<span v-if="playingBar>=0"> · 正在播放第 {{playingBar+1}} 小节，第 {{currentStep+1}} 步</span></p>
-<div class="studio-mobile-tools"><div role="group" aria-label="选择编辑轨道"><button v-for="(track,i) in studioTracks" :key="track.id" :aria-pressed="selectedTrack===i" @click="selectedTrack=i">{{track.label}}</button></div><div role="group" aria-label="选择节拍分段"><button :aria-pressed="stepPage===0" @click="stepPage=0">第 1–8 步</button><button :aria-pressed="stepPage===1" @click="stepPage=1">第 9–16 步</button></div></div><div class="studio-grid" aria-label="四轨十六步编排"><div v-for="(track,index) in studioTracks" :key="track.id" class="studio-track" :class="{'is-active-track':selectedTrack===index}"><strong>{{track.label}}</strong><div role="group" :aria-label="`${track.label}轨道`"><button v-for="step in 16" :key="step" type="button" :data-track="index" :data-step="step-1" :aria-label="`${track.label}第${step}步`" :aria-pressed="Boolean(masks[index] & (1 << (step-1)))" :class="{'is-current':playingBar===selectedBar&&currentStep===step-1,'is-beat':(step-1)%4===0,'mobile-step-hidden':Math.floor((step-1)/8)!==stepPage}" @click="toggle(index,step-1)">{{step}}</button></div></div></div>
-</template>
-<template #actions><button v-if="!playing" type="button" class="primary" :disabled="Boolean(error)||starting||exporting" @click="play">{{starting?'准备音效…':'播放并开启音效'}}</button><button v-else type="button" class="primary" @click="stop">停止播放</button><button v-if="shared" type="button" :disabled="Boolean(error)" @click="saveShared">保存为本机编排</button><button v-if="shared" type="button" @click="restore">恢复本机编排</button></template>
-<template #tools>
-<div class="room-fields"><label class="room-field">合奏名字<input id="pattern-name" v-model="pattern.name" maxlength="60"></label><label class="room-field">速度 BPM<input id="pattern-bpm" v-model.number="pattern.bpm" type="number" min="60" max="180" step="1"></label></div>
-<label v-if="pattern.version===2" class="room-field">当前小节名称<input v-model="pattern.bars[selectedBar].name" maxlength="24"></label>
-<div class="room-actions"><button @click="barAction('copy',selectedBar)">复制此小节 ＋</button><button :disabled="bars.length===1" @click="barAction('delete',selectedBar)">删除此小节</button><button :disabled="selectedBar===0" @click="barAction('move',selectedBar,selectedBar-1)">前移</button><button :disabled="selectedBar===bars.length-1" @click="barAction('move',selectedBar,selectedBar+1)">后移</button></div>
-<div class="room-fields"><label class="room-field">循环起点<select :value="range.start" @change="setRange('start',$event.target.value)"><option v-for="(bar,i) in bars" :key="bar.id" :value="i">{{i+1}} · {{bar.name}}</option></select></label><label class="room-field">循环终点<select :value="range.end" @change="setRange('end',$event.target.value)"><option v-for="(bar,i) in bars" :key="bar.id" :value="i">{{i+1}} · {{bar.name}}</option></select></label></div>
-<div class="studio-tone"><label class="room-check"><input id="studio-use-tone" v-model="useTone" type="checkbox" @change="chooseTone">使用我的吉他音色 · {{tone.name}}</label><RouterLink to="/room/effects">去效果器台调整 ↗</RouterLink></div>
-<TemplateLibrary tool="studio" :current="pattern" @apply="applyTemplate"/>
-<h3>把声音带走</h3><label class="room-field">导出循环次数<select v-model.number="exportCycles"><option v-for="n in [1,2,4,8,16]" :key="n" :value="n">{{n}} 遍所选范围</option></select></label><p class="room-hint">{{exportLength}} · WAV 上限三分钟；导出不需要麦克风。</p>
-<div class="room-actions"><button type="button" :disabled="exporting||Boolean(error)" @click="exportWav">导出原创编曲 WAV</button><button v-if="exporting" @click="exportController?.abort()">取消导出</button></div><progress v-if="exporting" :value="exportProgress" max="1" aria-label="音频导出进度"></progress>
-<div class="room-actions"><button type="button" :disabled="Boolean(error)" @click="copy">分享这段合奏</button><button type="button" :disabled="Boolean(error)" @click="exportPattern">导出编排 JSON</button><button type="button" @click="fileInput.click()">导入编排</button><input ref="fileInput" type="file" hidden accept=".json,application/json" aria-label="选择编排文件" @change="importPattern"></div>
-</template></EditorWorkspace>
-<div v-if="shareLink" class="room-share"><label class="room-field">合奏分享链接<input id="pattern-share" ref="shareInput" :value="shareLink" readonly @focus="$event.target.select()"></label></div><p class="room-status" role="status">{{error||message}}</p><p class="room-hint">本机编排自动保存。分享与导入需确认保存；老版单小节、作品架与分享链接仍可读取。所有声音为本站原创合成示范。</p></section>
-</template>
+
 <style scoped>
-.bar-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px}.bar-tabs button{white-space:nowrap;min-height:44px}.bar-playing{box-shadow:inset 0 -4px #b95d91}.studio-tone{padding:14px;background:#efe4df;border:1px solid #d6bfc9;margin-bottom:18px}.studio-tone a{font-size:13px;color:#76516a;min-height:44px;display:inline-flex;align-items:center}.studio-track{margin-block:14px}.studio-track>strong{display:block;font-size:13px;margin-bottom:8px}.studio-track>div{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}.studio-track button{padding:8px 0;min-height:44px;min-width:0;font-size:12px}.studio-track button.is-beat{border-left:3px solid #9b7a65}.studio-track button.is-current{outline:3px solid #493b47;outline-offset:-5px}.studio-grid{min-width:0}.studio-mobile-tools{display:none}progress{width:100%;height:22px}@media(max-width:760px){.studio-mobile-tools{display:grid;gap:6px}.studio-mobile-tools>div{display:flex;gap:6px}.studio-mobile-tools button{flex:1;min-width:0;padding:6px 4px;min-height:44px}.studio-track{display:none;margin:8px 0}.studio-track.is-active-track{display:block}.studio-track>strong{display:none}.studio-track>div{grid-template-columns:repeat(4,minmax(0,1fr))}.studio-track .mobile-step-hidden{display:none}.studio-position{font-size:11px;margin:6px 0}.bar-tabs button{padding:6px 8px}.studio-grid{max-height:112px;overflow:auto}:deep(.is-fullscreen .editor-workspace-canvas){max-height:54%;overflow-y:auto;overscroll-behavior:contain}}
+.studio-room.room-panel { padding: clamp(.8rem, 2.2vw, 1.8rem); background: var(--room-paper); border-color: var(--room-paper-edge); }
+.studio-room .activity-title { margin-bottom: .85rem; }
+.studio-workspace { margin: 0; border-color: var(--room-paper-edge); background: var(--room-paper); }
+.studio-room :deep(.editor-workspace-body) { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0; }
+.studio-room :deep(.editor-workspace-bar) { border-color: var(--room-paper-edge); }
+.studio-room :deep(.editor-workspace-canvas) { position: static; background: transparent; box-shadow: none; }
+.studio-room :deep(.editor-workspace-tools) { gap: clamp(.8rem, 2vw, 1.5rem); padding: clamp(.7rem, 2vw, 1.35rem); }
+.studio-room :deep(.studio-workspace:not(.is-fullscreen) .editor-workspace-tools) { max-height: none; overflow: visible; }
+.studio-console { container-type: inline-size; min-width: 0; }
+.studio-deck { padding: clamp(.55rem, 1.6vw, 1.15rem); }
+.studio-transport {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: .5rem 1rem;
+}
+.studio-console .studio-transport button.primary { background: #534250; border-color: #b29aab; color: var(--room-console-ink); }
+.studio-range { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .45rem; width: min(100%, 25rem); }
+.studio-range .room-field { color: var(--room-console-muted); font-size: .8125rem; gap: .25rem; }
+.studio-console .studio-range select { color: var(--room-console-ink); background: #312a35; border-color: var(--room-console-top); padding: .4rem .45rem; font-size: .8125rem; }
+.studio-position {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .2rem .85rem;
+  color: var(--room-console-muted);
+  margin: .65rem 0;
+  font-size: .8125rem;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.studio-position strong { margin-inline-start: .25rem; }
+.studio-play-position { color: var(--room-berry-light); }
+.studio-mobile-tools { display: grid; gap: .35rem; margin-bottom: .55rem; }
+.studio-mobile-tools > div { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: .3rem; }
+.studio-mobile-tools button, .studio-shared button { padding: .35rem .25rem; min-width: 0; color: var(--room-console-muted); background: transparent; border-color: var(--room-console-top); }
+.studio-mobile-tools button[aria-pressed='true'] { color: var(--room-console-ink); background: #544452; border-color: #ac93a7; font-weight: 700; }
+.studio-grid { display: grid; gap: .4rem; min-width: 0; }
+.studio-track { display: none; }
+.studio-track.is-active-track { display: block; }
+.studio-track > strong { display: none; }
+.studio-steps { display: grid; grid-template-columns: minmax(0, 1fr); gap: .4rem; }
+.studio-beat { display: none; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .24rem; }
+.studio-beat.is-visible { display: grid; }
+.studio-steps button {
+  min-height: 44px;
+  min-width: 0;
+  padding: .25rem 0;
+  position: relative;
+  color: var(--room-console-muted);
+  background: #302b36;
+  border-color: var(--room-console-top);
+  box-shadow: inset 0 2px 4px #0e0b1357;
+  font: .8125rem var(--mono, monospace);
+  font-variant-numeric: tabular-nums;
+  transition: none;
+}
+.studio-steps button[aria-pressed='true'] { color: var(--room-console-ink); background: #615061; border-color: #ac95aa; box-shadow: none; font-weight: 750; }
+.studio-steps button[aria-pressed='true']::before { content: ''; position: absolute; inset: auto 26% .28rem; border-bottom: 2px solid #bcabb8; }
+.studio-steps button.is-current { color: var(--room-console-ink); border-color: var(--room-berry-light); }
+.studio-steps button.is-current::after { content: ''; position: absolute; inset: 0 0 auto; border-top: 3px solid var(--room-berry-light); }
+.studio-deck .studio-status { margin: .55rem 0 0; color: var(--room-console-muted); font-size: .8125rem; }
+.studio-deck .studio-status:empty { min-height: 0; margin: 0; }
+.studio-tone { padding: .7rem .85rem; background: #eee2dc; border: 1px solid var(--room-paper-edge); }
+.studio-tone a { font-size: .8125rem; color: var(--room-ink-muted); min-height: 44px; display: inline-flex; align-items: center; }
+.studio-settings, .studio-files { min-width: 0; }
+.studio-settings > .room-fields, .studio-files > h3 { margin-top: 0; }
+.studio-files progress { width: 100%; }
+@container (min-width: 28rem) {
+  .studio-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; }
+}
+@container (min-width: 53.5rem) {
+  .studio-mobile-tools { display: none; }
+  .studio-track, .studio-track.is-active-track { display: grid; grid-template-columns: 4.2rem minmax(0, 1fr); align-items: center; gap: .48rem; }
+  .studio-track > strong { display: block; color: var(--room-console-ink); font-size: .875rem; }
+  .studio-steps { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; }
+  .studio-beat { display: grid; position: relative; }
+  .studio-beat + .studio-beat::before { content: ''; position: absolute; inset: .15rem auto; left: -.4rem; border-left: 1px solid var(--room-console-top); }
+}
+@media (min-width: 48rem) {
+  .studio-room :deep(.editor-workspace-tools) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .studio-room :deep(.is-fullscreen .editor-workspace-body) { grid-template-rows: minmax(0, 1.4fr) minmax(0, 1fr); }
+  .studio-room :deep(.is-fullscreen .editor-workspace-tools) { border-top: 1px solid var(--room-paper-edge); }
+}
+@media (max-width: 47.5rem) {
+  .studio-room :deep(.is-fullscreen .editor-workspace-canvas) { max-height: 68%; }
+}
+@media (max-height: 31.25rem) and (orientation: landscape) {
+  .studio-room :deep(.is-fullscreen .editor-workspace-body) { grid-template-rows: minmax(0, 1fr); }
+  .studio-room :deep(.is-fullscreen .editor-workspace-tools) { grid-template-columns: minmax(0, 1fr); }
+}
 </style>

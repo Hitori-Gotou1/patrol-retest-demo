@@ -1,7 +1,13 @@
 <script setup>
-import { nextTick, onBeforeUnmount, ref } from 'vue';
+import { nextTick, onBeforeUnmount, ref, useId } from 'vue';
 import { useRoute } from 'vue-router';
-const props = defineProps({ title: { type: String, required: true }, saveLabel: { type: String, default: '保存 / 导出' } });
+const props = defineProps({
+  title: { type: String, required: true },
+  saveLabel: { type: String, default: '保存 / 导出' },
+  saveId: String,
+  saving: Boolean,
+  toolbarTools: Boolean
+});
 const emit = defineEmits(['save']);
 const route=useRoute(), shelfBusy=ref(false), shelfMessage=ref('');
 async function saveToShelf(){
@@ -9,6 +15,7 @@ async function saveToShelf(){
   try{const [{draftKey,saveWork},{captureWorkPreview}]=await Promise.all([import('../../room/workshelf.js'),import('../../room/exportImage.js')]);const activity=route.path.split('/')[2],detail={key:draftKey(activity)};window.dispatchEvent(new CustomEvent('hitori:capture-draft',{detail}));if(detail.error||!detail.snapshot)throw new Error(detail.error||'画面还没准备好，请稍后再保存。');let preview='';try{preview=await captureWorkPreview(root.value);}catch{}saveWork(activity,detail.snapshot,preview);shelfMessage.value='已存入作品架，退出全屏后可以继续编辑。';}catch(error){shelfMessage.value=error.message||'作品暂未保存，请重试。';}finally{shelfBusy.value=false;}
 }
 const fullscreen = ref(false), root = ref(null), trigger = ref(null), toolsOpen = ref(true);
+const toolsId = useId();
 let previousOverflow = '', previousFocus = null;
 async function enter() {
   previousFocus = document.activeElement;
@@ -34,10 +41,23 @@ onBeforeUnmount(exit);
 </script>
 <template>
   <div ref="root" class="editor-workspace" :class="{'is-fullscreen':fullscreen,'tools-collapsed':!toolsOpen}" :role="fullscreen?'dialog':undefined" :aria-modal="fullscreen?true:undefined" :aria-label="fullscreen?`${title}全屏编辑`:undefined">
-    <div class="editor-workspace-bar"><strong>{{title}}</strong><div><button v-if="!fullscreen" ref="trigger" type="button" class="editor-enter" @click="enter">⛶ 全屏编辑</button><button v-else type="button" class="editor-exit" @click="exit">退出全屏</button><button type="button" class="editor-save" @click="emit('save')">{{saveLabel}}</button><button type="button" class="editor-save-work" :disabled="shelfBusy" @click="saveToShelf">{{shelfBusy?'保存中…':'存入作品架'}}</button></div></div>
+    <div class="editor-workspace-bar">
+      <strong>{{ title }}</strong>
+      <div>
+        <button v-if="!fullscreen" ref="trigger" type="button" class="editor-enter" @click="enter">⛶ 全屏编辑</button>
+        <button v-else type="button" class="editor-exit" @click="exit">退出全屏</button>
+        <button :id="saveId" type="button" class="editor-save" :disabled="saving" @click="emit('save')">{{ saveLabel }}</button>
+        <button type="button" class="editor-save-work" :disabled="shelfBusy" @click="saveToShelf">{{ shelfBusy ? '保存中…' : '存入作品架' }}</button>
+        <button v-if="toolbarTools" type="button" class="editor-tools-toggle" :aria-expanded="toolsOpen" :aria-controls="toolsId" @click="toolsOpen = !toolsOpen">{{ toolsOpen ? '收起工具' : '展开工具' }}</button>
+      </div>
+    </div>
     <slot name="overview"/>
-    <div class="editor-workspace-body"><div class="editor-workspace-canvas"><slot name="canvas"/><div class="editor-workspace-actions"><slot name="actions"/></div></div><div class="editor-workspace-tools"><slot name="tools"/></div></div>
-    <p v-if="shelfMessage" class="editor-workspace-notice" role="status">{{shelfMessage}}</p><div class="editor-mobile-footer"><button type="button" :aria-expanded="toolsOpen" @click="toolsOpen=!toolsOpen">{{toolsOpen?'收起工具 · 看画面':'展开工具 · 继续编辑'}}</button><span>编辑会沿用本机自动保存</span></div>
+    <div class="editor-workspace-body">
+      <div class="editor-workspace-canvas"><slot name="canvas"/><div v-if="$slots.actions" class="editor-workspace-actions"><slot name="actions"/></div></div>
+      <div v-show="!toolbarTools || toolsOpen" :id="toolsId" class="editor-workspace-tools"><slot name="tools"/></div>
+    </div>
+    <p v-if="shelfMessage" class="editor-workspace-notice" role="status">{{ shelfMessage }}</p>
+    <div v-if="!toolbarTools" class="editor-mobile-footer"><button type="button" :aria-expanded="toolsOpen" :aria-controls="toolsId" @click="toolsOpen = !toolsOpen">{{ toolsOpen ? '收起工具 · 看画面' : '展开工具 · 继续编辑' }}</button><span>编辑会沿用本机自动保存</span></div>
   </div>
 </template>
 <style scoped>

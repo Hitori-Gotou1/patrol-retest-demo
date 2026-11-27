@@ -1,7 +1,6 @@
 <script setup>
-import '../../styles/review-folio.css';
 import PracticeLedger from './PracticeLedger.vue';
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { recordActivity } from '../../room/activityLog.js';
 import { onBeforeRouteLeave } from 'vue-router';
 import { useInteractionAudio } from '../../composables/useInteractionAudio.js';
@@ -11,9 +10,19 @@ import { loadLocal, saveLocal, downloadJson } from '../../room/storage.js';
 const store = ref(loadLocal(practiceKey, emptyPractice, validatePractice));
 const minutes = ref(25), breakMinutes = ref(5), alarm = ref(false), now = ref(Date.now()), message = ref(''), busy = ref(false);
 const track = ref(''), goal = ref(''), reflection = ref(''), ending = ref(false), endPanel = ref(null), editing = ref(''), editReflection = ref('');
+const primaryButton = ref(null);
+const recordMessage = ref('');
 const audio = useInteractionAudio('practice-clock');
 let timer, storageWorking = true, alive = true, leaving = false, endWasRunning = false;
 const current = computed(() => store.value.current);
+watch(() => current.value?.id, () => {
+  if (!current.value) return;
+  minutes.value = current.value.minutes;
+  breakMinutes.value = current.value.breakMinutes;
+  track.value = current.value.track;
+  goal.value = current.value.goal;
+  alarm.value = Boolean(current.value.alarm);
+}, { immediate: true });
 const remaining = computed(() => current.value ? Math.ceil(remainingPractice(current.value, now.value) / 1000) : (Number.isInteger(minutes.value) && minutes.value >= 1 && minutes.value <= 180 ? minutes.value * 60 : 0));
 const clock = computed(() => `${String(Math.floor(remaining.value / 60)).padStart(2,'0')}:${String(remaining.value % 60).padStart(2,'0')}`);
 const phaseLabel = computed(() => !current.value ? '准备开始' : ({ focus: '专注练习', break: '休息一下', 'paused-focus': '练习已暂停', 'paused-break': '休息已暂停' })[current.value.phase]);
@@ -21,8 +30,12 @@ const streak = computed(() => practiceStreak(store.value.records, now.value));
 const recent = computed(() => store.value.records.slice().reverse().slice(0, 15));
 const actual = computed(() => actualPracticeSeconds(current.value, now.value));
 const duration = seconds => seconds < 60 ? `${seconds} 秒` : `${Math.floor(seconds / 60)} 分 ${seconds % 60} 秒`;
-const plan = computed(() => current.value ? current.value.minutes * 60 : remaining.value);
-const worked = computed(() => current.value?.phase.endsWith('break') ? plan.value : actual.value);
+const resting = computed(() => current.value?.phase.endsWith('break'));
+const paused = computed(() => current.value?.phase.startsWith('paused-'));
+const plan = computed(() => current.value ? (resting.value ? current.value.breakMinutes : current.value.minutes) * 60 : remaining.value);
+const elapsed = computed(() => resting.value ? Math.max(0, plan.value - remaining.value) : actual.value);
+const elapsedLabel = computed(() => `${resting.value ? '已休息' : '已练'} ${duration(elapsed.value)}`);
+const primaryLabel = computed(() => !current.value ? '开始练习' : paused.value ? '继续计时' : '暂停计时');
 function fresh() {
   if (!storageWorking) return store.value;
   try { const raw = localStorage.getItem(practiceKey); return raw ? validatePractice(JSON.parse(raw)) : structuredClone(emptyPractice); }
@@ -87,6 +100,10 @@ async function act(change) {
 }
 async function pause() { const at = Date.now(); await update(); await act(latest => pausePractice(latest, at)); now.value = at; }
 async function resume() { const at = Date.now(); await act(latest => resumePractice(latest, at)); now.value = at; }
+function runPrimaryAction() {
+  if (!current.value) return start();
+  return paused.value ? resume() : pause();
+}
 async function askEnd() {
   endWasRunning = current.value && !current.value.phase.startsWith('paused-');
   await pause();
@@ -102,11 +119,23 @@ async function end(saveActual) {
       recordActivity('practice', `实际练习 ${duration(seconds)}${before.track ? ` · ${before.track}` : ''}`, before.id);
       message.value = `已保存实际练习 ${duration(seconds)}，计划 ${before.minutes} 分钟。`;
     } else message.value = '本轮已结束，未新增练习记录。';
+    await nextTick();
+    primaryButton.value?.focus();
   }
 }
-async function cancelEnd() { ending.value = false; if (endWasRunning) await resume(); }
-function beginEdit(record) { editing.value = record.id; editReflection.value = record.reflection; }
-async function saveReflection() { if (await transact(latest => editPracticeRecord(latest, editing.value, { reflection: editReflection.value }))) { editing.value = ''; message.value = '心得已收好。'; } }
+async function cancelEnd() {
+  ending.value = false;
+  if (endWasRunning) await resume();
+  await nextTick();
+  primaryButton.value?.focus();
+}
+function beginEdit(record) { editing.value = record.id; editReflection.value = record.reflection; recordMessage.value = ''; }
+async function saveReflection() {
+  if (await transact(latest => editPracticeRecord(latest, editing.value, { reflection: editReflection.value }))) {
+    editing.value = '';
+    recordMessage.value = '心得已收好。';
+  } else recordMessage.value = message.value;
+}
 function sync(event) {
   try { if (event.type === 'hitori:sync-applied' || (event.storageArea === localStorage && (event.key === practiceKey || event.key === null))) { store.value = fresh(); if (!current.value) ending.value = false; update(); } } catch { /* Keep the in-memory timer. */ }
 }
@@ -115,50 +144,185 @@ onBeforeRouteLeave(() => { leaving = true; audio.stop(); });
 onBeforeUnmount(() => { alive = false; clearInterval(timer); audio.stop(); window.removeEventListener('storage', sync); window.removeEventListener('hitori:sync-applied', sync); document.removeEventListener('visibilitychange', update); });
 </script>
 <template>
-  <section class="room-panel review-folio practice-room" aria-labelledby="practice-title"><h2 id="practice-title">给今天，留一段练习。</h2><p class="room-intro">写下曲目和想练好的小事。暂停不计时，刷新后继续；同一浏览器的标签页共用一轮计时。</p>
-    <div class="practice-session" :class="{ 'is-timing':current }"><div class="practice-setup"><div class="room-fields"><label class="room-field" for="practice-track">曲目或练习内容<input id="practice-track" v-model="track" maxlength="80" :disabled="Boolean(current)" placeholder="例如：第一次扫弦"></label><label class="room-field" for="practice-goal">今天的目标<input id="practice-goal" v-model="goal" maxlength="120" :disabled="Boolean(current)" placeholder="例如：把副歌慢速弹顺"></label><label class="room-field" for="focus-minutes">计划练习（分钟）<input id="focus-minutes" v-model.number="minutes" type="number" min="1" max="180" :disabled="Boolean(current)"></label><label class="room-field" for="break-minutes">休息（0 表示不休息）<input id="break-minutes" v-model.number="breakMinutes" type="number" min="0" max="60" :disabled="Boolean(current)"></label></div>
-    <label class="room-check"><input v-model="alarm" type="checkbox" :disabled="Boolean(current)">本页结束提示音（开始时开启互动音效）</label></div>
-    <div class="practice-clock">
-      <p role="status">{{ phaseLabel }}</p>
-      <strong id="practice-clock" role="timer">{{ clock }}</strong>
-      <span v-if="current">{{ current.track || '今天的练习' }}<template v-if="current.goal"> · {{ current.goal }}</template></span>
-      <label class="practice-meter">
-        <span>已练 {{ duration(worked) }}</span><span>计划 {{ duration(plan) }}</span>
-        <progress :max="Math.max(1,plan)" :value="worked" :aria-valuetext="`已练 ${duration(worked)}，计划 ${duration(plan)}`"></progress>
-      </label>
-    </div></div>
-    <div class="room-actions"><button v-if="!current" id="practice-start" type="button" class="primary" :disabled="busy" @click="start">开始练习</button><button v-else-if="current.phase.startsWith('paused-')" type="button" class="primary" :disabled="busy || ending" @click="resume">继续计时</button><button v-else type="button" class="primary" :disabled="busy || ending" @click="pause">暂停计时</button><button v-if="current" type="button" :disabled="busy || ending" @click="askEnd">结束本轮</button><button type="button" @click="downloadJson(store,'hitori-room-practice.json')">导出练习记录</button></div>
-    <div v-if="ending" ref="endPanel" class="practice-end" tabindex="-1" aria-labelledby="practice-end-title" @keydown.esc.prevent="cancelEnd"><h3 id="practice-end-title">今天先练到这里？</h3><template v-if="current?.phase.endsWith('focus')"><p>已暂停。计划 {{ current.minutes }} 分钟，实际完成 {{ duration(actual) }}。可以保存实际时长，也可以放弃本轮。</p><label class="room-field">简短心得<textarea v-model="reflection" maxlength="240" rows="2" placeholder="今天哪一点更顺手了？"></textarea></label><div class="room-actions"><button type="button" class="primary" :disabled="busy || actual < 1" @click="end(true)">保存实际时长并结束</button><button type="button" :disabled="busy" @click="end(false)">不记账，结束</button><button type="button" :disabled="busy" @click="cancelEnd">继续这一轮</button></div></template><template v-else><p>练习已经记录。现在结束休息不会重复记账。</p><div class="room-actions"><button type="button" :disabled="busy" @click="end(false)">结束休息</button><button type="button" @click="cancelEnd">继续休息</button></div></template></div>
-    <dl class="room-stats"><div><dt>累计实际练习</dt><dd id="practice-total" :title="duration(store.totalSeconds)">{{ store.totalSeconds >= 60 ? store.totalMinutes + ' 分钟' : duration(store.totalSeconds) }}</dd></div><div><dt>已记录轮次</dt><dd>{{ store.totalSessions }}</dd></div><div><dt>近期连续练习</dt><dd>{{ streak }} 天</dd></div></dl>
-    <p class="room-status" role="status">{{ message }}</p>
-    <PracticeLedger :records="store.records" :now="now" />
-    <h3>近期练习</h3><ol v-if="recent.length" class="practice-records"><li v-for="record in recent" :key="record.id"><div><time>{{ record.date }}</time><strong>{{ record.track || '今天的练习' }}</strong><span>实际 {{ duration(record.actualSeconds) }} / 计划 {{ record.plannedMinutes }} 分钟{{ record.endedEarly ? ' · 提前收工' : '' }}</span><p v-if="record.goal">目标：{{ record.goal }}</p><p v-if="record.reflection">心得：{{ record.reflection }}</p></div><button v-if="editing !== record.id" type="button" @click="beginEdit(record)">写心得</button><div v-else class="practice-reflection"><label class="room-field">这一轮的心得<textarea v-model="editReflection" maxlength="240" rows="2"></textarea></label><div class="room-actions"><button type="button" :disabled="busy" @click="saveReflection">收好心得</button><button type="button" @click="editing = ''">取消</button></div></div></li></ol><p v-else class="room-hint">还没有练习记录。今天先留一分钟，也很好。</p>
-    <p class="room-hint">实际时长按秒保存，日期按设备本地时间。练习本保留最近 365 次明细，累计统计会继续保留。旧练习记录仍可读取，导出继续使用独立练琴 JSON。</p>
+  <section class="room-panel practice-room" aria-labelledby="room-heading">
+    <div class="practice-session">
+      <section class="room-console practice-clock" aria-label="练琴计时台">
+        <p class="practice-phase" role="status">{{ phaseLabel }}</p>
+        <strong id="practice-clock" role="timer">{{ clock }}</strong>
+        <p v-if="current" class="practice-track">{{ current.track || '今天的练习' }}<template v-if="current.goal"> · {{ current.goal }}</template></p>
+        <div class="practice-meter">
+          <span>{{ elapsedLabel }}</span><span>计划 {{ duration(plan) }}</span>
+          <progress :max="Math.max(1, plan)" :value="elapsed" aria-label="当前阶段进度" :aria-valuetext="`${elapsedLabel}，计划 ${duration(plan)}`"></progress>
+        </div>
+        <div class="room-actions practice-actions">
+          <button :id="current ? undefined : 'practice-start'" ref="primaryButton" type="button" class="primary" :disabled="busy || ending" @click="runPrimaryAction">{{ primaryLabel }}</button>
+          <button v-if="current" type="button" :disabled="busy || ending" @click="askEnd">结束本轮</button>
+        </div>
+        <p class="practice-status" role="status">{{ message }}</p>
+        <section v-if="ending && current" ref="endPanel" class="practice-end" tabindex="-1" aria-labelledby="practice-end-title" @keydown.esc.prevent="cancelEnd">
+          <h3 id="practice-end-title">今天先练到这里？</h3>
+          <template v-if="!resting">
+            <p>已暂停。计划 {{ current.minutes }} 分钟，实际完成 {{ duration(actual) }}。</p>
+            <label class="room-field">简短心得<textarea v-model="reflection" maxlength="240" rows="2" placeholder="今天哪一点更顺手了？"></textarea></label>
+            <div class="room-actions">
+              <button type="button" class="primary" :disabled="busy || actual < 1" @click="end(true)">保存实际时长并结束</button>
+              <button type="button" :disabled="busy" @click="end(false)">不记账，结束</button>
+              <button type="button" :disabled="busy" @click="cancelEnd">继续这一轮</button>
+            </div>
+          </template>
+          <template v-else>
+            <p>练习已经记录。现在结束休息不会重复记账。</p>
+            <div class="room-actions">
+              <button type="button" :disabled="busy" @click="end(false)">结束休息</button>
+              <button type="button" @click="cancelEnd">继续休息</button>
+            </div>
+          </template>
+        </section>
+      </section>
+
+      <section class="practice-sheet practice-setup" aria-labelledby="practice-title">
+        <h2 id="practice-title">给今天，留一段练习。</h2>
+        <div class="practice-plan">
+          <label class="room-field" for="practice-track">曲目或练习内容<input id="practice-track" v-model="track" maxlength="80" :disabled="Boolean(current)" placeholder="例如：第一次扫弦"></label>
+          <label class="room-field" for="practice-goal">今天的目标<input id="practice-goal" v-model="goal" maxlength="120" :disabled="Boolean(current)" placeholder="例如：把副歌慢速弹顺"></label>
+          <div class="practice-minutes">
+            <label class="room-field" for="focus-minutes">计划练习（分钟）<input id="focus-minutes" v-model.number="minutes" type="number" min="1" max="180" :disabled="Boolean(current)"></label>
+            <label class="room-field" for="break-minutes">休息（分钟）<input id="break-minutes" v-model.number="breakMinutes" type="number" min="0" max="60" :disabled="Boolean(current)" aria-describedby="practice-plan-hint"></label>
+          </div>
+          <label class="room-check"><input v-model="alarm" type="checkbox" :disabled="Boolean(current)">本页结束提示音</label>
+        </div>
+        <p id="practice-plan-hint" class="room-hint">休息填 0 可跳过。暂停期间不计时，刷新后保留当前进度。</p>
+      </section>
+    </div>
+
+    <section class="practice-sheet practice-notebook" aria-labelledby="practice-ledger-title">
+      <dl class="room-stats">
+        <div><dt>累计实际练习</dt><dd id="practice-total" :title="duration(store.totalSeconds)">{{ store.totalSeconds >= 60 ? store.totalMinutes + ' 分钟' : duration(store.totalSeconds) }}</dd></div>
+        <div><dt>已记录轮次</dt><dd>{{ store.totalSessions }}</dd></div>
+        <div><dt>近期连续练习</dt><dd>{{ streak }} 天</dd></div>
+      </dl>
+      <PracticeLedger :records="store.records" :now="now" />
+      <div class="practice-recent-heading">
+        <h3>近期练习</h3>
+        <button type="button" @click="downloadJson(store, 'hitori-room-practice.json')">导出练习记录</button>
+      </div>
+      <p class="record-status" role="status">{{ recordMessage }}</p>
+      <ol v-if="recent.length" class="practice-records">
+        <li v-for="record in recent" :key="record.id">
+          <div>
+            <time :datetime="record.date">{{ record.date }}</time>
+            <strong>{{ record.track || '今天的练习' }}</strong>
+            <span>实际 {{ duration(record.actualSeconds) }} / 计划 {{ record.plannedMinutes }} 分钟{{ record.endedEarly ? ' · 提前收工' : '' }}</span>
+            <p v-if="record.goal">目标：{{ record.goal }}</p>
+            <p v-if="record.reflection">心得：{{ record.reflection }}</p>
+          </div>
+          <button v-if="editing !== record.id" type="button" @click="beginEdit(record)">写心得</button>
+          <div v-else class="practice-reflection">
+            <label class="room-field">这一轮的心得<textarea v-model="editReflection" maxlength="240" rows="2"></textarea></label>
+            <div class="room-actions">
+              <button type="button" :disabled="busy" @click="saveReflection">收好心得</button>
+              <button type="button" @click="editing = ''">取消</button>
+            </div>
+          </div>
+        </li>
+      </ol>
+      <p v-else class="room-hint">还没有练习记录。今天先留一分钟，也很好。</p>
+      <p class="room-hint">实际时长按秒保存，日期按设备本地时间。练习本保留最近 365 次明细。</p>
+    </section>
   </section>
 </template>
+
 <style scoped>
-.practice-session { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:12px; align-items:stretch; margin:18px 0 12px; }
-.practice-setup { min-width:0; display:grid; align-content:center; }
-.practice-setup :is(input,textarea) { min-width:0; }
-.practice-clock { display:grid; align-content:center; padding:16px; text-align:center; background:#f2dece; border:1px solid #c29c9b; color:#513b4c; }
-.practice-clock>p { font-size:13px; margin:0; }
-.practice-clock>strong { font:600 clamp(45px,9vw,83px)/1.25 var(--mono,monospace); letter-spacing:-.06em; }
-.practice-clock>span { font-size:13px; overflow-wrap:anywhere; }
-.practice-meter { display:grid; grid-template-columns:1fr 1fr; gap:6px 11px; margin-top:10px; font-size:12px; color:inherit; text-align:left; font-variant-numeric:tabular-nums; }
-.practice-meter span:nth-child(2) { text-align:right; }
-.practice-meter progress { grid-column:1/-1; width:100%; height:11px; border:1px solid #8d677a; border-radius:1px; appearance:none; background:#fdf2e3; color:#8f5275; }
-.practice-meter progress::-webkit-progress-bar { background:#fdf2e3; }
-.practice-meter progress::-webkit-progress-value { background:#8f5275; }
-.practice-meter progress::-moz-progress-bar { background:#8f5275; }
-.practice-end { border:1px solid #ac829b; padding:18px; background:#f7e9ec; margin:15px 0; }
-.practice-end h3 { margin-top:0; }.practice-end p { font-size:13px; line-height:1.8; }
-.practice-records { list-style:none; margin:0; padding:0; }
-.practice-records li { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-start; gap:12px; border-top:1px solid #dcc7cf; padding:16px 0; }
-.practice-records li>div:first-child { display:grid; gap:5px; min-width:0; flex:1; overflow-wrap:anywhere; }
-.practice-records time,.practice-records span,.practice-records p { font-size:12px; margin:0; }
-.practice-records time { color:#795367; }.practice-records strong { font-size:15px; }.practice-reflection { flex-basis:100%; }
-@media(max-width:720px) {
-  .practice-session { grid-template-columns:minmax(0,1fr); }
-  .practice-session.is-timing .practice-clock { order:-1; }
+.practice-room { padding: 0; background: transparent; border: 0; color: var(--room-ink); }
+.practice-session { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(.85rem, 2vw, 1.4rem); }
+.practice-sheet {
+  min-width: 0;
+  background: var(--room-paper);
+  color: var(--room-ink);
+  border: 1px solid var(--room-paper-edge);
+  box-shadow: var(--room-paper-shadow);
+  padding: clamp(1rem, 2.8vw, 2rem);
+}
+.practice-sheet :is(label, .room-hint, dt) { color: var(--room-ink-muted); }
+.practice-sheet :is(button, input, select, textarea):focus-visible { outline-color: var(--room-berry); }
+.practice-setup h2 { font-size: clamp(1.25rem, 2.8vw, 1.8rem); line-height: 1.4; margin: 0 0 1.15rem; }
+.practice-plan, .practice-minutes { display: grid; gap: .8rem 1rem; }
+.practice-minutes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.practice-plan label { font-size: .875rem; }
+.practice-plan .room-check { cursor: pointer; }
+.practice-plan .room-check input { accent-color: var(--room-berry); flex-shrink: 0; }
+.practice-setup .room-hint { margin: 0; font-size: .8125rem; }
+.practice-clock {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  padding: clamp(1rem, 3.6vw, 2.65rem);
+  text-align: center;
+}
+.practice-clock :is(.practice-phase, .practice-track) { margin: 0; }
+.practice-phase {
+  color: var(--room-console-muted);
+  font-size: .875rem;
+  font-weight: 700;
+}
+.practice-clock > strong {
+  font: 600 clamp(2.6rem, 15vw, 6rem)/1.1 var(--mono, monospace);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.065em;
+  margin: .3rem 0 .65rem;
+}
+.practice-track { color: var(--room-console-muted); overflow-wrap: anywhere; font-size: .875rem; }
+.practice-meter {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .32rem .65rem;
+  width: min(100%, 24rem);
+  margin-top: .65rem;
+  color: var(--room-console-muted);
+  text-align: left;
+  font-size: .8125rem;
+  font-variant-numeric: tabular-nums;
+}
+.practice-meter > span + span { text-align: right; }
+.practice-meter progress {
+  grid-column: 1 / -1;
+  appearance: none;
+  width: 100%;
+  height: .45rem;
+  border: 0;
+  background: var(--room-console-edge);
+  color: var(--room-berry-light);
+}
+.practice-meter progress::-webkit-progress-bar { background: var(--room-console-edge); }
+.practice-meter progress::-webkit-progress-value { background: var(--room-berry-light); }
+.practice-meter progress::-moz-progress-bar { background: var(--room-berry-light); }
+.practice-clock .room-actions { margin-block: 1.1rem 0; }
+.practice-actions { width: min(100%, 24rem); }
+.practice-actions button { flex: 1 1 auto; min-height: 48px; }
+.practice-clock .room-actions button:not(.primary) { color: var(--room-console-ink); background: transparent; border-color: var(--room-console-top); }
+.practice-clock .practice-status { margin: .65rem 0 0; color: var(--room-console-muted); font-size: .8125rem; overflow-wrap: anywhere; }
+.practice-status:empty, .record-status:empty { display: none; }
+.record-status { color: var(--room-ink-muted); font-size: .875rem; }
+.practice-end { width: 100%; border-top: 1px solid var(--room-console-top); margin-top: 1rem; padding-top: .75rem; text-align: start; }
+.practice-end h3 { margin: 0; }
+.practice-end p { margin: .4rem 0 .75rem; font-size: .875rem; }
+.practice-end label { color: var(--room-console-ink); }
+.practice-end textarea { color-scheme: light; }
+.practice-notebook { margin-top: clamp(.85rem, 2vw, 1.4rem); }
+.practice-notebook .room-stats { margin-top: 0; padding-top: 0; border-top: 0; }
+.practice-notebook .room-stats dd { font-variant-numeric: tabular-nums; }
+.practice-notebook .practice-trend { margin-block: 1.15rem; }
+.practice-recent-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
+.practice-records { list-style: none; margin: .55rem 0 0; padding: 0; }
+.practice-records li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: .75rem; border-top: 1px solid var(--room-paper-edge); padding: 1rem 0; }
+.practice-records li > div:first-child { display: grid; gap: .3rem; min-width: 0; flex: 1; overflow-wrap: anywhere; }
+.practice-records :is(time, span, p) { font-size: .8125rem; margin: 0; }
+.practice-records time { color: var(--room-ink-muted); }
+.practice-reflection { flex-basis: 100%; }
+@media (min-width: 48rem) {
+  .practice-session { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+  .practice-clock { grid-area: 1 / 2; }
+  .practice-setup { grid-area: 1 / 1; }
 }
 </style>

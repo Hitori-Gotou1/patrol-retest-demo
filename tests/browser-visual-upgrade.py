@@ -7,7 +7,7 @@ import json, os, tempfile, traceback
 from playwright.sync_api import sync_playwright, expect
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / 'docs/visual-upgrade/previews'
+OUT = Path(os.environ.get('HITORI_QA_OUTPUT', ROOT / 'docs/visual-upgrade/previews'))
 OUT.mkdir(parents=True, exist_ok=True)
 BASE = os.environ.get('HITORI_QA_URL', 'http://127.0.0.1:4173/patrol-retest-demo/')
 REPORT = {'results': [], 'pageErrors': [], 'consoleErrors': [], 'unexpectedWrites': [], 'screenshots': []}
@@ -209,10 +209,18 @@ def test_characters(browser):
         no_overflow(page);c.close()
     return 'Last selection wins within one compact reveal; keyboard focus, colors and mobile swipe stay coordinated.'
 
+def open_cinema_mood(page):
+    details = page.locator('.cinema-mood-bar')
+    if details.get_attribute('open') is None:
+        details.locator('summary').press('Enter')
+    return details
+
 def test_cinema(browser):
     c=context(browser);page=c.new_page();goto(page,'#/#video',900)
     expect(page.locator('#video')).to_have_attribute('data-mood','warm')
     assert page.evaluate('window.__contexts.length')==0
+    expect(page.locator('.cinema-mood-choices')).to_be_hidden()
+    open_cinema_mood(page)
     for mood in ['warm','rain','stage']:
         page.locator('[data-mood-choice="'+mood+'"]').click();page.wait_for_timeout(750)
         expect(page.locator('#video')).to_have_attribute('data-mood',mood)
@@ -229,6 +237,7 @@ def test_cinema(browser):
     page.wait_for_function('document.querySelector("audio") && !document.querySelector("audio").paused')
     page.wait_for_function('parseFloat(document.querySelector("#video").style.getPropertyValue("--audio-glow"))>0')
     volume=page.locator('audio').evaluate('el=>el.volume')
+    open_cinema_mood(page)
     for mood in ['rain','warm','stage']:page.locator('[data-mood-choice="'+mood+'"]').click()
     assert page.locator('audio').evaluate('el=>el.volume')==volume
     assert not page.locator('audio').evaluate('el=>el.paused')
@@ -257,6 +266,7 @@ def test_cinema(browser):
     assert page.evaluate('window.__contexts.every(c=>c.state==="closed")')
     c.close()
     c=context(browser,390,844);page=c.new_page();goto(page,'#/#video',900)
+    open_cinema_mood(page)
     for mood in ['warm','rain','stage']:
         page.locator('[data-mood-choice="'+mood+'"]').click();page.wait_for_timeout(700);shot(page,'mood-'+mood+'-mobile');no_overflow(page)
     c.close()
@@ -265,6 +275,7 @@ def test_cinema(browser):
 def test_reduced_and_storage(browser):
     c=context(browser,390,844,reduced=True);page=c.new_page();goto(page,'#/#video')
     expect(page.locator('#video')).to_have_attribute('data-dynamic','false')
+    open_cinema_mood(page)
     expect(page.locator('.cinema-dynamic-toggle')).to_be_disabled()
     page.locator('[data-mood-choice="rain"]').click()
     expect(page.locator('.mood-rain')).to_have_class('cinema-mood mood-rain is-selected')
@@ -285,6 +296,7 @@ def test_reduced_and_storage(browser):
     c=context(browser);c.add_init_script("Storage.prototype.getItem=()=>{throw new Error('blocked')};Storage.prototype.setItem=()=>{throw new Error('blocked')}")
     page=c.new_page();goto(page,'#/#video')
     expect(page.locator('#video')).to_have_attribute('data-mood','warm')
+    open_cinema_mood(page)
     page.locator('[data-mood-choice="rain"]').click()
     expect(page.locator('#video')).to_have_attribute('data-mood','rain')
     expect(page.locator('.cinema-mood-notice')).to_contain_text('浏览器暂时无法记住')
@@ -302,6 +314,7 @@ def record(browser):
     page.locator('#lightbox-close').click();page.wait_for_timeout(750)
     page.locator('.site-navigation-header nav').get_by_role('link',name='音乐放映室',exact=True).click();page.wait_for_timeout(1100)
     page.locator('.media-tabs').get_by_role('button',name='练习唱片').click();page.wait_for_timeout(700)
+    open_cinema_mood(page)
     for mood in ['warm','rain','stage']:
         page.locator('[data-mood-choice="'+mood+'"]').click();page.wait_for_timeout(1400)
     video=page.video;c.close()

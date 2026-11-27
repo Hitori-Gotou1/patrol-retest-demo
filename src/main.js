@@ -13,6 +13,7 @@ import './styles/scenes.css';
 import './styles/enhancements.css';
 import './styles/mobile-workspace.css';
 import './styles/visual-upgrade.css';
+import './styles/room-materials.css';
 
 // 初始路由与异步页面就绪后再挂载，导航才可读取完整的五幕节点。
 applyPreferences();

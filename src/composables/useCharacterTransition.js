@@ -9,7 +9,7 @@ export function revealGeometry(width, height, x, y) {
   return { x: cx, y: cy, radius: Math.hypot(Math.max(cx, width - cx), Math.max(cy, height - cy)) + 6 };
 }
 
-export function useCharacterTransition({ members, scene, baseLayer, revealLayer, content, suspended = ref(false) }) {
+export function useCharacterTransition({ members, scene, art, baseLayer, revealLayer, content, suspended = ref(false) }) {
   const selectedIndex = ref(0);
   const requestedIndex = ref(0);
   const member = computed(() => members[selectedIndex.value]);
@@ -69,8 +69,8 @@ export function useCharacterTransition({ members, scene, baseLayer, revealLayer,
     });
   }
   function updateGeometry() {
-    if (!scene.value) return;
-    const bounds = scene.value.getBoundingClientRect();
+    if (!art.value) return;
+    const bounds = art.value.getBoundingClientRect();
     geometry = revealGeometry(bounds.width, bounds.height, normalizedOrigin.x * bounds.width, normalizedOrigin.y * bounds.height);
     if (busy.value) renderReveal();
   }
@@ -81,7 +81,7 @@ export function useCharacterTransition({ members, scene, baseLayer, revealLayer,
     revealLayer.value.style.clipPath = `circle(${(radius * revealProgress.value).toFixed(2)}px at ${x.toFixed(2)}px ${y.toFixed(2)}px)`;
   }
   function chooseOrigin(element) {
-    const bounds = scene.value.getBoundingClientRect();
+    const bounds = art.value.getBoundingClientRect();
     const anchor = element?.isConnected ? element.getBoundingClientRect() : null;
     normalizedOrigin = anchor ? {
       x: Math.min(1, Math.max(0, (anchor.left + anchor.width / 2 - bounds.left) / bounds.width)),
@@ -117,12 +117,12 @@ export function useCharacterTransition({ members, scene, baseLayer, revealLayer,
     revealLayer.value.style.backgroundColor = incoming.theme.primary;
     revealProgress.value = 0; renderReveal();
     revealLayer.value.style.opacity = '1';
-    // 单一事务：旧海报退场后同步换人、图形和底色，姓名留在原位。
+    // 姓名、立绘与主题色一起切换，转场中的人物文字仍可阅读。
     // 新选择取消旧事务，以已经提交的人物为起点；generation 拦截过期提交。
     await animate(tl => {
-      tl.to($$('.cast-reveal-item'), { y: -9, autoAlpha: 0, duration: .13, stagger: .006, ease: 'power2.in' }, 0)
-        .to($$('.cast-portrait-motion, .cast-decorations'), { x: outgoing.motion.exitX, autoAlpha: 0, duration: .17, ease: 'power2.in' }, 0)
-        .to($$('.cast-peripheral'), { opacity: 0, duration: .17 }, 0)
+      tl.to($$('.cast-reveal-item'), { y: -3, opacity: .86, duration: .13, stagger: .006, ease: 'power2.in' }, 0)
+        .to($$('.cast-portrait-motion'), { x: outgoing.motion.exitX * .3, opacity: .88, duration: .17, ease: 'power2.in' }, 0)
+        .to($$('.cast-decorations, .cast-peripheral'), { opacity: .4, duration: .17 }, 0)
         .to(revealProgress, { value: 1, duration: .24, ease: 'power3.inOut', onUpdate: renderReveal }, .02);
     });
     if (disposed || token !== generation) return;
@@ -131,18 +131,18 @@ export function useCharacterTransition({ members, scene, baseLayer, revealLayer,
     if (disposed || token !== generation) return;
     updateGeometry(); revealProgress.value = 1; renderReveal();
     synchronizeTheme();
-    const poster = $$('.cast-portrait-motion, .cast-decorations');
+    const poster = $('.cast-portrait-motion');
     const details = $$('.cast-reveal-item');
-    const captions = $$('.cast-peripheral');
-    gsap.set(poster, { x: incoming.motion.enterX, autoAlpha: 0 });
-    gsap.set(details, { y: 16, autoAlpha: 0 });
-    gsap.set(captions, { opacity: 0 });
+    const accents = $$('.cast-decorations, .cast-peripheral');
+    gsap.set(poster, { x: incoming.motion.enterX * .3, opacity: .88 });
+    gsap.set(details, { y: 4, opacity: .86 });
+    gsap.set(accents, { opacity: .4 });
     // 底层已是相同颜色，再撤走遮罩；没有透明中间帧或旧色角落。
     revealLayer.value.style.opacity = '0';
     await animate(tl => {
-      tl.to(poster, { x: 0, autoAlpha: 1, duration: .24, ease: incoming.motion.ease }, 0)
-        .to(details, { y: 0, autoAlpha: 1, duration: .19, stagger: .012, ease: 'power3.out' }, .025)
-        .to(captions, { opacity: 1, duration: .2, ease: 'sine.out' }, .03);
+      tl.to(poster, { x: 0, opacity: 1, duration: .24, ease: incoming.motion.ease }, 0)
+        .to(details, { y: 0, opacity: 1, duration: .19, stagger: .012, ease: 'power3.out' }, .025)
+        .to(accents, { opacity: 1, duration: .2, ease: 'sine.out' }, .03);
     });
     if (disposed || token !== generation) return;
     showAll(); busy.value = false;
@@ -213,7 +213,7 @@ export function useCharacterTransition({ members, scene, baseLayer, revealLayer,
     }, { threshold: 0 });
     observer.observe(scene.value);
     resizeObserver = new ResizeObserver(updateGeometry);
-    resizeObserver.observe(scene.value);
+    resizeObserver.observe(art.value);
   });
   onBeforeUnmount(() => {
     disposed = true; generation++;

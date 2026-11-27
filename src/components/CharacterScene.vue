@@ -11,13 +11,14 @@ import '../styles/character-enhancements.css';
 
 const scene = ref(null);
 useSceneMotion(scene, { entrance: false });
+const art = ref(null);
 const baseLayer = ref(null);
 const revealLayer = ref(null);
 const content = ref(null);
 const reaction = ref('');
 const easterEgg = ref(null);
 const interactionBlocked = computed(() => busy.value || liveModeActive.value);
-const { selectedIndex, requestedIndex, member, busy, selectMember, react, pointerMove, pointerLeave } = useCharacterTransition({ members, scene, baseLayer, revealLayer, content, suspended: liveModeActive });
+const { selectedIndex, requestedIndex, member, busy, selectMember, react, pointerMove, pointerLeave } = useCharacterTransition({ members, scene, art, baseLayer, revealLayer, content, suspended: liveModeActive });
 const counter = computed(() => `${String(selectedIndex.value + 1).padStart(2, '0')} / ${String(members.length).padStart(2, '0')}`);
 const themeStyle = computed(() => ({
   '--cast-primary': member.value.theme.primary,
@@ -29,7 +30,7 @@ const portraitStyle = computed(() => ({
   '--portrait-scale': member.value.portraitLayout.scale,
   '--portrait-x': `${member.value.portraitLayout.x}%`,
   '--portrait-y': `${member.value.portraitLayout.y}%`,
-  objectPosition: member.value.portraitLayout.objectPosition
+  '--portrait-position': member.value.portraitLayout.objectPosition
 }));
 const companionStyle = computed(() => ({
   '--companion-scale': member.value.companionLayout?.scale ?? 1,
@@ -86,13 +87,9 @@ watch(selectedIndex, () => { reaction.value = ''; reactionIndex = 0; });
 
 <template>
   <section id="about" ref="scene" class="about scene character-scene" data-scene-name="结束乐队" :data-member="member.id" :data-transitioning="busy" :style="themeStyle" aria-labelledby="about-title" @keydown="onSectionKey" @pointermove="pointerMove" @pointerleave="pointerLeave">
-    <div ref="baseLayer" class="cast-background cast-background-base" aria-hidden="true"></div>
-    <div ref="revealLayer" class="cast-background cast-background-reveal" aria-hidden="true"></div>
-    <div class="cast-paper-texture" aria-hidden="true"></div>
     <div id="character-showcase" class="cast-stage" :data-member="member.id">
-      <header class="cast-topline"><h2 id="about-title">四种颜色，同一支乐队。</h2><span>结束乐队 · KESSOKU BAND</span></header>
+      <header class="cast-topline"><h2 id="about-title">结束乐队</h2><span>KESSOKU BAND</span></header>
       <div class="cast-selector">
-
         <div id="character-tabs" class="cast-tabs" role="tablist" aria-label="结束乐队成员">
           <button v-for="(person, index) in members" :id="`tab-${person.id}`" :key="person.id" type="button" role="tab" :data-member="person.id" :data-pending="busy && index === requestedIndex" :style="{ '--tab-color': person.theme.primary, '--tab-ink': person.theme.ink }" aria-controls="character-panel" :aria-selected="index === selectedIndex" :tabindex="index === requestedIndex ? 0 : -1" @click="choose(index)" @keydown="onTabKey">
             <span class="cast-tab-portrait" aria-hidden="true"><img :src="asset(person.thumbnail || person.portrait)" :style="{ objectPosition: person.portraitLayout.thumbnailPosition, transform: `scale(${person.portraitLayout.thumbnailScale})`, transformOrigin: person.portraitLayout.thumbnailOrigin }" :width="(person.thumbnailSize || person.portraitSize)?.width" :height="(person.thumbnailSize || person.portraitSize)?.height" alt="" loading="lazy" decoding="async"></span><span class="cast-tab-copy"><strong>{{ person.name }}</strong><small>{{ person.shortRole }}</small></span><span class="cast-tab-indicator" aria-hidden="true">↗</span>
@@ -103,17 +100,13 @@ watch(selectedIndex, () => { reaction.value = ''; reactionIndex = 0; });
       <div id="character-panel" ref="content" class="cast-content" role="tabpanel" :aria-labelledby="`tab-${member.id}`" :aria-busy="busy" tabindex="0">
         <article class="character-view cast-view" :data-character="member.id">
           <header class="cast-identity">
-            <div class="cast-name-row"><h3>{{ member.name }}</h3><p lang="ja">{{ member.nameJa }}</p></div>
-            <div class="cast-role-row"><span class="cast-role">{{ member.role }}</span><span class="cast-cv">CV. {{ member.cv }}</span></div>
+            <h3>{{ member.name }}</h3><p lang="ja">{{ member.nameJa }}</p>
+            <span class="cast-role">{{ member.role }}</span><span class="cast-cv">CV. {{ member.cv }}</span>
           </header>
-          <div class="cast-details">
-            <ul class="cast-personality cast-reveal-item" aria-label="性格关键词"><li v-for="trait in member.personality" :key="trait">{{ trait }}</li></ul>
-            <p class="cast-description cast-reveal-item">{{ member.description }}</p>
-            <blockquote class="cast-quote cast-reveal-item"><span>{{ member.lineKind }}</span><p aria-live="polite">{{ reaction || member.originalLine }}</p></blockquote>
-            <p class="cast-connection cast-reveal-item"><span>{{ member.connectionTitle }}</span>{{ member.connection }}</p>
-            <InstrumentPanel v-if="interactionFeatures.instruments" :member="member" :disabled="interactionBlocked" />
-          </div>
-          <div class="cast-art" @pointerdown="startSwipe" @pointerup="finishSwipe" @pointercancel="pointerStart = null">
+          <div ref="art" class="cast-art" @pointerdown="startSwipe" @pointerup="finishSwipe" @pointercancel="pointerStart = null">
+            <div ref="baseLayer" class="cast-background cast-background-base" aria-hidden="true"></div>
+            <div ref="revealLayer" class="cast-background cast-background-reveal" aria-hidden="true"></div>
+            <div class="cast-paper-texture" aria-hidden="true"></div>
             <div class="cast-decorations" :data-kind="member.decoration" aria-hidden="true">
               <svg class="cast-score" viewBox="0 0 800 560" preserveAspectRatio="xMidYMid slice">
                 <g v-if="member.id === 'hitori'" fill="none" stroke="currentColor">
@@ -147,7 +140,7 @@ watch(selectedIndex, () => { reaction.value = ''; reactionIndex = 0; });
             <div class="cast-portrait-motion"><div class="cast-portrait-parallax"><div class="cast-portrait-float">
               <CharacterEasterEgg ref="easterEgg" :member="member" :blocked="interactionBlocked" @message="reaction = $event">
                 <button class="cast-portrait-trigger" type="button" :aria-label="`轻点${member.name}，查看原创角色印象`" @click="portraitReaction">
-                  <img :key="member.id" class="character-portrait cast-portrait-image" :src="asset(member.portrait)" :alt="member.portraitAlt" :style="portraitStyle" :width="member.portraitSize?.width" :height="member.portraitSize?.height" loading="lazy" decoding="async">
+                  <img class="character-portrait cast-portrait-image" :src="asset(member.portrait)" :alt="member.portraitAlt" :style="portraitStyle" :width="member.portraitSize?.width" :height="member.portraitSize?.height">
                   <!-- 共用人物的转场和反应容器，切换、漂浮及躲箱时两种形象保持同步。 -->
                   <span v-if="member.thumbnail" class="cast-companion" :style="companionStyle" aria-hidden="true">
                     <img :key="`${member.id}-chibi`" :src="asset(member.thumbnail)" :width="member.thumbnailSize?.width" :height="member.thumbnailSize?.height" alt="" loading="lazy" decoding="async">
@@ -156,6 +149,13 @@ watch(selectedIndex, () => { reaction.value = ''; reactionIndex = 0; });
               </CharacterEasterEgg>
             </div></div></div>
             <div class="cast-art-caption cast-peripheral"><span>{{ member.artNote }}</span><small v-if="member.placeholder">原创图形占位</small><small v-else>轻点人物，听听她的心声</small></div>
+          </div>
+          <div class="cast-details">
+            <p class="cast-description cast-reveal-item">{{ member.description }}</p>
+            <ul class="cast-personality cast-reveal-item" aria-label="性格关键词"><li v-for="trait in member.personality" :key="trait">{{ trait }}</li></ul>
+            <blockquote class="cast-quote cast-reveal-item"><span>{{ member.lineKind }}</span><p aria-live="polite">{{ reaction || member.originalLine }}</p></blockquote>
+            <p class="cast-connection cast-reveal-item"><span>{{ member.connectionTitle }}</span>{{ member.connection }}</p>
+            <InstrumentPanel v-if="interactionFeatures.instruments" :member="member" :disabled="interactionBlocked" />
           </div>
         </article>
       </div>

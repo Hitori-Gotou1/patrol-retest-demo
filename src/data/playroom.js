@@ -14,6 +14,11 @@ export const stickers = [
   { id: 'note', text: '♪', name: '音符', color: '#5c709f' }, { id: 'bocchi', text: 'ぼっち！', name: '波奇签名', color: '#8e5b81' },
   { id: 'together', text: 'ひとりじゃない。', name: '并不孤单', color: '#537d72' }, { id: 'live', text: 'LIVE!', name: '开演', color: '#b65347' }
 ];
+export const photoCaptionFonts = [
+  { id: 'sans', label: '黑体', family: 'sans-serif' },
+  { id: 'serif', label: '宋体', family: '"Noto Serif CJK SC", "Songti SC", SimSun, serif' }
+];
+
 export const photoThemes = [
   { id: 'pink', label: '粉色放学后', paper: '#fff6eb', background: '#efd0dc', ink: '#664658', accent: '#ba647e' },
   { id: 'night', label: '今晚的舞台', paper: '#e9dfcb', background: '#302b43', ink: '#4e3e56', accent: '#bb8aa4' },
