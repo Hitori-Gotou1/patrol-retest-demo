@@ -201,7 +201,7 @@ def test_practice(browser):
     page.get_by_role('button', name='继续计时', exact=True).click()
     page.clock.run_for(50000)
     expect(page.locator('#practice-total')).to_have_text('1 分钟')
-    expect(page.locator('.practice-clock [role=status]')).to_have_text('休息一下')
+    expect(page.locator('.practice-clock .practice-phase[role=status]')).to_have_text('休息一下')
     page.clock.fast_forward(65000)
     expect(page.locator('#practice-start')).to_be_visible()
     page.reload(wait_until='networkidle')
