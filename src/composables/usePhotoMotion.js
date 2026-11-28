@@ -11,7 +11,7 @@ export function usePhotoMotion({ lightbox, section }) {
   function nextFrame() { return new Promise(resolve => { finishFrame = resolve; frame = requestAnimationFrame(() => { frame = 0; finishFrame = null; resolve(); }); }); }
   function cancelFrame() { cancelAnimationFrame(frame); frame = 0; finishFrame?.(); finishFrame = null; }
   const image = () => lightbox.value?.querySelector('#lightbox-image');
-  const chrome = () => lightbox.value?.querySelectorAll('.lightbox-toolbar,.lightbox-bottom,.lightbox-zoom-controls,.lightbox-gesture-hint');
+  const chrome = () => lightbox.value?.querySelectorAll('.lightbox-toolbar,.lightbox-bottom,.lightbox-utilities');
   function clean() {
     tween?.kill(); tween = null; flight?.remove(); flight = null;
     const photo = image();
@@ -40,13 +40,15 @@ export function usePhotoMotion({ lightbox, section }) {
     await nextTick(); await nextFrame(); await nextTick();
     if (token !== revision || !lightbox.value?.open || preference?.matches) { if(token===revision) clean(); return; }
     const target = image(), surface = lightbox.value.querySelector('.lightbox-zoom-surface')?.getBoundingClientRect();
-    const size = fittedImageSize(item?.width || captured?.width || target?.naturalWidth || 1200,
-      item?.height || captured?.height || target?.naturalHeight || 800, surface?.width, surface?.height);
+    const vector = item?.vectorViewBox;
+    const size = fittedImageSize(vector?.width || item?.width || captured?.width || target?.naturalWidth || 1200,
+      vector?.height || item?.height || captured?.height || target?.naturalHeight || 800,
+      surface?.width, surface?.height, { allowUpscale: !!vector });
     const left = (surface?.left || 0) + ((surface?.width || 0) - size.width) / 2;
     const top = (surface?.top || 0) + ((surface?.height || 0) - size.height) / 2;
     const targetRect = { left, top, width: size.width, height: size.height, right: left + size.width, bottom: top + size.height };
     const origin = sourceButton?.isConnected ? captured : null;
-    gsap.fromTo(lightbox.value, { backgroundColor: 'rgba(18,14,24,0)' }, { backgroundColor: 'rgba(18,14,24,.96)', duration: .32, clearProps: 'backgroundColor' });
+    gsap.fromTo(lightbox.value, { backgroundColor: 'rgba(35,30,40,0)' }, { backgroundColor: 'rgba(35,30,40,.98)', duration: .32, clearProps: 'backgroundColor' });
     gsap.fromTo([...chrome()], { opacity: .1, y: 5 }, { opacity: 1, y: 0, delay: .16, duration: .22, clearProps: 'opacity,transform' });
     if (!origin || !validRect(targetRect)) { if(target) gsap.set(target, { clearProps: 'opacity' }); return; }
     const node = makeFlight(origin.src, origin.rect, origin.fit);
@@ -90,7 +92,7 @@ export function usePhotoMotion({ lightbox, section }) {
       const node = makeFlight(current.currentSrc || current.src, rect, getComputedStyle(thumbnail).objectFit);
       gsap.set(current, { opacity: 0 });
       gsap.to(chrome(), { opacity: 0, duration: .12 });
-      gsap.to(lightbox.value, { backgroundColor: 'rgba(18,14,24,0)', duration: .28 });
+      gsap.to(lightbox.value, { backgroundColor: 'rgba(35,30,40,0)', duration: .28 });
       tween = gsap.to(node, { x: destination.left - rect.left, y: destination.top - rect.top,
         width: destination.width, height: destination.height, duration: .3, ease: 'power3.inOut', onComplete: finish, onInterrupt: resolve });
     });

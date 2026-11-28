@@ -1,7 +1,7 @@
 <script setup>
 import { recordActivity } from '../../room/activityLog.js';
 import { computed, ref } from 'vue';
-import { cast, concertEvents, concertOptions } from '../../data/playroom.js';
+import { cast, concertEvents, concertOptions, concertSetlists } from '../../data/playroom.js';
 import { concertBudget, concertCost, defaultConcert, resolveConcert, shuffled, validateConcertDraft } from '../../room/playroom.js';
 import { useLocalDraft } from '../../composables/useLocalDraft.js';
 import { downloadStage } from '../../room/exportImage.js';
@@ -50,7 +50,7 @@ async function poster(){busy.value=true;try{await downloadStage(stage.value,'our
         </fieldset>
       </div>
       <div v-if="state.phase === 'plan'" class="concert-runup">
-        <label class="room-field" for="concert-setlist">演出的心情<select id="concert-setlist" v-model="state.plan.setlist"><option value="together">四个人的合奏 · 默契优先</option><option value="quiet">安静的不插电 · 慢慢开口</option><option value="energy">热烈的安可 · 让气氛亮起来</option></select></label>
+        <label class="room-field" for="concert-setlist">演出的心情<select id="concert-setlist" v-model="state.plan.setlist"><option v-for="item in concertSetlists" :key="item.id" :value="item.id">{{ item.label }}</option></select></label>
         <button id="concert-launch" type="button" class="primary" @click="launch">方案就绪，准备开演 →</button>
       </div>
       <div v-else-if="state.phase === 'event'" class="concert-event">

@@ -10,12 +10,14 @@ export const galleryImages = [
   },
   {
     id: 'pink-frequency', category: 'poster', src: 'assets/pink-frequency.svg',
+    vectorViewBox: { width: 800, height: 1000 },
     title: '今天的频率，是粉色', subtitle: '蓝黄发饰与粉色噪音 · 02', tag: '设计海报',
     alt: '粉色底的后藤一里主题排版海报，蓝黄发饰与吉他琴弦图形',
     credit: '本站原创图形海报 · 非官方设计'
   },
   {
     id: 'live-ticket', category: 'poster', src: 'assets/live-ticket.svg',
+    vectorViewBox: { width: 800, height: 1000 },
     title: '下一站，Live House', subtitle: '下一场，舞台见 · 03', tag: '设计海报',
     alt: '深紫色与荧光黄的音乐现场主题票根海报',
     credit: '本站原创图形海报 · 非官方设计'

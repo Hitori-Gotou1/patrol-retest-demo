@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { saveWork, readWorks, readDrafts, restoreWork, removeWork, exportWorks, importWorks, worksKey, draftKey, maxWorks } from '../src/room/workshelf.js';
+import { saveWork, readWorks, readDrafts, restoreWork, removeWork, exportWorks, importWorks, worksKey, draftKey, maxWorks, compareWorks, comparisonValue } from '../src/room/workshelf.js';
 import { defaultPhoto } from '../src/room/playroom.js';
+import { photoThemes } from '../src/data/playroom.js';
 import { defaultPattern } from '../src/room/pattern.js';
 
 function storage() {
@@ -15,6 +16,18 @@ test('versions are deduplicated without replacing another saved version or the a
   saveWork('photobooth',{...defaultPhoto,caption:'下一次的合影'},'',s);
   assert.equal(readWorks(s).length,2);
   assert.deepEqual(JSON.parse(s.getItem(draftKey('photobooth'))),defaultPhoto);
+});
+test('comparison keeps the selected direction and uses editor labels only for option fields', () => {
+  const s = storage();
+  const pink = saveWork('photobooth', defaultPhoto, '', s);
+  const night = saveWork('photobooth', { ...defaultPhoto, theme: 'night' }, '', s);
+  const [change] = compareWorks(night, pink);
+  assert.deepEqual(change, { path: 'theme', before: 'night', after: 'pink' });
+  assert.equal(comparisonValue(change.before, change.path, 'photobooth'), photoThemes.find(theme => theme.id === 'night').label);
+  assert.equal(comparisonValue('future-theme', 'theme', 'photobooth'), 'future-theme');
+  assert.equal(comparisonValue('night', 'caption', 'photobooth'), 'night');
+  const written = '这几行都由读者填写。\n'.repeat(15);
+  assert.equal(comparisonValue(written, 'panels[1].dialogue', 'comic'), written);
 });
 test('restoring an older version first preserves the different active draft', () => {
   const s=storage(),one=saveWork('studio',defaultPattern,'',s),current={...defaultPattern,name:'尚未收好的新编曲',bpm:120};

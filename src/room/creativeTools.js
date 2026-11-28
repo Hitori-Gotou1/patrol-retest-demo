@@ -6,6 +6,9 @@ export function newLightShow(){return {version:1,name:'今晚的第一束光',bp
 export function validateLightShow(v){if(!v||v.version!==1||typeof v.name!=='string'||v.name.length>60||!Array.isArray(v.cues)||v.cues.length!==3||v.cues.some(row=>!Array.isArray(row)||row.length!==16))throw new Error('需要三束灯光、每束十六步的编排。');return {version:1,name:v.name.slice(0,60),bpm:Math.round(number(v.bpm,60,180,96)),background:v.background===true,cues:v.cues.map(row=>row.map(c=>{if(!c||!validColor(c.color))throw new Error('灯光颜色无效。');return {x:number(c.x,50,850,450),color:c.color,intensity:number(c.intensity,0,1,.5),fade:c.fade===true};}))};}
 export function lightFrame(show,step,fraction){return show.cues.map(row=>{const now=row[step],next=row[(step+1)%16],a=now.fade?clamp(fraction,0,1):0;return {...now,x:now.x+(next.x-now.x)*a,intensity:now.intensity+(next.intensity-now.intensity)*a};});}
 export const comicScenes=[{id:'room',label:'放学后的房间',background:'#e7cdd8',floor:'#b695ab'},{id:'stage',label:'小小舞台',background:'#3d354d',floor:'#6e586f'},{id:'street',label:'晴天的街角',background:'#c6d9d2',floor:'#a0b6a6'}];
+export const comicLayouts = [{ id: 'grid', label: '两列四格' }, { id: 'vertical', label: '竖向四格' }];
+export const graffitiFormats = [{ id: 'wall', label: '演出墙 · 横向' }, { id: 'poster', label: '小海报 · 竖向' }];
+export const graffitiTools = [{ id: 'pen', label: '画笔' }, { id: 'eraser', label: '橡皮' }, { id: 'stamp', label: '印章' }];
 const ids=['hitori','nijika','ryo','kita'];
 export function newComic(){return {version:1,title:'今天，也一起。',layout:'grid',panels:Array.from({length:4},(_,i)=>({scene:comicScenes[i%3].id,caption:['放学以后','排练之前','稍微有点紧张','不过，大家都在'][i],dialogue:['今、今天要练哪一段？','从第一小节开始吧。','我来数拍子。','一、二、三、四！'][i],objects:[{key:`a${i}`,id:ids[i],x:190,y:265,scale:1},{key:`b${i}`,id:ids[(i+1)%4],x:410,y:265,scale:1}]}))};}
 function validateComicPanel(panel, index) {

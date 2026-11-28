@@ -96,6 +96,8 @@ test('sorting honors owner order, date, then unique ID', () => {
 test('image fitting preserves aspect ratio and never enlarges a small image', () => {
   assert.deepEqual(fittedImageSize(1800, 1200, 900, 400), { width: 600, height: 400 });
   assert.deepEqual(fittedImageSize(100, 100, 900, 400), { width: 100, height: 100 });
+  assert.deepEqual(fittedImageSize(800, 1000, 326, 431, { allowUpscale: true }), { width: 326, height: 407.5 });
+  assert.deepEqual(fittedImageSize(800, 1000, 1500, 1250, { allowUpscale: true }), { width: 1000, height: 1250 });
   assert.deepEqual(fittedImageSize(0, 100, 900, 400), { width: 0, height: 0 });
 });
 

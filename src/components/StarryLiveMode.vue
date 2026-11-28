@@ -17,9 +17,9 @@ const compactEffects = ref(false);
 const announcement = ref('灯光准备中，欢迎来到 STARRY。');
 const selectedMember = computed(() => members.find(member => member.id === selected.value));
 const lightModes = [
-  { id: 'warm', label: 'Warm Up', note: '暖场' },
-  { id: 'colors', label: 'Kessoku Colors', note: '四色合奏' },
-  { id: 'spotlight', label: 'Spotlight', note: '成员聚光' }
+  { id: 'warm', label: '暖场', note: 'Warm Up' },
+  { id: 'colors', label: '四色合奏', note: 'Kessoku Colors' },
+  { id: 'spotlight', label: '成员聚光', note: 'Spotlight' }
 ];
 const { play, stop } = useInteractionAudio('starry-live');
 let intro, beatTween, entranceFocus, previousOverflow, motionPreference;
@@ -149,15 +149,19 @@ onBeforeUnmount(() => {
 
 <template>
   <Teleport to="body">
-    <dialog id="starry-live-dialog" ref="dialog" class="starry-live" :data-phase="phase" :data-lighting="lighting" :data-selected-member="selected" :data-lite="compactEffects" :style="{ '--spot-color': selectedMember.theme.primary }" aria-labelledby="starry-title" aria-describedby="starry-instruction" @keydown.capture="onDialogKey" @cancel.prevent="close" @close="close">
+    <dialog id="starry-live-dialog" ref="dialog" class="starry-live" :data-phase="phase" :data-lighting="lighting" :data-selected-member="selected" :data-lite="compactEffects" :data-reduced="reduced" :style="{ '--spot-color': selectedMember.theme.primary }" aria-labelledby="starry-title" aria-describedby="starry-instruction" @keydown.capture="onDialogKey" @cancel.prevent="close" @close="close">
       <header class="starry-topbar">
         <span class="starry-venue"><i aria-hidden="true"></i> SHIMOKITAZAWA <b>LIVE HOUSE</b></span>
         <div class="starry-top-actions"><InteractionSoundControl compact /><button id="starry-exit" type="button" @click="close">离开舞台 <span aria-hidden="true">↗</span></button></div>
       </header>
       <div class="starry-house">
         <div class="starry-stage" :aria-busy="phase === 'intro'">
-          <div class="starry-truss" aria-hidden="true"><i v-for="n in 9" :key="n"></i></div>
-          <div class="starry-lights" aria-hidden="true"><div v-for="member in members" :key="member.id" class="starry-beam" :data-beam="member.id" :style="{ '--member-color': member.theme.primary }"></div></div>
+          <div class="starry-truss" aria-hidden="true"></div>
+          <div class="starry-lights" aria-hidden="true">
+            <div v-for="member in members" :key="member.id" class="starry-light" :class="{ 'is-spot': selected === member.id }" :style="{ '--member-color': member.theme.primary }">
+              <span class="starry-lamp"></span><span class="starry-beam" :data-beam="member.id"></span>
+            </div>
+          </div>
           <div class="starry-sign"><span>TONIGHT, WE ARE</span><h2 id="starry-title">STARRY<span aria-hidden="true">✦</span></h2><p>結束バンド <i></i> KESSOKU BAND</p></div>
           <div class="starry-haze" aria-hidden="true"></div>
           <div class="starry-speaker starry-speaker-left" aria-hidden="true"><i></i><i></i><b>ST.</b></div><div class="starry-speaker starry-speaker-right" aria-hidden="true"><i></i><i></i><b>ST.</b></div>
@@ -175,7 +179,7 @@ onBeforeUnmount(() => {
         <div class="starry-ready-line"><span>LIVE SESSION / 001</span><p id="starry-instruction">点亮一位成员，给今晚加一点自己的节奏。</p><span>FOUR COLORS, ONE BAND.</span></div>
       </div>
       <footer class="starry-console">
-        <div class="starry-light-controls" role="group" aria-label="舞台灯光"><span class="starry-control-label">LIGHTING <small>舞台灯光</small></span><button v-for="mode in lightModes" :key="mode.id" type="button" :data-light-mode="mode.id" :aria-pressed="lighting === mode.id" :disabled="phase === 'intro'" @click="setLighting(mode.id)"><b>{{ mode.label }}</b><small>{{ mode.note }}</small></button></div>
+        <div class="starry-light-controls" role="group" aria-label="舞台灯光"><span class="starry-control-label">舞台灯光 <small>LIGHTING</small></span><button v-for="mode in lightModes" :key="mode.id" type="button" :data-light-mode="mode.id" :aria-pressed="lighting === mode.id" :disabled="phase === 'intro'" @click="setLighting(mode.id)"><b>{{ mode.label }}</b><small>{{ mode.note }}</small></button></div>
         <div class="starry-performance-controls"><button id="starry-beat" type="button" :disabled="phase === 'intro'" @click="beat"><span aria-hidden="true">◉</span> 敲一下节拍</button><button v-if="phase === 'intro'" id="starry-skip" type="button" @click="skipEntrance">跳过入场 →</button><button v-else id="starry-replay" type="button" @click="runEntrance">重播开场 ↺</button></div>
         <p class="starry-status" role="status" aria-live="polite">{{ announcement }}</p>
       </footer>
@@ -199,40 +203,46 @@ onBeforeUnmount(() => {
 #starry-exit span { padding-left:16px; }
 #starry-exit:hover { background:#fff8ec; color:#100e13; }
 .starry-house { flex:1; display:flex; flex-direction:column; min-height:370px; }
-.starry-stage { position:relative; flex:1; min-height:370px; isolation:isolate; overflow:hidden; background:radial-gradient(ellipse at 50% 10%,#36252e55,transparent 60%),repeating-linear-gradient(90deg,#fff8ec03 0 1px,transparent 1px 80px),#100e13; }
-.starry-truss { position:absolute; top:0; left:0; right:0; height:20px; display:flex; justify-content:space-evenly; border-bottom:2px solid #52424d; background:repeating-linear-gradient(45deg,transparent 0 30px,#52424d 30px 32px,transparent 32px 62px); }
-.starry-truss i { position:relative; top:9px; width:18px; height:13px; border-radius:2px 2px 50% 50%; background:#261f2a; border-bottom:3px solid #b4a77f; }
-.starry-lights { position:absolute; inset:0 14%; display:flex; justify-content:center; pointer-events:none; }
-.starry-beam { position:relative; width:24%; height:110%; transform-origin:50% 0; opacity:.6; clip-path:polygon(43% 0,57% 0,100% 100%,0 100%); transition:opacity .65s; }
+.starry-stage { --stage-inset:14%; --stage-gap:8px; --light-floor:3.4rem; position:relative; flex:1; min-height:370px; isolation:isolate; overflow:hidden; background:radial-gradient(ellipse at 50% 10%,#36252e55,transparent 60%),repeating-linear-gradient(90deg,#fff8ec03 0 1px,transparent 1px 80px),#100e13; }
+.starry-truss { position:absolute; top:0; left:0; right:0; height:20px; border-bottom:2px solid #52424d; background:repeating-linear-gradient(45deg,transparent 0 30px,#52424d 30px 32px,transparent 32px 62px); }
+.starry-band,.starry-lights { position:absolute; inset-inline:var(--stage-inset); display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--stage-gap); }
+.starry-lights { inset-block:16px var(--light-floor); pointer-events:none; }
+.starry-light { position:relative; }
+.starry-lamp { position:absolute; z-index:1; top:-7px; left:50%; width:18px; height:13px; transform:translateX(-50%); border-radius:2px 2px 50% 50%; background:#261f2a; border-bottom:3px solid #b4a77f; }
+.starry-beam { position:absolute; inset:2px 0 0; transform-origin:50% 0; opacity:.6; clip-path:polygon(calc(50% - 7px) 0,calc(50% + 7px) 0,100% 100%,0 100%); transition:opacity .45s; }
 /* 两层灯光交叉淡化，避免直接切换无法插值的渐变背景。 */
-.starry-beam::before,.starry-beam::after { content:''; position:absolute; inset:0; transition:opacity .65s; }
+.starry-beam::before,.starry-beam::after { content:''; position:absolute; inset:0; transition:opacity .45s; }
 .starry-beam::before { opacity:1; background:linear-gradient(#efc27545,#efc2750c 90%,transparent); }
-.starry-beam::after { opacity:0; background:linear-gradient(color-mix(in srgb,var(--member-color) 46%,transparent),transparent 95%); }
+.starry-beam::after { opacity:0; background:linear-gradient(color-mix(in srgb,var(--member-color) 47%,transparent),color-mix(in srgb,var(--member-color) 14%,transparent) 81%,transparent); }
 [data-lighting='colors'] .starry-beam { opacity:.72; }
 [data-lighting='colors'] .starry-beam::before,[data-lighting='spotlight'] .starry-beam::before,[data-phase='intro'] .starry-beam::before { opacity:0; }
 [data-lighting='colors'] .starry-beam::after,[data-lighting='spotlight'] .starry-beam::after,[data-phase='intro'] .starry-beam::after { opacity:1; }
 [data-phase='intro'] .starry-beam,[data-phase='intro'] .starry-beam::before,[data-phase='intro'] .starry-beam::after { transition:none; }
-[data-phase='intro'] .starry-member { transition:none; }
 [data-lighting='spotlight'] .starry-beam { opacity:.08; }
-[data-selected-member='hitori'][data-lighting='spotlight'] [data-beam='hitori'],[data-selected-member='nijika'][data-lighting='spotlight'] [data-beam='nijika'],[data-selected-member='ryo'][data-lighting='spotlight'] [data-beam='ryo'],[data-selected-member='kita'][data-lighting='spotlight'] [data-beam='kita'] { opacity:1; }
+[data-lighting='spotlight'] .starry-light.is-spot .starry-beam { opacity:1; }
+[data-lighting='spotlight'] .starry-light.is-spot .starry-lamp { border-bottom-color:var(--member-color); box-shadow:0 4px 9px color-mix(in srgb,var(--member-color) 42%,transparent); }
 .starry-sign { position:absolute; top:24px; left:50%; transform:translateX(-50%); width:80%; text-align:center; z-index:1; }
 .starry-sign > span { font:9px var(--mono); letter-spacing:5px; color:#c7b8bd; }
 .starry-sign h2 { margin:5px 0 0; font:900 clamp(50px,7.5vw,108px)/.9 Arial,sans-serif; letter-spacing:-.07em; color:#fff8ec; text-shadow:3px 3px 0 #e9667055; }
 .starry-sign h2 > span { display:inline-block; color:#f6c945; font-size:.55em; vertical-align:top; margin:0 0 0 9px; }
 .starry-sign p { margin:12px 0 0; display:flex; justify-content:center; gap:13px; align-items:center; font:9px var(--mono); letter-spacing:2px; color:#cbbec8; }
 .starry-sign p i { width:25px; height:1px; background:currentColor; }
-.starry-band { position:absolute; inset:150px 14% 24px; z-index:3; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); align-items:stretch; gap:8px; }
-.starry-member { position:relative; min-width:0; padding:0; border:0; background:transparent; color:#fff8ec; display:flex; flex-direction:column; align-items:stretch; transition:opacity .4s; }
-.starry-member-art { position:relative; display:block; flex:1; min-height:0; }
-.starry-member img { position:absolute; left:50%; bottom:0; width:auto; max-width:none; height:100%; object-fit:contain; transform:translate(calc(-50% + var(--stage-x)),var(--stage-y)) scale(var(--stage-scale)); transform-origin:50% 100%; filter:drop-shadow(0 8px 10px #0009); }
-.starry-member-name { position:relative; margin-top:9px; border-top:1px solid color-mix(in srgb,var(--member-color) 50%,transparent); padding-top:8px; display:flex; align-items:center; justify-content:center; gap:10px; }
-.starry-member-name b { font-size:12px; font-weight:500; }
-.starry-member-name small { color:var(--member-color); font:10px var(--mono); }
-[data-lighting='spotlight'] .starry-member { opacity:.42; }
-[data-lighting='spotlight'] .starry-member[aria-pressed='true'] { opacity:1; }
-.starry-member:hover { opacity:1; }
+.starry-band { inset-block:150px 24px; z-index:3; }
+.starry-member { position:relative; min-width:0; padding:0; border:0; background:transparent; color:#fff8ec; display:flex; flex-direction:column; align-items:stretch; }
+.starry-member-art { position:relative; display:block; flex:1; min-height:0; pointer-events:none; }
+.starry-member-art::before { content:''; position:absolute; left:50%; bottom:-10px; width:88%; height:22px; transform:translateX(-50%); opacity:0; background:radial-gradient(ellipse,color-mix(in srgb,var(--member-color) 28%,transparent),transparent 71%); transition:opacity .35s; }
+.starry-member img { position:absolute; left:50%; bottom:0; width:auto; max-width:none; height:100%; object-fit:contain; transform:translate(calc(-50% + var(--stage-x)),var(--stage-y)) scale(var(--stage-scale)); transform-origin:50% 100%; filter:brightness(var(--portrait-brightness,1)) drop-shadow(0 8px 10px #0009); transition:filter .3s, max-height .35s; }
+.starry-member-name { position:relative; margin-top:9px; border-top:1px solid color-mix(in srgb,var(--member-color) 60%,transparent); padding-top:8px; display:flex; align-items:center; justify-content:center; gap:10px; }
+.starry-member-name b { font-size:.875rem; font-weight:600; }
+.starry-member-name small { color:color-mix(in srgb,var(--member-color) 75%,#fff8ec); font:.6875rem var(--mono); }
+[data-lighting='spotlight'] .starry-member:not([aria-pressed='true']) img { --portrait-brightness:.56; }
+[data-lighting='spotlight'] .starry-member:is(:hover,:focus-visible):not([aria-pressed='true']) img { --portrait-brightness:.76; }
+.starry-member[aria-pressed='true'] { z-index:1; }
+.starry-member[aria-pressed='true'] .starry-member-art::before { opacity:1; }
+.starry-member[aria-pressed='true'] .starry-member-name { border-color:var(--member-color); }
 .starry-floor { position:absolute; left:0; right:0; height:28%; bottom:0; border-top:1px solid #fff8ec1c; background:linear-gradient(#2b242a65,#171319),repeating-linear-gradient(90deg,transparent 0 15%,#fff8ec09 15% 15.1%); transform:perspective(600px) rotateX(28deg) scaleX(1.2); transform-origin:50% 100%; }
 .starry-floor span { position:absolute; inset:0; opacity:.2; background:radial-gradient(ellipse at 20% 40%,#f48fb1,transparent 25%),radial-gradient(ellipse at 40% 40%,#f6c945,transparent 25%),radial-gradient(ellipse at 60% 40%,#76b9e8,transparent 25%),radial-gradient(ellipse at 80% 40%,#e96670,transparent 25%); }
+[data-lighting='spotlight'] .starry-floor span { opacity:.05; }
 .starry-haze { position:absolute; inset:50% -15% -20%; background:radial-gradient(ellipse at 45% 50%,#bd9eb218,transparent 65%); pointer-events:none; }
 .starry-speaker { position:absolute; bottom:40px; width:8%; max-width:90px; height:46%; max-height:240px; background:repeating-linear-gradient(0deg,#fff8ec06 0 1px,transparent 1px 4px),#17141a; border:2px solid #3b313d; box-shadow:8px 10px 0 #09080a; display:flex; flex-direction:column; align-items:center; justify-content:space-evenly; }
 .starry-speaker-left { left:3%; transform:rotate(2deg); }
@@ -253,11 +263,11 @@ onBeforeUnmount(() => {
 .starry-ready-line p { margin:0; font-size:11px; letter-spacing:1px; color:#d9cbd6; }
 .starry-console { flex-shrink:0; padding:19px 32px 13px; background:#1a151e; display:grid; grid-template-columns:1fr auto; gap:14px 24px; }
 .starry-light-controls { display:flex; gap:7px; align-items:center; }
-.starry-control-label { font:9px var(--mono); letter-spacing:1.5px; color:#ad9aaa; margin-right:16px; }
-.starry-control-label small { display:block; margin-top:5px; font:9px var(--font); letter-spacing:1px; }
+.starry-control-label { font:.75rem var(--font); color:#d9cbd6; margin-right:16px; }
+.starry-control-label small { display:block; margin-top:5px; font:.625rem var(--mono); letter-spacing:1px; color:#b9a8b6; }
 .starry-light-controls button { border:1px solid #fff8ec25; background:transparent; color:#b8a9b7; padding:9px 15px; min-height:48px; text-align:left; }
-.starry-light-controls button b { font:11px var(--mono); display:block; }
-.starry-light-controls button small { display:block; margin-top:3px; font-size:9px; }
+.starry-light-controls button b { font-size:.875rem; font-weight:650; display:block; line-height:1.3; }
+.starry-light-controls button small { display:block; margin-top:4px; font:.625rem var(--mono); }
 .starry-light-controls button[aria-pressed='true'] { border-color:#f6c945; background:#f6c9450a; color:#f6c945; }
 .starry-performance-controls { display:flex; gap:12px; align-items:center; }
 #starry-beat { padding:12px 16px; background:#f6c945; border:0; color:#251c12; font-size:12px; min-height:48px; }
@@ -266,8 +276,8 @@ onBeforeUnmount(() => {
 #starry-skip,#starry-replay { background:transparent; border:0; border-bottom:1px solid #fff8ec45; font-size:11px; min-height:44px; padding:10px 0; color:#e1d3de; white-space:nowrap; }
 .starry-light-controls button:disabled,#starry-beat:disabled { opacity:.4; }
 .starry-status { grid-column:1/-1; color:#b9a8b6; font-size:10px; margin:0; line-height:1.5; min-height:15px; }
-@media (min-width:1400px) { .starry-band,.starry-lights { inset-inline:21%; } }
-@media (max-width:900px) { .starry-console { gap:14px; padding-inline:22px; } .starry-control-label { display:none; } .starry-ready-line span:last-child { display:none; } .starry-band,.starry-lights { inset-inline:11%; } .starry-topbar { padding-inline:22px; } .starry-venue b { display:none; } .starry-light-controls button { padding-inline:10px; } }
+@media (min-width:1400px) { .starry-stage { --stage-inset:21%; } }
+@media (max-width:900px) { .starry-console { gap:14px; padding-inline:22px; } .starry-control-label { display:none; } .starry-ready-line span:last-child { display:none; } .starry-stage { --stage-inset:11%; } .starry-topbar { padding-inline:22px; } .starry-venue b { display:none; } .starry-light-controls button { padding-inline:10px; } }
 @media (max-width:600px) {
   .starry-topbar { padding:10px 16px; gap:10px; }
   .starry-venue { font-size:8px; letter-spacing:1px; gap:6px; }
@@ -275,17 +285,17 @@ onBeforeUnmount(() => {
   #starry-exit { font-size:10px; padding:8px 9px; }
   #starry-exit span { padding-left:5px; }
   .starry-house { min-height:350px; }
-  .starry-stage { min-height:300px; }
+  .starry-stage { --stage-inset:12px; --stage-gap:5px; --light-floor:3.85rem; min-height:300px; }
   .starry-sign { top:30px; }
   .starry-sign h2 { font-size:58px; }
   .starry-sign > span { font-size:7px; letter-spacing:3px; }
   .starry-sign p { font-size:7px; letter-spacing:1px; }
-  .starry-band { inset:135px 12px 18px; gap:5px; }
-  .starry-lights { inset-inline:12px; }
+  .starry-band { inset-block:135px 18px; }
   .starry-member-name { flex-direction:column; gap:3px; padding-top:8px; }
-  .starry-member-name b { font-size:10px; white-space:nowrap; }
-  .starry-member-name small { font-size:8px; }
-  .starry-member img { max-height:55vw; filter:drop-shadow(0 5px 3px #0008); }
+  .starry-member-name b { font-size:.75rem; white-space:nowrap; }
+  .starry-member-name small { font-size:.6875rem; }
+  .starry-member img { max-height:55vw; filter:brightness(var(--portrait-brightness,1)) drop-shadow(0 5px 3px #0008); }
+  .starry-member[aria-pressed='true'] img { max-height:73vw; }
   .starry-speaker { display:none; }
   .starry-ready-line { padding:11px 16px; text-align:center; justify-content:center; }
   .starry-ready-line span { display:none; }
@@ -293,8 +303,7 @@ onBeforeUnmount(() => {
   .starry-console { padding:14px 16px 12px; grid-template-columns:1fr; gap:13px; }
   .starry-light-controls { display:grid; grid-template-columns:1fr 1.2fr 1fr; gap:6px; }
   .starry-light-controls button { padding:9px 7px; text-align:center; }
-  .starry-light-controls button b { font-size:9px; white-space:nowrap; }
-  .starry-light-controls button small { font-size:8px; }
+  .starry-light-controls button b { font-size:.8125rem; white-space:nowrap; }
   .starry-performance-controls { justify-content:space-between; }
   #starry-beat { flex:1; margin-right:15px; }
   .starry-status { font-size:9px; line-height:1.6; min-height:28px; }
@@ -302,5 +311,7 @@ onBeforeUnmount(() => {
 }
 @media (max-width:370px) { .starry-venue { font-size:0; gap:0; letter-spacing:0; } .starry-venue i { margin-right:5px; } .starry-venue::after { content:'STARRY'; font:9px var(--mono); letter-spacing:1px; } }
 @media (max-height:650px) and (min-width:601px) { .starry-house,.starry-stage { min-height:280px; } .starry-sign { top:20px; } .starry-sign h2 { font-size:56px; } .starry-band { top:110px; bottom:15px; } .starry-console { padding-block:10px; gap:8px; } .starry-ready-line { padding-block:9px; } }
-@media (prefers-reduced-motion:reduce) { .starry-beam,.starry-beam::before,.starry-beam::after,.starry-member { transition:none; } #starry-beat:active { transform:none; } }
+[data-reduced='true'] .starry-beam,[data-reduced='true'] .starry-beam::before,[data-reduced='true'] .starry-beam::after,
+[data-reduced='true'] .starry-member img,[data-reduced='true'] .starry-member-art::before { transition:none; }
+[data-reduced='true'] #starry-beat:active { transform:none; }
 </style>

@@ -3,7 +3,7 @@ import EditorWorkspace from '../tools/EditorWorkspace.vue';
 import {readWorks} from '../../room/workshelf.js';
 import { recordActivity } from '../../room/activityLog.js';
 import { computed, ref } from 'vue';
-import { cast, roomProps } from '../../data/playroom.js';
+import { cast, roomLights, roomProps } from '../../data/playroom.js';
 import { defaultRoom, validateRoom } from '../../room/playroom.js';
 import { useLocalDraft } from '../../composables/useLocalDraft.js';
 import { useStageEditor } from '../../composables/useStageEditor.js';
@@ -85,7 +85,7 @@ async function exportRoom(){if(busy.value)return;busy.value=true;persist();try{a
         <rect x="18" y="18" width="924" height="584" fill="none" :stroke="state.light==='night' ? '#aaa0b5' : '#9a7666'" stroke-width="1.5"/><text x="32" y="588" font-family="monospace" font-size="12" letter-spacing="3" :fill="state.light==='night' ? '#f0d5db' : '#4b333b'">HITORI ROOM</text>
       </svg>
     </div></template><template #tools>
-    <div class="room-actions play-sticky-actions room-light-options"><button type="button" class="primary" :disabled="busy" @click="exportRoom">{{busy?'保存中…':'保存房间照片 ↓'}}</button><button v-for="[id,label] in [['warm','暖色午后'],['pink','粉色灯光'],['night','深夜小屋']]" :key="id" type="button" :aria-pressed="state.light===id" @click="state.light=id">{{label}}</button></div>
+    <div class="room-actions play-sticky-actions room-light-options"><button type="button" class="primary" :disabled="busy" @click="exportRoom">{{busy?'保存中…':'保存房间照片 ↓'}}</button><button v-for="{ id, label } in roomLights" :key="id" type="button" :aria-pressed="state.light===id" @click="state.light=id">{{label}}</button></div>
     <p id="decoration-reaction" class="room-status" role="status">{{message}}</p>
     <h3 class="play-subheading">把自己的作品挂上墙</h3><div class="room-fields"><label class="room-field">从作品架选择<select v-model="chosenWork"><option value="">选择带预览的作品</option><option v-for="work in hangingWorks" :key="work.id" :value="work.id">{{work.title}}</option></select></label></div><div class="room-actions"><button id="hang-work" type="button" @click="hangWork">挂到房间里 ＋</button><RouterLink to="/room/works">去作品架整理 ↗</RouterLink></div><p class="play-footer-note">保存的是作品画面副本；原作品后来被移出作品架，这张挂画仍会保留。</p><h3 class="play-subheading">从这里，添一件喜欢的东西</h3><div class="play-palette room-prop-palette"><button v-for="item in roomProps" :key="item.id" type="button" :aria-label="`添加${item.name}`" @click="add(item)"><svg viewBox="-80 -85 160 170" width="58" height="62" aria-hidden="true"><RoomProp :kind="item.id"/></svg>{{item.name}}</button></div>
     <label class="room-field" for="decoration-object">选择已经摆放的物品<select id="decoration-object" v-model="editor.selectedKey.value"><option value="">选择一件物品</option><option v-for="(item,index) in objects" :key="item.key" :value="item.key">{{index+1}} / {{prop(item).name}}</option></select></label>
