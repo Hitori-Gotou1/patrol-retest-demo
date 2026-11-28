@@ -10,7 +10,11 @@ export function useGalleryZoom({ selectedImage, dialogOpen, surface, stepImage, 
   const natural = ref({ width: 0, height: 0 });
   const dragging = ref(false);
   const pointers = new Map();
-  const maxScale = computed(() => Math.max(4, Math.min(8, natural.value.width / (size.value.width || 1))));
+  const vectorViewBox = computed(() => selectedImage.value?.vectorViewBox);
+  const originalSize = computed(() => vectorViewBox.value || natural.value);
+  const oneToOneScale = computed(() => size.value.width ? originalSize.value.width / size.value.width : 1);
+  const minScale = computed(() => Math.min(1, oneToOneScale.value));
+  const maxScale = computed(() => Math.max(4, oneToOneScale.value));
   const zoomed = computed(() => scale.value > 1.01);
   const zoomLabel = computed(() => `${Math.round(scale.value * 100)}%`);
   const imageTransform = computed(() => ({ width: `${size.value.width}px`, height: `${size.value.height}px`, transform: `translate(${x.value}px, ${y.value}px) scale(${scale.value})` }));
@@ -19,6 +23,7 @@ export function useGalleryZoom({ selectedImage, dialogOpen, surface, stepImage, 
   let lastTap;
   let pointerOrigin;
   let lastTouchZoom = 0;
+  let atOriginalSize = false;
 
   function clamp() {
     const result = clampImagePan({ x: x.value, y: y.value, scale: scale.value, ...size.value, availableWidth: available.value.width, availableHeight: available.value.height });
@@ -26,18 +31,22 @@ export function useGalleryZoom({ selectedImage, dialogOpen, surface, stepImage, 
   }
   function measure() {
     if (!surface.value) return;
-    available.value = { width: surface.value.clientWidth, height: surface.value.clientHeight };
-    size.value = fittedImageSize(natural.value.width, natural.value.height, available.value.width, available.value.height);
+    const bounds = surface.value.getBoundingClientRect();
+    available.value = { width: bounds.width, height: bounds.height };
+    const { width, height } = originalSize.value;
+    size.value = fittedImageSize(width, height, available.value.width, available.value.height, { allowUpscale: !!vectorViewBox.value });
+    scale.value = atOriginalSize ? oneToOneScale.value : Math.max(minScale.value, Math.min(maxScale.value, scale.value));
     clamp();
   }
-  function reset() { scale.value = 1; x.value = 0; y.value = 0; dragging.value = false; pointers.clear(); pinch = null; pointerOrigin = null; lastTap = null; }
+  function reset() { atOriginalSize = false; scale.value = 1; x.value = 0; y.value = 0; dragging.value = false; pointers.clear(); pinch = null; pointerOrigin = null; lastTap = null; }
   function imageLoaded(event) {
     natural.value = { width: event.target.naturalWidth, height: event.target.naturalHeight };
     measure();
   }
   function setZoom(next, clientX, clientY) {
+    atOriginalSize = false;
     const previous = scale.value;
-    const value = Math.max(1, Math.min(maxScale.value, next));
+    const value = Math.max(minScale.value, Math.min(maxScale.value, next));
     if (clientX != null && surface.value) {
       const bounds = surface.value.getBoundingClientRect();
       const anchorX = clientX - bounds.left - bounds.width / 2;
@@ -49,7 +58,7 @@ export function useGalleryZoom({ selectedImage, dialogOpen, surface, stepImage, 
     clamp();
   }
   function fit() { reset(); measure(); }
-  function oneToOne() { setZoom(natural.value.width / (size.value.width || 1)); }
+  function oneToOne() { setZoom(oneToOneScale.value); atOriginalSize = true; }
   function toggle(event) { zoomed.value ? fit() : setZoom(Math.max(2, Math.min(3, maxScale.value)), event?.clientX, event?.clientY); }
   function doubleClick(event) { if (Date.now() - lastTouchZoom < 500 || event.sourceCapabilities?.firesTouchEvents) return; toggle(event); }
   function distance() { const [a, b] = [...pointers.values()]; return Math.hypot(a.x - b.x, a.y - b.y); }
@@ -117,5 +126,5 @@ export function useGalleryZoom({ selectedImage, dialogOpen, surface, stepImage, 
     if (surface.value) { observer = new ResizeObserver(measure); observer.observe(surface.value); }
   }, { flush: 'post' });
   onBeforeUnmount(() => observer?.disconnect());
-  return { scale, maxScale, zoomed, zoomLabel, imageTransform, dragging, imageLoaded, reset, fit, oneToOne, setZoom, toggle, doubleClick, pointerDown, pointerMove, pointerUp, pointerCancel, panKeyboard };
+  return { scale, minScale, maxScale, zoomed, zoomLabel, imageTransform, dragging, imageLoaded, reset, fit, oneToOne, setZoom, toggle, doubleClick, pointerDown, pointerMove, pointerUp, pointerCancel, panKeyboard };
 }

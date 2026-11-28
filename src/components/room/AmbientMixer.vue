@@ -3,7 +3,7 @@ import AmbientStreet from './AmbientStreet.vue';
 import { useMediaFocus } from '../../composables/useMediaFocus.js';
 import { recordActivity } from '../../room/activityLog.js';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { ambientLayers, ambientPresets } from '../../data/playroom.js';
+import { ambientLayers, ambientLights, ambientPresets } from '../../data/playroom.js';
 import { validateAmbient } from '../../room/playroom.js';
 import { useLocalDraft } from '../../composables/useLocalDraft.js';
 import { useSoundPreferences } from '../../composables/useSoundPreferences.js';
@@ -69,7 +69,7 @@ onBeforeUnmount(()=>{alive=false;stop();engine.dispose();document.removeEventLis
       <h3 class="play-subheading">街景的四层声音</h3>
       <div class="ambient-layer" v-for="layer in ambientLayers" :key="layer.id"><label :for="`ambient-${layer.id}`"><strong>{{layer.label}}</strong><span>{{Math.round(state.current.levels[layer.id]*100)}}%</span></label><input :id="`ambient-${layer.id}`" v-model.number="state.current.levels[layer.id]" class="play-range" type="range" min="0" max="1" step="0.01"><p>{{layer.hint}}</p></div>
       <label class="room-field" for="ambient-volume">音量 {{Math.round(sounds.preferences.ambience*200)}}%<input id="ambient-volume" class="play-range" type="range" min="0" max="0.5" step="0.01" :value="sounds.preferences.ambience" @input="sounds.update({ambience:Number($event.target.value)})"></label>
-      <h3 class="play-subheading">灯光，也换一种颜色</h3><div class="play-toolbar"><button v-for="[id,label] in [['violet','紫色深夜'],['amber','暖色门灯'],['blue','蓝色晚风']]" :key="id" type="button" :aria-pressed="state.current.light===id" @click="state.current.light=id">{{label}}</button></div>
+      <h3 class="play-subheading">灯光，也换一种颜色</h3><div class="play-toolbar"><button v-for="{ id, label } in ambientLights" :key="id" type="button" :aria-pressed="state.current.light===id" @click="state.current.light=id">{{label}}</button></div>
       <h3 class="play-subheading">从一个夜晚开始</h3><div class="play-toolbar"><button v-for="item in ambientPresets" :key="item.id" type="button" @click="preset(item)">{{item.name}}</button></div>
       <label class="room-field" for="ambient-name">这一段氛围的名字<input id="ambient-name" v-model="state.current.name" maxlength="28"></label>
       <button type="button" @click="saveScene">把当前氛围放进收藏 ＋</button><p class="room-status" role="status">{{message}}</p>

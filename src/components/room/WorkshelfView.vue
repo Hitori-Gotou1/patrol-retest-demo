@@ -1,7 +1,7 @@
 <script setup>
 import {computed,nextTick,onBeforeUnmount,onMounted,ref} from 'vue';
 import {useRoute,useRouter} from 'vue-router';
-import {readWorks,readDrafts,workTypes,removeWork,restoreWork,exportWorks,importWorks,maxWorks,updateWork,compareWorks,comparisonLabel,comparisonValue} from '../../room/workshelf.js';
+import {readWorks,readDrafts,workTypes,removeWork,restoreWork,exportWorks,importWorks,maxWorks,updateWork,compareWorks,comparisonLabel,comparisonOption,comparisonValue} from '../../room/workshelf.js';
 import WorkCover from './WorkCover.vue';
 import {downloadJson} from '../../room/storage.js';
 const router=useRouter(),route=useRoute(),works=ref([]),drafts=ref([]),filter=ref('all'),query=ref(''),order=ref('new'),message=ref(''),removed=ref(null),fileInput=ref(null),busy=ref(false),editing=ref(''),editTitle=ref(''),editTags=ref(''),selected=ref([]);
@@ -11,7 +11,22 @@ refresh();try{exportWorks();}catch(e){message.value=e.message;}
 const visible=computed(()=>works.value.filter(w=>(filter.value==='all'||w.kind===filter.value)&&(w.title+' '+(w.tags||[]).join(' ')).toLowerCase().includes(query.value.trim().toLowerCase())).sort((a,b)=>Number(b.pinned)-Number(a.pinned)||(order.value==='old'?a.at-b.at:order.value==='title'?a.title.localeCompare(b.title,'zh-CN'):b.at-a.at)));
 const kinds=computed(()=>[...new Set(works.value.map(w=>w.kind))]);
 const compared=computed(()=>selected.value.map(id=>works.value.find(w=>w.id===id)).filter(Boolean));
-const differences=computed(()=>compared.value.length===2&&compared.value[0].kind===compared.value[1].kind?compareWorks(...compared.value):[]);
+const compareSlots = computed(() => compared.value.map((work, index) => ({
+  work, letter: index === 0 ? 'A' : 'B', valueKey: index === 0 ? 'before' : 'after'
+})));
+const differences = computed(() => {
+  const [first, second] = compared.value;
+  if (!second || first.kind !== second.kind) return [];
+  return compareWorks(first, second).map(change => ({
+    path: change.path,
+    label: comparisonLabel(change.path, first.kind),
+    values: compareSlots.value.map(({ letter, valueKey }) => ({
+      letter,
+      text: comparisonValue(change[valueKey], change.path, first.kind),
+      swatch: comparisonOption(change[valueKey], change.path, first.kind)?.background
+    }))
+  }));
+});
 const formatDate=at=>new Date(at).toLocaleString('zh-CN',{month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
 async function open(work){try{await router.push(restoreWork(work.id));}catch(e){message.value=e.message;}}
 function remove(work){try{removed.value=removeWork(work.id);message.value='已移出作品架，编辑页草稿保留，可以撤销。';refresh();}catch(e){message.value=e.message;}}
@@ -75,20 +90,36 @@ onBeforeUnmount(()=>{alive=false;window.removeEventListener('storage',refresh);w
       <p v-if="selected.length === 1">再选择一个同类型版本，可以并排看预览与修改。</p>
       <template v-else>
         <div class="compare-grid">
-          <div v-for="work in compared" :key="work.id">
-            <WorkCover :work="work"/><h4>{{ work.title }}</h4><p>{{ formatDate(work.at) }}</p>
+          <div v-for="{ work, letter } in compareSlots" :key="work.id" class="compare-version">
+            <div class="compare-preview">
+              <WorkCover :work="work"/>
+              <span class="compare-badge" :data-side="letter">{{ letter }}</span>
+            </div>
+            <div class="compare-caption">
+              <h4>{{ work.title }}</h4>
+              <time :datetime="new Date(work.at).toISOString()">{{ formatDate(work.at) }}</time>
+            </div>
           </div>
         </div>
-        <p>{{ differences.length ? `发现${differences.length}${differences.length === 40 ? '处以上' : '处'}修改` : '两个版本的编辑数据相同。' }}</p>
-        <div v-if="differences.length" class="compare-table-wrap">
-          <table>
-            <thead><tr><th scope="col">修改位置</th><th scope="col">{{ compared[0].title }}</th><th scope="col">{{ compared[1].title }}</th></tr></thead>
-            <tbody><tr v-for="change in differences" :key="change.path">
-              <th scope="row">{{ comparisonLabel(change.path) }}</th>
-              <td>{{ comparisonValue(change.before, change.path) }}</td><td>{{ comparisonValue(change.after, change.path) }}</td>
-            </tr></tbody>
-          </table>
-        </div>
+        <p class="compare-result">{{ differences.length ? `发现${differences.length}${differences.length === 40 ? '处以上' : '处'}修改` : '两个版本的编辑数据相同。' }}</p>
+        <table v-if="differences.length" class="compare-table" role="table" aria-label="版本差异">
+          <thead class="visually-hidden" role="rowgroup">
+            <tr role="row">
+              <th scope="col" role="columnheader">修改位置</th>
+              <th v-for="slot in compareSlots" :key="slot.letter" scope="col" role="columnheader">{{ slot.letter }} · {{ slot.work.title }}</th>
+            </tr>
+          </thead>
+          <tbody role="rowgroup">
+            <tr v-for="change in differences" :key="change.path" role="row">
+              <th scope="row" role="rowheader">{{ change.label }}</th>
+              <td v-for="value in change.values" :key="value.letter" role="cell">
+                <span class="compare-badge" :data-side="value.letter" aria-hidden="true">{{ value.letter }}</span>
+                <span v-if="value.swatch" class="compare-swatch" :style="{ backgroundColor: value.swatch }" aria-hidden="true"></span>
+                <span class="compare-value">{{ value.text }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </template>
     </section>
     <div v-if="visible.length" class="works-grid">
@@ -166,15 +197,39 @@ onBeforeUnmount(()=>{alive=false;window.removeEventListener('storage',refresh);w
 .work-menu-options a { display:flex; align-items:center; text-underline-offset:3px; }
 .work-menu-options button:hover,.work-menu-options a:hover { background:#f1ded7; }
 .work-metadata { margin-top:10px; padding:9px; background:#f2e4d6; border:1px solid #d3b9a4; }
-.work-compare-panel { color:#523846; background:#fff8e9; padding:12px; border:1px solid #bda68e; margin:0 0 14px; }
-.compare-heading { margin:0 0 8px; justify-content:space-between; }
-.compare-heading h3 { margin:0; }
-.compare-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-.compare-grid>div { min-width:0; padding:0; background:#f3e6d5; border:1px solid #c5aa94; color:#493642; }
-.compare-grid h4,.compare-grid p { margin:5px 7px; overflow-wrap:anywhere; }
-.compare-table-wrap table { width:100%; table-layout:fixed; border-collapse:collapse; }
-.compare-table-wrap :is(th,td) { text-align:left; border:1px solid #cbb4a0; color:#573d4c; padding:7px 9px; font-size:13px; overflow-wrap:anywhere; }
-.compare-table-wrap thead th:first-child,.compare-table-wrap tbody th { background:#f1e1cc; }
+.work-compare-panel {
+  --compare-gap: clamp(6px, 1.5vw, 16px);
+  --compare-preview-height: clamp(8.5rem, 42vw, 22rem);
+  color:#523846; background:#fff8e9; padding:clamp(9px, 1.8vw, 20px); border:1px solid #bda68e; margin:0 0 14px;
+}
+.compare-heading { margin:0 0 8px; justify-content:space-between; gap:4px 10px; }
+.compare-heading h3 { margin:0; font-size: clamp(1rem, 3.8vw, 1.25rem); }
+.compare-heading button { min-height:44px; }
+.compare-grid,.compare-table tbody tr { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:var(--compare-gap); }
+.compare-version {
+  display:grid; grid-row:span 2; grid-template-rows:subgrid; row-gap:0;
+  min-width:0; background:#f3e6d5; border:1px solid #c5aa94; color:#493642;
+}
+.compare-preview { display:grid; position:relative; min-width:0; }
+.compare-preview :deep(.work-cover) { min-height:var(--compare-preview-height); border-bottom-color:#c5aa94; }
+.compare-preview :deep(.work-cover-art img) { max-height:calc(var(--compare-preview-height) - 16px); }
+.compare-preview .compare-badge { position:absolute; inset:7px auto auto 7px; width:27px; height:27px; }
+.compare-caption { padding:6px 8px 8px; overflow-wrap:anywhere; }
+.compare-caption h4 { margin:0; font-size:.875rem; line-height:1.45; }
+.compare-caption time { font-size:.75rem; color:#6e515a; font-variant-numeric:tabular-nums; }
+.compare-badge {
+  display:inline-grid; place-items:center; width:21px; height:21px; flex:none;
+  border:1px solid; border-radius:3px; background:#f5e6eb; color:#67334e; font:700 .75rem/1 var(--mono);
+}
+.compare-badge[data-side='B'] { border-radius:50%; background:#e7ece4; color:#374f47; }
+.compare-result { margin:10px 0 6px; font-size:.875rem; }
+.compare-table,.compare-table tbody { display:block; width:100%; }
+.compare-table tbody tr { border-top:1px solid #cbb4a0; }
+.compare-table :is(th,td) { min-width:0; text-align:start; padding:7px 8px; font-size:.875rem; overflow-wrap:anywhere; }
+.compare-table th { grid-column:1/-1; padding-bottom:3px; color:#724d57; font-size:.8125rem; }
+.compare-table td { display:flex; align-items:baseline; gap:5px; }
+.compare-swatch { align-self:center; flex:0 0 11px; height:11px; border:1px solid #856775; border-radius:2px; }
+.compare-value { min-width:0; white-space:pre-wrap; }
 .works-empty { padding:30px 18px; border:1px dashed #a58676; background:#f7e8d7; text-align:center; }
 .works-empty p { font-size:13px; }
 .works-empty>div { display:flex; flex-wrap:wrap; justify-content:center; column-gap:14px; }
@@ -188,9 +243,5 @@ onBeforeUnmount(()=>{alive=false;window.removeEventListener('storage',refresh);w
 @media(max-width:600px) {
   .works-grid { grid-template-columns:minmax(0,1fr); gap:11px; }
   .works-tools .rich-toolbar { width:100%; }
-  .compare-table-wrap tr { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
-  .compare-table-wrap tr th:first-child { grid-column:1/-1; }
-  .compare-table-wrap :is(th,td) { min-width:0; }
-  .compare-grid { gap:5px; }
 }
 </style>

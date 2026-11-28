@@ -32,22 +32,7 @@
 .gallery-flow-access > span { color: #8e7568; font-size: 10px; letter-spacing: 2px; }
 .gallery-flow-access button { padding: 8px 0; min-height: 38px; color: #5e4958; background: transparent; border: 0; border-bottom: 1px solid #b69caa; font-size: 11px; }
 .gallery-flow-access button > span { margin-left: 7px; }
-.lightbox.gallery-lightbox { border-radius: 0; width: 100vw; max-width: none; height: 100dvh; max-height: 100dvh; padding: 22px max(22px, env(safe-area-inset-right)); border: 0; margin: 0; background: #19141df5; overflow: auto; }
-.gallery-lightbox[open] { display: flex; flex-direction: column; }
-.gallery-lightbox .lightbox-toolbar { flex: 0 0 auto; max-width: 1400px; width: 100%; margin-inline: auto; }
-.gallery-lightbox .lightbox-hint { color: #baa9bd; font: 11px var(--font); }
-.gallery-lightbox .lightbox-image-wrap { flex: 1 1 0; min-height: 140px; margin-top: 15px; touch-action: pan-y pinch-zoom; }
-.gallery-lightbox .lightbox-image-wrap > img { width: auto; height: 100%; max-height: calc(100dvh - 210px); max-width: calc(100% - 100px); animation: gallery-image-enter .3s ease both; border-radius: 0; }
-.gallery-lightbox .lightbox-bottom { flex: 0 0 auto; }
-.gallery-lightbox .lightbox-favorite { border: 1px solid #8a657f; background: transparent; color: #eab2cd; margin-top: 6px; min-height: 36px; padding: 6px 14px; font-size: 12px; }
-.gallery-lightbox .lightbox-favorite[aria-pressed='true'] { background: #9c527428; }
-.gallery-lightbox .lightbox-actions { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; }
-.gallery-lightbox .lightbox-original { display: inline-flex; align-items: center; gap: 8px; color: #eab2cd; font-size: 12px; min-height: 44px; border-bottom: 1px solid #8a657f; }
-/* 小幅原图按自身像素显示；大图仍由既有灯箱适应屏幕。 */
-.gallery-lightbox .lightbox-image-wrap > img.is-small-image { width: auto; height: auto; max-width: min(100%,var(--gallery-image-width)); max-height: min(calc(100dvh - 240px),var(--gallery-image-height)); }
-.gallery-lightbox .lightbox-image-error { max-width: 260px; padding: 20px; color: #d2bace; text-align: center; line-height: 1.8; }
 @keyframes gallery-flow-loop { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-@keyframes gallery-image-enter { from { opacity: 0; transform: translateY(7px) scale(.985); } to { opacity: 1; transform: none; } }
 @media (hover: hover) { .gallery-flow-wall:hover .gallery-flow-track { animation-play-state: paused; } }
 @media (min-width: 1100px) and (max-height: 850px) { .gallery-flow-photo { height: 119px; width: 290px; } .gallery-section .gallery-view-bar { margin-bottom: 17px; } }
 @media (max-width: 760px) {
@@ -63,18 +48,10 @@
   .gallery-flow-access { gap: 4px 13px; }
   .gallery-flow-access > span { width: 100%; margin-bottom: 2px; }
   .gallery-flow-access button { font-size: 11px; }
-  .lightbox.gallery-lightbox { padding: max(13px, env(safe-area-inset-top)) 12px max(13px, env(safe-area-inset-bottom)); }
-  .gallery-lightbox .lightbox-hint { font-size: 10px; }
-  .gallery-lightbox .lightbox-image-wrap > img { max-width: 100%; max-height: calc(100dvh - 240px); }
-  .gallery-lightbox .lightbox-prev, .gallery-lightbox .lightbox-next { top: auto; bottom: -7px; transform: none; }
-  .gallery-lightbox .lightbox-prev { left: calc(50% - 56px); }
-  .gallery-lightbox .lightbox-next { right: calc(50% - 56px); }
-  .gallery-lightbox .lightbox-bottom { padding-top: 20px; }
   .gallery-section .filters { flex-wrap: wrap; }
 }
 @media (prefers-reduced-motion: reduce) {
   .gallery-flow-track { animation-play-state: paused !important; }
-  .gallery-lightbox .lightbox-image-wrap > img { animation: none; }
   .gallery-flow-photo img { transition: none; }
 }
 

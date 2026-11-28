@@ -1,6 +1,7 @@
-export function fittedImageSize(width, height, availableWidth, availableHeight) {
+export function fittedImageSize(width, height, availableWidth, availableHeight, { allowUpscale = false } = {}) {
   if (![width, height, availableWidth, availableHeight].every(value => Number.isFinite(value) && value > 0)) return { width: 0, height: 0 };
-  const ratio = Math.min(1, availableWidth / width, availableHeight / height);
+  const fitRatio = Math.min(availableWidth / width, availableHeight / height);
+  const ratio = allowUpscale ? fitRatio : Math.min(1, fitRatio);
   return { width: width * ratio, height: height * ratio };
 }
 export function clampImagePan({ x, y, scale, width, height, availableWidth, availableHeight }) {

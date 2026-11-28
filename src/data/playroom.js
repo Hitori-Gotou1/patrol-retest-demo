@@ -14,6 +14,7 @@ export const stickers = [
   { id: 'note', text: '♪', name: '音符', color: '#5c709f' }, { id: 'bocchi', text: 'ぼっち！', name: '波奇签名', color: '#8e5b81' },
   { id: 'together', text: 'ひとりじゃない。', name: '并不孤单', color: '#537d72' }, { id: 'live', text: 'LIVE!', name: '开演', color: '#b65347' }
 ];
+export const stampStickers = stickers.filter(sticker => ['✦', '♪', 'LIVE!', '♥'].includes(sticker.text));
 export const photoCaptionFonts = [
   { id: 'sans', label: '黑体', family: 'sans-serif' },
   { id: 'serif', label: '宋体', family: '"Noto Serif CJK SC", "Songti SC", SimSun, serif' }
@@ -23,6 +24,9 @@ export const photoThemes = [
   { id: 'pink', label: '粉色放学后', paper: '#fff6eb', background: '#efd0dc', ink: '#664658', accent: '#ba647e' },
   { id: 'night', label: '今晚的舞台', paper: '#e9dfcb', background: '#302b43', ink: '#4e3e56', accent: '#bb8aa4' },
   { id: 'mint', label: '街角晴天', paper: '#fff8e8', background: '#c8d9cb', ink: '#405d55', accent: '#71866c' }
+];
+export const roomLights = [
+  { id: 'warm', label: '暖色午后' }, { id: 'pink', label: '粉色灯光' }, { id: 'night', label: '深夜小屋' }
 ];
 export const roomProps = [
   { id: 'guitar', name: '电吉他', w: 65, h: 135 }, { id: 'amp', name: '音箱', w: 115, h: 95 },
@@ -57,12 +61,20 @@ export const concertOptions = {
   promo: { label: '宣传方式', choices: [{ id: 'friends', label: '邀请朋友来听', cost: 100, reach: 10, quality: 6 }, { id: 'posters', label: '手写海报和传单', cost: 300, reach: 24, quality: 4 }, { id: 'online', label: '海报加线上预告', cost: 500, reach: 34, quality: 3 }] },
   lights: { label: '舞台灯光', choices: [{ id: 'warm', label: '一盏温暖的聚光', cost: 100, reach: 2, quality: 10 }, { id: 'colors', label: '四种颜色的灯光', cost: 250, reach: 5, quality: 18 }, { id: 'night', label: '整场灯光编排', cost: 400, reach: 8, quality: 23 }] }
 };
+export const concertSetlists = [
+  { id: 'together', label: '四个人的合奏 · 默契优先' },
+  { id: 'quiet', label: '安静的不插电 · 慢慢开口' },
+  { id: 'energy', label: '热烈的安可 · 让气氛亮起来' }
+];
 export const concertEvents = [
   { id: 'rain', title: '开演前，忽然下起雨。', text: '门口的观众躲在屋檐下。距离开门，还有十分钟。', choices: [{ id: 'shelter', label: '花 100 元准备雨具与热饮', cost: 100, reach: 10, quality: 8, ending: '门口多了一小排雨伞，观众带着暖意走进来。' }, { id: 'acoustic', label: '在门口弹一段暖场', cost: 0, reach: 4, quality: 5, ending: '雨声替那段短短的吉他，加上了温柔的底鼓。' }] },
   { id: 'cable', title: '试音时，连接线突然失灵。', text: '音箱沉默了一下，大家一起看向了地上的线。', choices: [{ id: 'replace', label: '花 150 元换一条备用线', cost: 150, reach: 4, quality: 12, ending: '新的连接线接上了。熟悉的声音终于重新响起。' }, { id: 'borrow', label: '向隔壁乐队借线并致谢', cost: 0, reach: 2, quality: 5, ending: '隔壁乐队递来了连接线，也留下了一句「加油」。' }] },
   { id: 'nerves', title: '幕布后，一里有点紧张。', text: '她握着拨片，脑内已经把所有可能出错的地方排练了一遍。', choices: [{ id: 'together', label: '四个人再数一次开场的拍子', cost: 0, reach: 3, quality: 12, ending: '一、二、三、四。她抬起头，看见三个人都在等她。' }, { id: 'quiet', label: '留出安静的一分钟', cost: 0, reach: 2, quality: 9, ending: '没人催她。安静的一分钟过去，第一步由她自己迈出。' }] }
 ];
 export const ambientLayers = [{ id: 'rain', label: '屋檐雨声', hint: '细密的雨，落在门外' }, { id: 'street', label: '远处街道', hint: '晚风和城市的低鸣' }, { id: 'tuning', label: '台上的试音', hint: '隔一会儿，轻轻拨一根弦' }, { id: 'crowd', label: '散场的人群', hint: '像隔着一扇门的模糊声响' }];
+export const ambientLights = [
+  { id: 'violet', label: '紫色深夜' }, { id: 'amber', label: '暖色门灯' }, { id: 'blue', label: '蓝色晚风' }
+];
 export const ambientPresets = [
   { id: 'rainy', name: '雨夜的 STARRY', light: 'violet', levels: { rain: .65, street: .18, tuning: .3, crowd: .1 } },
   { id: 'before', name: '开场之前', light: 'amber', levels: { rain: 0, street: .12, tuning: .65, crowd: .35 } },
