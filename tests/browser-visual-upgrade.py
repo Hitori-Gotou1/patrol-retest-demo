@@ -131,9 +131,10 @@ def test_photos(browser):
     expect(page.locator('#lightbox')).to_be_visible();page.wait_for_timeout(480)
     assert page.evaluate('window.__flightCount')>=1,'Photo must actually fly from its thumbnail'
     assert page.evaluate('window.__home===document.querySelector("main")'),'Query changes remounted home'
-    page.locator('[aria-label="放大图片"]').click();expect(page.locator('.lightbox-zoom-controls output')).to_have_text('140%')
+    page.locator('.lightbox-zoom-details summary').click()
+    page.locator('[aria-label="放大图片"]').click();expect(page.locator('#lightbox-zoom-level')).to_have_text('140%')
     surface=page.locator('.lightbox-zoom-surface');surface.dblclick();page.wait_for_timeout(100)
-    page.locator('.lightbox-zoom-controls').get_by_role('button',name='适配屏幕').click()
+    page.get_by_role('button',name='适配屏幕').click()
     for _ in range(6):page.locator('#lightbox-next').click()
     page.wait_for_timeout(260)
     assert page.locator('#lightbox-count').inner_text().startswith('07')
@@ -174,15 +175,15 @@ def test_photo_touch(browser):
         surface.dispatch_event(kind,{'pointerType':'touch','pointerId':id,'button':0,'clientX':px,'clientY':py,'bubbles':True})
     for _ in range(2):
         pointer('pointerdown',1,x,y);pointer('pointerup',1,x,y);page.wait_for_timeout(55)
-    expect(page.locator('.lightbox-zoom-controls output')).to_have_text('300%')
+    expect(page.locator('#lightbox-zoom-level')).to_have_text('300%')
     pointer('pointerdown',1,x,y);pointer('pointermove',1,x+75,y);pointer('pointerup',1,x+75,y)
     assert 'translate(0px, 0px)' not in page.locator('#lightbox-image').get_attribute('style')
     pointer('pointerdown',1,x-40,y);pointer('pointerdown',2,x+40,y)
     pointer('pointermove',2,x+100,y)
-    assert int(page.locator('.lightbox-zoom-controls output').inner_text().strip('%'))>300
+    assert int(page.locator('#lightbox-zoom-level').inner_text().strip('%'))>300
     pointer('pointerup',2,x+100,y);pointer('pointerup',1,x-40,y)
-    page.locator('.lightbox-zoom-controls').get_by_role('button',name='适配屏幕').click()
-    expect(page.locator('.lightbox-zoom-controls output')).to_have_text('100%')
+    page.get_by_role('button',name='适配屏幕').click()
+    expect(page.locator('#lightbox-zoom-level')).to_have_text('100%')
     pointer('pointerdown',1,x+70,y);pointer('pointermove',1,x-70,y);pointer('pointerup',1,x-70,y)
     expect(page.locator('#lightbox-count')).to_have_text('02 / 54')
     page.locator('#lightbox-close').click();expect(page.locator('#lightbox')).to_be_hidden()

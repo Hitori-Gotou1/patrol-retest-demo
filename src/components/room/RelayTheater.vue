@@ -192,9 +192,9 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .relay-room .pg-toolbar button { min-height:44px; }
-.relay-spread { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; gap:clamp(10px,2vw,22px); margin:13px 0 18px; }
+.relay-spread { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); margin:13px 0 18px; border:1px solid #b69d87; background:#f2e4cf; box-shadow:2px 3px 0 #cdb59e; }
 .relay-spread.is-complete { grid-template-columns:minmax(0,1fr); }
-.relay-paper { --fold-edge:#9f8a7d; --fold-face:#fff7e5; background:#eedec6; border:1px solid #b69d87; padding:clamp(9px,2.1vw,24px); margin:0; box-shadow:2px 3px 0 #cdb59e; }
+.relay-paper { --fold-edge:#9f8a7d; --fold-face:#fff7e5; min-width:0; padding:clamp(10px,2.1vw,24px); margin:0; }
 .relay-paper.is-local { --fold-edge:#997781; --fold-face:#fffaed; }
 .relay-paper.is-printed { --fold-edge:#8a5e72; --fold-face:#fbedd9; }
 .relay-paper>header { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:5px 12px; border-bottom:1px solid #c4aa90; margin:0 0 11px; padding-bottom:7px; }
@@ -217,13 +217,18 @@ onBeforeUnmount(() => {
 .relay-fold-number { margin:0 0 5px; }
 .relay-fold-text { color:#4e3b47; font-size:14px; margin:0; }
 .relay-open-folds a { display:inline-flex; align-items:center; min-height:44px; font-size:12px; text-underline-offset:4px; color:#71435e; }
-.relay-form { min-width:0; gap:10px; padding:clamp(10px,2.1vw,24px); background:#fff8e8; color:#4c3443; border:1px solid #b69d87; box-shadow:2px 3px 0 #cdb59e; }
+.relay-form { min-width:0; align-content:start; gap:10px; padding:clamp(10px,2.1vw,24px); background:#fbf1df; color:#4c3443; border-inline-start:1px dashed #b69d87; }
 .relay-writing { min-width:0; }
 .relay-writing-head { display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 10px; color:#6e4d5e; margin-bottom:5px; }
 .relay-writing-head h3 { margin:0; color:#4c3043; font-size:clamp(1rem,3vw,1.375rem); line-height:1.4; }
 .relay-writing-head label,.relay-writing-head span { font-size:.8125rem; }
 #relay-count { margin-inline-start:auto; white-space:nowrap; font-variant-numeric:tabular-nums; }
-.relay-form textarea { display:block; width:100%; min-height:5rem; padding:8px; border:1px solid #cbad98; border-bottom:2px solid #926878; background:#fffdf4; color:#422c39; font-size:1rem; line-height:1.55; resize:vertical; scroll-margin-block-start:8.5rem; }
+.relay-form textarea {
+  display:block; width:100%; min-height:5rem; padding:8px; border:1px solid #cbad98; border-bottom:2px solid #926878;
+  background:repeating-linear-gradient(to bottom,transparent 0 calc(1lh - 1px),#d9c4af calc(1lh - 1px) 1lh) #fffdf4;
+  background-origin:content-box; background-attachment:local;
+  color:#422c39; font-size:1rem; line-height:1.55; resize:vertical; scroll-margin-block-start:8.5rem;
+}
 .relay-form textarea::placeholder { color:#7a6569; }
 .relay-entry-actions { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:end; gap:7px 12px; }
 .relay-entry-actions > :is(button,a) { min-height:44px; text-align:center; white-space:normal; }
@@ -238,13 +243,18 @@ onBeforeUnmount(() => {
 .relay-unfurl { animation:relay-unfold .34s ease-out both; transform-origin:top left; }
 @keyframes relay-unfold { from { transform:scale(.985); opacity:.65; } to { transform:scale(1); opacity:1; } }
 @media(max-width:1000px) { .relay-open-folds { grid-template-columns:repeat(3,minmax(0,1fr)); } }
-@media(max-width:750px) { .relay-spread { grid-template-columns:minmax(0,1fr); } }
+@media(max-width:750px) {
+  .relay-spread { grid-template-columns:minmax(0,1fr); }
+  .relay-form { border-inline-start:0; border-block-start:1px dashed #b69d87; }
+}
 @media(max-width:600px) {
   .relay-open-folds { grid-template-columns:minmax(0,1fr); }
   .relay-open-folds li { min-height:92px; }
   .relay-room .relay-seeds { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; }
   .relay-seeds button { padding:4px; font-size:.75rem; }
   .relay-pocket { min-height:0; }
+  .relay-entry-actions:not(.relay-approval) .relay-nickname { flex-basis:100%; max-width:none; }
+  #relay-practice { flex-basis:100%; }
 }
 @media(prefers-reduced-motion:reduce) { .relay-unfurl { animation:none; } }
 </style>

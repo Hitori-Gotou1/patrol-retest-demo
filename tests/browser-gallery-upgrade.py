@@ -32,6 +32,7 @@ for index in range(80):
 # Valid sortable ISO minutes, including the first records.
 for index, row in enumerate(ROWS):
     row['created_at'] = f'2026-11-{14-index//60:02d}T00:{59-index%60:02d}:00Z'
+ROWS[0]['tags'] = ['雨夜', *[f'可阅读的作品标签 {index}' for index in range(1, 21)]]
 REPORT = {'checks': [], 'pageErrors': [], 'backend': 'local contract fixture only'}
 
 class Handler(SimpleHTTPRequestHandler):
@@ -101,16 +102,20 @@ def test_pagination(browser):
     expect(page.locator('.gallery-search-coverage')).to_contain_text('正在检索全部')
     check(page.locator('.gallery-empty').count() == 0, '全量检索未结束时不误报空结果')
     fixture.release()
-    expect(page.locator('.gallery-card h3')).to_have_text('稀有第75张')
+    expect(page.locator('.gallery-card h3')).to_have_text(['稀有第75张'])
     expect(page.locator('.gallery-cloud-controls')).to_contain_text('全部读取')
     check(len(fixture.calls) >= 3, '搜索能命中第三批云端图片')
     page.locator('.gallery-image-button').click()
     expect(page.locator('#lightbox-image')).to_have_attribute('data-state', 'ready')
-    expect(page.locator('.source-label')).to_contain_text('测试明确作者')
+    source = page.locator('.lightbox-source-details')
+    source.locator('summary').click()
+    expect(source.locator('.source-label')).to_contain_text('测试明确作者')
+    expect(source.locator('.source-label')).to_be_visible()
+    page.locator('.lightbox-zoom-details summary').click()
     page.get_by_role('button', name='放大图片', exact=True).click()
-    check(page.locator('.lightbox-zoom-controls output').inner_text() != '100%', '缩放控制改变真实图像比例')
+    check(page.locator('#lightbox-zoom-level').inner_text() != '100%', '缩放控制改变真实图像比例')
     page.get_by_role('button', name='适配屏幕', exact=True).click()
-    expect(page.locator('.lightbox-zoom-controls output')).to_have_text('100%')
+    expect(page.locator('#lightbox-zoom-level')).to_have_text('100%')
     surface = page.locator('.lightbox-zoom-surface')
     surface.dblclick()
     check('is-zoomed' in surface.get_attribute('class'), '桌面双击进入内部缩放')
@@ -165,11 +170,19 @@ def test_mobile(browser):
         dispatch_touch(page, 'pointerup', 7, center[0]+70, center[1]+20)
         check(page.locator('#lightbox-title').inner_text() == title, f'{width}px放大拖动不会误触切图')
         page.get_by_role('button', name='适配屏幕', exact=True).click()
-        expect(page.locator('.lightbox-zoom-controls output')).to_have_text('100%')
+        expect(page.locator('#lightbox-zoom-level')).to_have_text('100%')
         page.locator('#lightbox-next').click()
-        expect(page.locator('.lightbox-zoom-controls output')).to_have_text('100%')
+        expect(page.locator('#lightbox-zoom-level')).to_have_text('100%')
         page.screenshot(path=str(OUTPUT/f'gallery-preview-{width}.png'))
         check(page.locator('#lightbox-close').bounding_box()['width'] >= 44, f'{width}px关闭触控区域至少44px')
+        if width == 360:
+            page.locator('#lightbox-prev').click()
+            source = page.locator('.lightbox-source-details')
+            source.locator('summary').click()
+            last_tag = source.get_by_text('可阅读的作品标签 20', exact=True)
+            last_tag.scroll_into_view_if_needed()
+            expect(last_tag).to_be_in_viewport()
+            check(page.locator('#lightbox').evaluate('el => el.scrollWidth <= el.clientWidth'), '窄屏展开来源可滚动读到最后一个标签')
         page.locator('#lightbox-close').click()
         fixture.close()
 

@@ -74,8 +74,10 @@ watch(selected, () => {
 .story-stage.is-ending { background:#f7e9d9; border-block-end:2px solid #b79a9e; }
 .is-ending .story-copy { grid-template-rows:auto; min-height:0; }
 .story-speaker { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:4px 10px; }
+.is-ending .story-speaker { justify-content:flex-start; }
 .story-copy h3,.story-copy p { margin:0; }
 .story-copy h3 { font-size:clamp(19px,3vw,26px); line-height:1.35; }
+.is-ending .story-copy h3 { font-family:var(--room-serif,serif); font-size:clamp(1.375rem,3vw,1.75rem); }
 .story-copy .room-kicker { color:#815a6e; font-size:12px; margin-bottom:4px; }
 .story-copy > .room-prose { margin-top:8px; padding-bottom:9px; line-height:var(--reader-line, 2.1); }
 .is-ending .story-copy > .room-prose { padding-bottom:0; }

@@ -285,7 +285,7 @@ onBeforeUnmount(() => {
   #starry-exit { font-size:10px; padding:8px 9px; }
   #starry-exit span { padding-left:5px; }
   .starry-house { min-height:350px; }
-  .starry-stage { --stage-inset:12px; --stage-gap:5px; --light-floor:3.85rem; min-height:300px; }
+  .starry-stage { --stage-inset:16px; --stage-gap:5px; --light-floor:3.85rem; min-height:300px; }
   .starry-sign { top:30px; }
   .starry-sign h2 { font-size:58px; }
   .starry-sign > span { font-size:7px; letter-spacing:3px; }
@@ -295,7 +295,7 @@ onBeforeUnmount(() => {
   .starry-member-name b { font-size:.75rem; white-space:nowrap; }
   .starry-member-name small { font-size:.6875rem; }
   .starry-member img { max-height:55vw; filter:brightness(var(--portrait-brightness,1)) drop-shadow(0 5px 3px #0008); }
-  .starry-member[aria-pressed='true'] img { max-height:73vw; }
+  .starry-member[aria-pressed='true'] img { max-height:76vw; }
   .starry-speaker { display:none; }
   .starry-ready-line { padding:11px 16px; text-align:center; justify-content:center; }
   .starry-ready-line span { display:none; }

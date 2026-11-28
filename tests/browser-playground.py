@@ -76,7 +76,25 @@ def mix_relay(browser):
   p.locator('textarea').fill(f'第 {i+1} 位写下的一句。');p.locator('#relay-practice').click()
   if i<5:expect(p.locator('.relay-complete')).to_have_count(0)
  expect(p.locator('.relay-complete li')).to_have_count(6);p.reload(wait_until='networkidle');p.get_by_role('button',name='本机练习',exact=True).click();expect(p.locator('.relay-complete li')).to_have_count(6)
- p.get_by_role('button',name='公开接龙 · 站主审核',exact=True).click();p.locator('textarea').fill('这一句等待审核后才会出现。');expect(p.locator('#relay-submit')).to_have_count(0);p.get_by_label('我知道内容会公开，且需要站主审核。',exact=True).check();expect(p.locator('#relay-submit')).to_be_visible();query=parse_qs(urlsplit(p.locator('#relay-submit').get_attribute('href')).query);assert query['labels']==['hitori-relay'] and '"parentIssue": 0' in query['body'][0];f.close()
+ p.get_by_role('button',name='公开接龙 · 站主审核',exact=True).click()
+ p.locator('textarea').fill('这一句等待审核后才会出现。')
+ expect(p.locator('#relay-submit')).to_have_count(0)
+ p.get_by_label('我知道内容会公开，且需要站主审核。',exact=True).check()
+ submit=p.get_by_role('link',name='打开 GitHub，核对并提交 →',exact=True)
+ issue_requests=[]
+ def preview_issue(route):
+  issue_requests.append(route.request.method)
+  route.fulfill(status=200,content_type='text/html; charset=UTF-8',body='<h1>接龙预填检查</h1>')
+ f.context.route('https://github.com/Hitori-Gotou1/patrol-retest-demo/issues/new?*',preview_issue)
+ with p.expect_popup() as opened: submit.click()
+ issue=opened.value
+ expect(issue.get_by_role('heading',name='接龙预填检查')).to_be_visible()
+ assert issue_requests==['GET']
+ query=parse_qs(urlsplit(issue.url).query)
+ assert query['template']==['relay.md'] and query['labels']==['hitori-relay']
+ assert query['title']==['[小屋接龙] before-show · 第 1 句']
+ assert '"parentIssue": 0' in query['body'][0] and '这一句等待审核后才会出现。' in query['body'][0]
+ f.close()
 
 def layouts_lifecycle(browser):
  for width in [1440,390,320]:

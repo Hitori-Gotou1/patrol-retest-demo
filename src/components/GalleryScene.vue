@@ -434,10 +434,9 @@ onBeforeUnmount(() => {
       <dialog id="lightbox" ref="lightbox" class="lightbox gallery-lightbox" aria-labelledby="lightbox-title" @close="onDialogClose" @cancel.prevent="closeImage" @keydown="dialogKeydown" @click="dialogBackdrop">
         <div v-if="selectedImage" class="lightbox-content">
           <div class="lightbox-toolbar">
-            <div class="lightbox-navigation" role="group" aria-label="翻阅图片">
-              <button v-if="previewImages.length > 1" id="lightbox-prev" type="button" class="icon-button" aria-label="上一张" @click="stepImage(-1)">←</button>
+            <div class="lightbox-context">
+              <span>心动收藏</span>
               <span id="lightbox-count" aria-live="polite">{{ imageCounter }}</span>
-              <button v-if="previewImages.length > 1" id="lightbox-next" type="button" class="icon-button" aria-label="下一张" @click="stepImage(1)">→</button>
             </div>
             <button id="lightbox-close" type="button" class="icon-button" aria-label="关闭图片" autofocus @click="closeImage">×</button>
           </div>
@@ -446,6 +445,14 @@ onBeforeUnmount(() => {
               <img v-show="!imageState.unavailable" id="lightbox-image" :key="selectedImage.id" :src="imageState.source" :data-state="imageState.status" :alt="selectedImage.alt" :style="zoom.imageTransform.value" decoding="async" draggable="false" @load="zoom.imageLoaded" @error="progressiveImage.displayError($event.currentTarget.getAttribute('src'))">
               <p v-if="imageState.status === 'error'" class="lightbox-image-error" role="status">这张图片暂时没有加载成功，可以切换到下一张。</p>
             </div>
+          </div>
+          <div class="lightbox-navigation" role="group" aria-label="翻阅图片与适配">
+            <button v-if="previewImages.length > 1" id="lightbox-prev" type="button" class="icon-button" aria-label="上一张" @click="stepImage(-1)">←</button>
+            <div class="lightbox-fit-control">
+              <button type="button" class="lightbox-fit" @click="zoom.fit">适配屏幕</button>
+              <output id="lightbox-zoom-level" :class="{ 'visually-hidden': zoom.scale.value === 1 }" aria-live="polite">{{ zoom.zoomLabel.value }}</output>
+            </div>
+            <button v-if="previewImages.length > 1" id="lightbox-next" type="button" class="icon-button" aria-label="下一张" @click="stepImage(1)">→</button>
           </div>
           <div class="lightbox-bottom">
             <div class="lightbox-caption">
@@ -467,15 +474,19 @@ onBeforeUnmount(() => {
             </div>
           </div>
           <div class="lightbox-utilities">
-            <div class="lightbox-zoom-controls" role="group" aria-label="图片缩放">
-              <button type="button" aria-label="缩小图片" :disabled="zoom.scale.value <= zoom.minScale.value" @click="zoom.setZoom(zoom.scale.value / 1.4)">−</button>
-              <output aria-live="polite">{{ zoom.zoomLabel.value }}</output>
-              <button type="button" aria-label="放大图片" :disabled="zoom.scale.value >= zoom.maxScale.value" @click="zoom.setZoom(zoom.scale.value * 1.4)">＋</button>
-              <button type="button" @click="zoom.fit">适配屏幕</button>
-              <button type="button" @click="zoom.oneToOne">1:1 查看</button>
-            </div>
-            <details class="lightbox-details">
-              <summary>作品信息与操作说明</summary>
+            <details class="lightbox-details lightbox-zoom-details">
+              <summary>图片缩放与手势</summary>
+              <div class="lightbox-details-copy">
+                <div class="lightbox-zoom-controls" role="group" aria-label="图片缩放">
+                  <button type="button" aria-label="缩小图片" :disabled="zoom.scale.value <= zoom.minScale.value" @click="zoom.setZoom(zoom.scale.value / 1.4)">−</button>
+                  <button type="button" aria-label="放大图片" :disabled="zoom.scale.value >= zoom.maxScale.value" @click="zoom.setZoom(zoom.scale.value * 1.4)">＋</button>
+                  <button type="button" @click="zoom.oneToOne">1:1 查看</button>
+                </div>
+                <p class="lightbox-gesture-hint">适配时左右滑动切图。双击放大或还原，放大后可拖动或用双指调整。键盘按 + / − 缩放，0 适配，Shift + 方向键移动。</p>
+              </div>
+            </details>
+            <details class="lightbox-details lightbox-source-details">
+              <summary>作品来源与信息</summary>
               <div class="lightbox-details-copy">
                 <p v-if="selectedImage.subtitle">{{ selectedImage.subtitle }}</p>
                 <ul v-if="lightboxTags.length" class="lightbox-tags" aria-label="作品标签">
@@ -489,7 +500,6 @@ onBeforeUnmount(() => {
                   <a v-if="selectedImage.creatorUrl" :href="selectedImage.creatorUrl" target="_blank" rel="noopener noreferrer">画师主页 ↗</a>
                   <RouterLink to="/room/sources">查看来源档案 ↗</RouterLink>
                 </div>
-                <p class="lightbox-gesture-hint">适配时左右滑动切图。双击放大或还原，放大后可拖动或用双指调整。键盘按 + / − 缩放，0 适配，Shift + 方向键移动。</p>
               </div>
             </details>
           </div>

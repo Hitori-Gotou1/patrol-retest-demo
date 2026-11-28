@@ -65,15 +65,16 @@ function readableConflict(item) { return item.local?.payload?.title || item.loca
       <p v-else>打开浏览器菜单，选择「添加到主屏幕」或「安装应用」。iPhone / iPad 可在 Safari 的分享菜单中添加；没有这个菜单也可以继续用网页。</p>
       <p class="device-hint">安装图标不会自动下载图库或大型媒体。</p>
     </section>
-    <section aria-labelledby="offline-title"><h2 id="offline-title">选几件常用玩法，离线也能继续</h2>
-      <p class="offline-intro">只下载你勾选的玩法和必要页面。图库、云端图片、登录、同步与网络内容仍需要联网；离线打开未下载的页面时，请返回这里选择已保存的入口。</p>
+    <section class="offline-section" aria-labelledby="offline-title">
+      <header class="offline-heading">
+        <h2 id="offline-title">选几件常用玩法，离线也能继续</h2>
+        <div v-if="offline" class="offline-list-heading">
+          <h3 id="offline-choice-title">可离线使用的玩法</h3>
+          <output class="offline-total" aria-live="polite">预计下载 <strong>{{ selectedBytes === null ? '更新后可估算' : bytes(selectedBytes) }}</strong></output>
+        </div>
+      </header>
       <div v-if="offline" class="offline-pack">
         <div class="offline-selection">
-          <header class="offline-list-heading">
-            <h3 id="offline-choice-title">可离线使用的玩法</h3>
-            <output class="offline-total" aria-live="polite">预计下载 <strong>{{ selectedBytes === null ? '更新后可估算' : bytes(selectedBytes) }}</strong></output>
-          </header>
-          <p id="offline-size-note" class="device-hint">总量包含必要页面，共享资源只计一次。</p>
           <fieldset class="offline-choices" aria-labelledby="offline-choice-title" aria-describedby="offline-size-note" :disabled="busy">
             <label v-for="(group, id) in offline.manifest.groups" :key="id">
               <input v-model="selected" type="checkbox" :value="id">
@@ -81,28 +82,31 @@ function readableConflict(item) { return item.local?.payload?.title || item.loca
               <span class="offline-size">约 {{ bytes(group.bytes) }}</span>
             </label>
           </fieldset>
+          <p id="offline-size-note" class="device-hint">总量包含必要页面，共享资源只计一次。</p>
           <button type="button" class="offline-primary" :disabled="busy || !deviceState.online" @click="saveSelection">{{ busy && deviceState.progress ? '正在保存…' : '保存所选玩法到此设备' }}</button>
           <progress v-if="deviceState.progress" :value="deviceState.progress.done" :max="deviceState.progress.total" :aria-label="`已保存${deviceState.progress.done}个资源`"></progress>
           <p v-if="offlineFeedback === 'selection' && notice" class="device-callout" role="status">{{ notice }}</p>
           <p v-if="offlineFeedback === 'selection' && failure" class="device-error" role="alert">{{ failure }}</p>
           <nav v-if="offline.enabled && offline.groups.length" class="offline-links" aria-label="已下载的玩法"><RouterLink v-for="id in offline.groups" :key="id" :to="offline.manifest.groups[id].path">✓ {{ offline.manifest.groups[id].title }} ↗</RouterLink></nav>
-          <p v-else class="device-hint">还没有下载玩法。勾选后点「保存」，下次离线就能继续。</p>
         </div>
-        <div class="offline-maintenance">
-          <h3>离线维护</h3>
-          <p class="offline-cached">已缓存 {{ bytes(offline.bytes) }} · {{ offline.count }} 个资源</p>
+        <div class="offline-maintenance" role="group" aria-label="离线维护">
           <div class="device-actions">
             <button type="button" :disabled="busy || !deviceState.online" @click="inspectOffline">检查版本更新</button>
             <button type="button" :disabled="busy" @click="cleanSelection">清理离线资源</button>
           </div>
+          <p class="offline-cached">已缓存 {{ bytes(offline.bytes) }} · {{ offline.count }} 个资源</p>
           <p class="device-hint">清理会移除下载的网页资源，作品、草稿和练习记录会保留。</p>
           <p v-if="offlineFeedback === 'maintenance' && notice" class="device-callout" role="status">{{ notice }}</p>
           <p v-if="offlineFeedback === 'maintenance' && failure" class="device-error" role="alert">{{ failure }}</p>
         </div>
       </div>
-      <p v-else>{{ deviceState.error || offlineUnavailable || '离线缓存需在生产构建、HTTPS 或本机预览中使用。' }}</p>
-      <div v-if="deviceState.updateAvailable" class="device-callout"><p>新版本及已选择的离线资源已准备好。先保存正在编辑的内容，再刷新更新。</p><button type="button" @click="run(acceptDeviceUpdate, 'maintenance')">保存完成，刷新到新版本</button></div>
-      <p v-if="deviceState.changedVersion">新版本已接管。<button type="button" @click="reload">刷新使用新版本</button></p>
+      <div class="offline-notes">
+        <p v-if="!offline" role="status">{{ deviceState.error || offlineUnavailable || '离线缓存需在生产构建、HTTPS 或本机预览中使用。' }}</p>
+        <p v-else-if="!offline.enabled || !offline.groups.length" class="device-hint">还没有下载玩法。勾选后点「保存」，下次离线就能继续。</p>
+        <p class="device-hint">只下载你勾选的玩法和必要页面。图库、云端图片、登录、同步与网络内容仍需要联网；离线打开未下载的页面时，请返回这里选择已保存的入口。</p>
+        <div v-if="deviceState.updateAvailable" class="device-callout"><p>新版本及已选择的离线资源已准备好。先保存正在编辑的内容，再刷新更新。</p><button type="button" @click="run(acceptDeviceUpdate, 'maintenance')">保存完成，刷新到新版本</button></div>
+        <p v-if="deviceState.changedVersion">新版本已接管。<button type="button" @click="reload">刷新使用新版本</button></p>
+      </div>
     </section>
     <section aria-labelledby="sync-title"><h2 id="sync-title">在另一台设备接着做</h2>
       <p>可选同步范围：作品架中保存的版本、各创作工具草稿、图片收藏、常用活动及顺序、最近 365 条练琴记录、三档节奏最高分。正在运行的计时器、私人视频、图库原图和其他游戏进度不参与同步。</p>
@@ -136,13 +140,15 @@ function readableConflict(item) { return item.local?.payload?.title || item.loca
   </main>
 </template>
 <style scoped>
-.offline-intro { font-size:.875rem; line-height:1.65; margin:8px 0 12px; }
-.offline-pack { display:grid; grid-template-columns:minmax(0,1fr) minmax(13rem,.52fr); align-items:start; gap:clamp(16px,3vw,30px); margin-top:12px; }
-.offline-list-heading { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:1px 12px; }
-.offline-list-heading h3,.offline-maintenance h3 { margin:0; color:#f5e1e7; font-size:1rem; }
-.offline-total { color:#e3c5d8; font-size:.875rem; }
-.offline-total strong { color:#fff1df; font-variant-numeric:tabular-nums; }
-#offline-size-note { margin:4px 0 10px; }
+.device-page .offline-section { --offline-padding:clamp(14px,2.5vw,28px); padding:0; }
+.offline-heading { padding:12px var(--offline-padding); background:#f2e6d8; color:#4f354b; border-bottom:1px solid #9e818c; border-radius:9px 9px 0 0; }
+.device-page .offline-heading h2 { margin:0; font:700 clamp(1.175rem,3.5vw,1.45rem)/1.45 var(--room-serif,serif); color:inherit; }
+.offline-list-heading { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:1px 12px; margin-top:3px; }
+.offline-list-heading h3 { margin:0; font-size:.875rem; }
+.offline-total { color:#67475c; font-size:.8125rem; }
+.offline-total strong { color:#4f354b; font:700 1rem var(--mono); font-variant-numeric:tabular-nums; }
+.offline-pack { display:grid; grid-template-columns:minmax(0,1fr) minmax(13rem,.52fr); align-items:start; gap:clamp(12px,3vw,30px); padding:12px var(--offline-padding) 0; }
+#offline-size-note { margin:7px 0 0; font-size:.8125rem; }
 .offline-choices { min-width:0; margin:0; padding:0; border:0; border-top:1px solid #735d74; background:#28212e; }
 .offline-choices label { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:clamp(6px,2vw,12px); min-height:44px; padding:4px 8px; border-bottom:1px solid #56475a; cursor:pointer; }
 .device-page .offline-choices input[type=checkbox] { width:20px; height:20px; margin:0; }
@@ -150,13 +156,20 @@ function readableConflict(item) { return item.local?.payload?.title || item.loca
 .offline-choices label strong { font-weight:550; }
 .offline-choices label:has(:checked) { background:#49374a; color:#fff4eb; }
 .offline-size { color:#e0c9db; text-align:end; font-variant-numeric:tabular-nums; white-space:nowrap; }
-.device-page .offline-primary { margin-top:12px; background:#efd0de; color:#3a2339; border-color:#efd0de; font-weight:700; }
+.device-page .offline-primary { margin-top:8px; background:#efd0de; color:#3a2339; border-color:#efd0de; font-weight:700; }
 .offline-selection progress { display:block; margin-top:10px; }
 .offline-maintenance { padding:12px; border-top:1px solid #735d74; background:#29222f; }
-.offline-cached { font-size:.875rem; margin:5px 0 0; font-variant-numeric:tabular-nums; }
-.offline-maintenance .device-actions { gap:6px; margin-block:10px; }
+.offline-cached { font-size:.875rem; margin:4px 0; font-variant-numeric:tabular-nums; }
+.offline-maintenance .device-actions { gap:6px; margin:0; }
 .offline-maintenance .device-actions button { font-size:.875rem; padding:6px 9px; }
 .offline-maintenance .device-hint { margin:0; }
-@media(max-width:760px) { .offline-pack { grid-template-columns:minmax(0,1fr); } }
+.offline-notes { padding:0 var(--offline-padding) 12px; }
+.offline-notes p { font-size:.875rem; line-height:1.65; margin:8px 0; }
+@media(max-width:760px) {
+  .offline-pack { grid-template-columns:minmax(0,1fr); }
+  .device-page .offline-primary { width:100%; }
+  .offline-maintenance { padding:0; background:transparent; }
+  .offline-maintenance .device-actions button { flex:0 1 auto; padding:4px 8px; border:0; background:transparent; text-decoration:underline; text-underline-offset:3px; }
+}
 .device-page{max-width:1040px;margin:auto;padding:140px 28px 80px;color:#f5e6dc;line-height:1.85;overflow-wrap:anywhere}.device-page header>a{color:#e1b5d0}.device-kicker{color:#d7b2d2;letter-spacing:.15em}.device-page h1{font-size:clamp(1.8rem,4vw,2.8rem);line-height:1.4}.device-page h2{font-size:1.35rem;color:#efd3df}.device-page section{margin:28px 0;padding:28px;border:1px solid #705b71;background:#312936;border-radius:10px}.device-hint,.device-page small{font-size:.9rem;color:#d0bfce}.device-page button,.device-page input{font:inherit}.device-page button,.offline-links a{min-height:44px;padding:10px 16px;border:1px solid #d0a6c2;background:#514052;color:#fff0e8;border-radius:5px;cursor:pointer}.device-page button:disabled{opacity:.5;cursor:default}.device-page :focus-visible{outline:3px solid #edcf85;outline-offset:4px}.device-actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}.device-consent{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid #826982;border-radius:5px;cursor:pointer;min-height:44px}.device-page input[type=checkbox]{width:24px;height:24px;flex-shrink:0;accent-color:#d994b3}.device-page input:not([type=checkbox]){display:block;box-sizing:border-box;width:100%;min-height:46px;padding:8px 12px;background:#211b27;border:1px solid #b393ae;color:#fff0e8;border-radius:4px}.device-login{max-width:530px}.device-login>label{display:block;margin:14px 0}.device-callout{padding:16px;background:#49394b;border-left:3px solid #edcf85}.device-error{color:#ffc6d1;padding:12px;border:1px solid #b66c85}.offline-links{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}.offline-links a{display:inline-flex;align-items:center;text-decoration:none}.device-status{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.device-status div{background:#25202b;padding:12px}.device-status dt{font-size:.85rem;color:#c6b3c3}.device-status dd{margin:4px 0}.device-account{color:#edcf85}.device-conflicts article{padding:18px;margin:14px 0;border:1px solid #bc93ad}.device-page progress{width:100%;height:16px;accent-color:#d994b3}.device-network{font-size:.9rem;color:#d8c5db}@media(max-width:600px){.device-page{padding:120px 16px 40px}.device-page section{padding:18px 14px}.device-status{grid-template-columns:1fr}.device-actions button{flex:1 1 135px}.device-page{padding-bottom:calc(40px + env(safe-area-inset-bottom))}}
 </style>

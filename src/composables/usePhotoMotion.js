@@ -11,7 +11,7 @@ export function usePhotoMotion({ lightbox, section }) {
   function nextFrame() { return new Promise(resolve => { finishFrame = resolve; frame = requestAnimationFrame(() => { frame = 0; finishFrame = null; resolve(); }); }); }
   function cancelFrame() { cancelAnimationFrame(frame); frame = 0; finishFrame?.(); finishFrame = null; }
   const image = () => lightbox.value?.querySelector('#lightbox-image');
-  const chrome = () => lightbox.value?.querySelectorAll('.lightbox-toolbar,.lightbox-bottom,.lightbox-utilities');
+  const chrome = () => lightbox.value?.querySelectorAll('.lightbox-toolbar,.lightbox-navigation,.lightbox-bottom,.lightbox-utilities');
   function clean() {
     tween?.kill(); tween = null; flight?.remove(); flight = null;
     const photo = image();
